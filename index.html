@@ -82,7 +82,6 @@
         .me-menu-item { background: #fff; padding: 14px 24px; font-size: 16px; color: #111; border-bottom: 0.5px solid #f0f0f0; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; }
         .me-menu-item:active { background: #f9f9f9; }
 
-        /* --- 聊天详情页 UI 优化 --- */
         .chat-detail-page { position: absolute; inset: 0; background: #ffffff; z-index: 500; display: flex; flex-direction: column; animation: slideInRight 0.3s ease-out; }
         .detail-header { 
             padding-top: calc(env(safe-area-inset-top) + 10px); 
@@ -112,15 +111,13 @@
             transform: translateX(-120px); 
         }
         
-        .detail-char-name { font-size: 24px; font-weight: 700; color: #000; margin-top: 22px; letter-spacing: 0.5px; text-align: center; }
+        .detail-char-name { font-size: 24px; font-weight: 700; color: #000; margin-top: 22px; letter-spacing: 0.5px; text-align: center; cursor: pointer; }
         
         .detail-persona-box { margin-top: 12px; text-align: center; width: 85%; align-self: center; margin-bottom: 30px; }
         .detail-persona-text { font-size: 14px; color: #000; line-height: 1.5; font-weight: 400; opacity: 0.9; }
         .detail-persona-placeholder { font-size: 14px; color: #ccc; font-style: italic; }
         
         .detail-list-menu { border-top: 0.5px solid #eee; background: #fff; width: 100%; }
-
-        /* -------------------------------------- */
 
         .wallet-page { background: #f6f6f6; position: absolute; inset: 0; z-index: 200; display: flex; flex-direction: column; }
         .wallet-header-bg { background: linear-gradient(to bottom, var(--theme-color), #f6f6f6); height: 260px; position: absolute; top: 0; left: 0; right: 0; z-index: 0; }
@@ -323,7 +320,7 @@
                     <img :src="getFriendById(currentChatPartner.id).avatar" @click="changeDetailAvatar" class="detail-avatar">
                 </div>
                 
-                <div class="detail-char-name" @click="editFriendRemark">{{ getFriendById(currentChatPartner.id).name }}</div>
+                <div class="detail-char-name" @click="editPartnerRemark">{{ getFriendById(currentChatPartner.id).name }}</div>
                 
                 <div class="detail-persona-box" @click="editDetailPersona">
                     <div v-if="getFriendById(currentChatPartner.id).persona" class="detail-persona-text">
@@ -725,15 +722,17 @@ createApp({
             if(res !== null) friend.persona = res;
         };
 
-        // 新增：编辑角色备注的功能
-        const editFriendRemark = () => {
+        // 新增：在详情页修改备注的功能
+        const editPartnerRemark = () => {
             if(!currentChatPartner.value) return;
             const friend = friendsList.value.find(f => f.id === currentChatPartner.value.id);
-            const newName = prompt("修改备注：", friend.name);
-            if(newName) {
-                friend.name = newName;
-                // 如果是左侧预设角色，同步更新 widget
-                if(friend.id === 'left') widget.value.leftName = newName;
+            const newRemark = prompt("修改备注名：", friend.name);
+            if(newRemark !== null && newRemark.trim() !== "") {
+                friend.name = newRemark;
+                // 如果是左侧快捷组件对应的好友，同步小组件显示
+                if(friend.id === 'left') {
+                    widget.value.leftName = newRemark;
+                }
             }
         };
 
@@ -972,7 +971,7 @@ createApp({
             isAIReplying.value = true;
 
             try {
-                // 使用 realName 而非 name，确保 AI 接收到的是设定名，而非用户的备注名
+                // AI 视角只会看到 realName 和 persona，不会看到用户修改的本地备注 name
                 let aiSystemPrompt = `你现在是 ${targetFriend.realName}。对方叫 ${widget.value.meName}。对方目前的微信状态是“${widget.value.userStatus}”。你的核心设定：${targetFriend.persona}。额外预设：${config.value.presetCss}`;
 
                 const res = await fetch(`${config.value.baseUrl}/chat/completions`, {
@@ -1038,7 +1037,7 @@ createApp({
             newAI, addNewFriend,
             showDescPhotoModal, descPhotoInput, confirmDescPhoto,
             triggerAIReply, isAIReplying, getFriendById, changeDetailAvatar, onDetailAvatarSelected,
-            editDetailPersona, openBlankSubPage, editFriendRemark
+            editDetailPersona, openBlankSubPage, editPartnerRemark
         };
     }
 }).mount('#app');
