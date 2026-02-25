@@ -82,6 +82,7 @@
         .me-menu-item { background: #fff; padding: 14px 24px; font-size: 16px; color: #111; border-bottom: 0.5px solid #f0f0f0; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; }
         .me-menu-item:active { background: #f9f9f9; }
 
+        /* --- 聊天详情页 UI 优化 --- */
         .chat-detail-page { position: absolute; inset: 0; background: #ffffff; z-index: 500; display: flex; flex-direction: column; animation: slideInRight 0.3s ease-out; }
         .detail-header { 
             padding-top: calc(env(safe-area-inset-top) + 10px); 
@@ -112,6 +113,7 @@
         }
         
         .detail-char-name { font-size: 24px; font-weight: 700; color: #000; margin-top: 22px; letter-spacing: 0.5px; text-align: center; cursor: pointer; }
+        .detail-char-name:active { opacity: 0.6; }
         
         .detail-persona-box { margin-top: 12px; text-align: center; width: 85%; align-self: center; margin-bottom: 30px; }
         .detail-persona-text { font-size: 14px; color: #000; line-height: 1.5; font-weight: 400; opacity: 0.9; }
@@ -320,7 +322,9 @@
                     <img :src="getFriendById(currentChatPartner.id).avatar" @click="changeDetailAvatar" class="detail-avatar">
                 </div>
                 
-                <div class="detail-char-name" @click="editPartnerRemark">{{ getFriendById(currentChatPartner.id).name }}</div>
+                <div class="detail-char-name" @click="editFriendRemark">
+                    {{ getFriendById(currentChatPartner.id).name }}
+                </div>
                 
                 <div class="detail-persona-box" @click="editDetailPersona">
                     <div v-if="getFriendById(currentChatPartner.id).persona" class="detail-persona-text">
@@ -422,7 +426,9 @@
                 </button>
                 <div v-if="(activeTab === 'discover' || activeTab === 'me') && !currentChatPartner" class="w-8"></div>
             </div>
-            <span class="font-bold text-[17px] pb-1 truncate max-w-[60%]">{{ currentChatPartner ? (isMultiSelect ? '已选择' : getFriendById(currentChatPartner.id).name) : navTitle }}</span>
+            <span class="font-bold text-[17px] pb-1 truncate max-w-[60%]">
+                {{ currentChatPartner ? (isMultiSelect ? '已选择' : getFriendById(currentChatPartner.id).name) : navTitle }}
+            </span>
             <div class="w-12 flex justify-end">
                 <button v-if="activeTab === 'contacts' && !currentChatPartner" @click="triggerPlusAction" class="text-[#1a1a1a] pb-1 text-2xl font-light">
                    <div class="plus-icon-container" :class="{'plus-rotate-active': isPlusRotating}">＋</div>
@@ -697,7 +703,7 @@ createApp({
             config: '参数配置', beauty: '界面美化', preset: '人格预设'
         }[activeModal.value]));
 
-        const getFriendById = (id) => friendsList.value.find(f => f.id === id) || {};
+        const getFriendById = (id) => friendsList.value.find(f => f.id === id) || { name: '未知' };
 
         const openWechat = () => { chatVisible.value = true; activeTab.value = 'contacts'; currentChatPartner.value = null; meSubPage.value = null; };
         const enterChat = (id) => {
@@ -722,17 +728,14 @@ createApp({
             if(res !== null) friend.persona = res;
         };
 
-        // 新增：在详情页修改备注的功能
-        const editPartnerRemark = () => {
+        // 修改点：支持在详情页修改角色备注
+        const editFriendRemark = () => {
             if(!currentChatPartner.value) return;
             const friend = friendsList.value.find(f => f.id === currentChatPartner.value.id);
-            const newRemark = prompt("修改备注名：", friend.name);
-            if(newRemark !== null && newRemark.trim() !== "") {
-                friend.name = newRemark;
-                // 如果是左侧快捷组件对应的好友，同步小组件显示
-                if(friend.id === 'left') {
-                    widget.value.leftName = newRemark;
-                }
+            const newName = prompt("修改好友备注：", friend.name);
+            if (newName && newName.trim()) {
+                friend.name = newName;
+                // 注意：这里故意不更新 widget.leftName，实现逻辑解耦
             }
         };
 
@@ -764,10 +767,7 @@ createApp({
             const newName = prompt("编辑小组件显示名字：", widget.value[side + 'Name']);
             if (newName) { 
                 widget.value[side + 'Name'] = newName;
-                if(side === 'left') {
-                    const f = friendsList.value.find(item => item.id === 'left');
-                    if(f) f.name = newName;
-                }
+                // 仅维持小组件自身的逻辑，不强制联动私聊备注
             }
         };
 
@@ -971,8 +971,7 @@ createApp({
             isAIReplying.value = true;
 
             try {
-                // AI 视角只会看到 realName 和 persona，不会看到用户修改的本地备注 name
-                let aiSystemPrompt = `你现在是 ${targetFriend.realName}。对方叫 ${widget.value.meName}。对方目前的微信状态是“${widget.value.userStatus}”。你的核心设定：${targetFriend.persona}。额外预设：${config.value.presetCss}`;
+                let aiSystemPrompt = `你现在是 ${targetFriend.realName}。对方叫 ${widget.value.meName}。对方目前的微信状态是“${widget.value.userStatus}”。你的核心设定：${targetFriend.persona}。额外预设：${config.value.presetCss}。注意：你只知道自己的真名叫${targetFriend.realName}，不知道对方给你打了什么备注。`;
 
                 const res = await fetch(`${config.value.baseUrl}/chat/completions`, {
                     method: 'POST',
@@ -1037,7 +1036,7 @@ createApp({
             newAI, addNewFriend,
             showDescPhotoModal, descPhotoInput, confirmDescPhoto,
             triggerAIReply, isAIReplying, getFriendById, changeDetailAvatar, onDetailAvatarSelected,
-            editDetailPersona, openBlankSubPage, editPartnerRemark
+            editDetailPersona, openBlankSubPage, editFriendRemark
         };
     }
 }).mount('#app');
