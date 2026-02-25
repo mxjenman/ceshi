@@ -112,7 +112,7 @@
             transform: translateX(-120px); 
         }
         
-        .detail-char-name { font-size: 24px; font-weight: 700; color: #000; margin-top: 22px; letter-spacing: 0.5px; text-align: center; cursor: pointer; }
+        .detail-char-name { font-size: 24px; font-weight: 700; color: #000; margin-top: 22px; letter-spacing: 0.5px; text-align: center; }
         
         .detail-persona-box { margin-top: 12px; text-align: center; width: 85%; align-self: center; margin-bottom: 30px; }
         .detail-persona-text { font-size: 14px; color: #000; line-height: 1.5; font-weight: 400; opacity: 0.9; }
@@ -323,9 +323,7 @@
                     <img :src="getFriendById(currentChatPartner.id).avatar" @click="changeDetailAvatar" class="detail-avatar">
                 </div>
                 
-                <div class="detail-char-name" @click="editRemarkName">
-                    {{ getFriendById(currentChatPartner.id).name }}
-                </div>
+                <div class="detail-char-name" @click="editFriendRemark">{{ getFriendById(currentChatPartner.id).name }}</div>
                 
                 <div class="detail-persona-box" @click="editDetailPersona">
                     <div v-if="getFriendById(currentChatPartner.id).persona" class="detail-persona-text">
@@ -727,15 +725,15 @@ createApp({
             if(res !== null) friend.persona = res;
         };
 
-        // 新增/修改点：修改备注名的函数，仅修改显示备注，不影响 AI 感知的 realName
-        const editRemarkName = () => {
+        // 新增：编辑角色备注的功能
+        const editFriendRemark = () => {
             if(!currentChatPartner.value) return;
             const friend = friendsList.value.find(f => f.id === currentChatPartner.value.id);
-            const res = prompt("设置备注名：", friend.name);
-            if(res !== null && res.trim() !== "") {
-                friend.name = res;
-                // 如果是左侧小组件对应的好友，同步更新小组件名称
-                if(friend.id === 'left') widget.value.leftName = res;
+            const newName = prompt("修改备注：", friend.name);
+            if(newName) {
+                friend.name = newName;
+                // 如果是左侧预设角色，同步更新 widget
+                if(friend.id === 'left') widget.value.leftName = newName;
             }
         };
 
@@ -974,7 +972,7 @@ createApp({
             isAIReplying.value = true;
 
             try {
-                // 核心逻辑：这里 AI 只知道 targetFriend.realName，不知道备注名（targetFriend.name）
+                // 使用 realName 而非 name，确保 AI 接收到的是设定名，而非用户的备注名
                 let aiSystemPrompt = `你现在是 ${targetFriend.realName}。对方叫 ${widget.value.meName}。对方目前的微信状态是“${widget.value.userStatus}”。你的核心设定：${targetFriend.persona}。额外预设：${config.value.presetCss}`;
 
                 const res = await fetch(`${config.value.baseUrl}/chat/completions`, {
@@ -1040,7 +1038,7 @@ createApp({
             newAI, addNewFriend,
             showDescPhotoModal, descPhotoInput, confirmDescPhoto,
             triggerAIReply, isAIReplying, getFriendById, changeDetailAvatar, onDetailAvatarSelected,
-            editDetailPersona, openBlankSubPage, editRemarkName
+            editDetailPersona, openBlankSubPage, editFriendRemark
         };
     }
 }).mount('#app');
