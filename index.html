@@ -3,148 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AI 手机桌面聊天</title>
+<title>Echo 手机 AI</title>
 
 <style>
-/* ===== 手机整体比例 ===== */
 body{
-    margin:0;
-    background:#111;
-    font-family:-apple-system,BlinkMacSystemFont;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+margin:0;
+background:#eaeaea;
+font-family:-apple-system,BlinkMacSystemFont;
+display:flex;
+justify-content:center;
 }
 
 .phone{
-    width:390px;
-    height:844px;
-    background:#f5f5f5;
-    border-radius:40px;
-    overflow:hidden;
-    position:relative;
-    box-shadow:0 0 40px rgba(0,0,0,0.6);
+width:390px;
+height:844px;
+background:white;
+border-radius:40px;
+overflow:hidden;
+box-shadow:0 0 30px rgba(0,0,0,0.2);
+position:relative;
+display:flex;
+flex-direction:column;
 }
 
-/* ===== 顶部状态栏 ===== */
-.top-cloud{
-    background:linear-gradient(to right,#89f7fe,#66a6ff);
-    padding:15px;
-    border-bottom-left-radius:30px;
-    border-bottom-right-radius:30px;
-    color:#fff;
+.status{
+padding:15px;
+background:linear-gradient(to bottom,#b5e4ff,#ffffff);
+}
+
+.cloud{
+background:white;
+border-radius:25px;
+padding:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
 .time{
-    font-size:28px;
-    font-weight:bold;
+font-size:22px;
+font-weight:bold;
 }
 
 .date{
-    font-size:14px;
+font-size:14px;
 }
 
 .weather{
-    font-size:14px;
+font-size:14px;
+margin-top:5px;
 }
 
-/* ===== 图标区 ===== */
-.icon-bar{
-    position:absolute;
-    bottom:20px;
-    width:100%;
-    display:flex;
-    justify-content:space-around;
+.chat-icon{
+position:absolute;
+right:15px;
+top:90px;
+font-size:22px;
+cursor:pointer;
 }
 
-.icon{
-    font-size:14px;
-    text-align:center;
-    cursor:pointer;
+.chat{
+flex:1;
+display:none;
+flex-direction:column;
+background:#f5f5f5;
 }
 
-/* ===== 微信聊天界面 ===== */
-.chat-page{
-    position:absolute;
-    top:120px;
-    bottom:80px;
-    width:100%;
-    display:none;
-    flex-direction:column;
-    background:#e5ddd5;
-}
-
-.chat-header{
-    padding:10px;
-    background:#fff;
-    text-align:center;
-    font-weight:bold;
-}
-
-.chat-box{
-    flex:1;
-    overflow-y:auto;
-    padding:10px;
+.messages{
+flex:1;
+padding:10px;
+overflow-y:auto;
 }
 
 .msg{
-    max-width:70%;
-    margin:6px 0;
-    padding:8px 10px;
-    border-radius:12px;
-    font-size:14px;
-    word-break:break-all;
+margin:5px 0;
+max-width:70%;
+padding:8px 12px;
+border-radius:15px;
+font-size:14px;
 }
 
-.user{
-    background:#95ec69;
-    align-self:flex-end;
+.me{
+background:#9eea6a;
+align-self:flex-end;
 }
 
 .ai{
-    background:#fff;
-    align-self:flex-start;
+background:white;
+align-self:flex-start;
 }
 
-.input-bar{
-    display:flex;
-    padding:5px;
-    background:#fff;
+.input-area{
+display:flex;
+padding:10px;
+background:white;
 }
 
 input{
-    flex:1;
-    padding:6px;
-    border-radius:8px;
-    border:1px solid #ccc;
+flex:1;
+padding:8px;
+border-radius:20px;
+border:1px solid #ddd;
 }
 
 button{
-    margin-left:5px;
-    border:none;
-    border-radius:8px;
-    padding:6px 10px;
-    background:#4CAF50;
-    color:#fff;
+margin-left:5px;
+border:none;
+background:#4caf50;
+color:white;
+padding:8px 12px;
+border-radius:20px;
 }
 
-/* ===== 设置页面 ===== */
+.bottom{
+display:flex;
+justify-content:space-around;
+padding:10px;
+background:white;
+border-top:1px solid #ddd;
+}
+
 .panel{
-    position:absolute;
-    top:0;
-    bottom:0;
-    width:100%;
-    background:#fff;
-    display:none;
-    flex-direction:column;
-    padding:15px;
-    overflow:auto;
+position:absolute;
+bottom:60px;
+left:0;
+right:0;
+background:white;
+height:300px;
+display:none;
+padding:10px;
+overflow:auto;
+border-top:1px solid #ddd;
 }
 
 textarea{
-    width:100%;
-    height:120px;
+width:100%;
+height:80px;
 }
 </style>
 </head>
@@ -152,174 +144,165 @@ textarea{
 <body>
 <div class="phone">
 
-<!-- ===== 顶部模块 ===== -->
-<div class="top-cloud">
-    <div class="time" id="time"></div>
-    <div class="date" id="date"></div>
-    <div class="weather">
-        <input id="city" placeholder="城市" style="width:80px;">
-        <input id="weatherInput" placeholder="天气" style="width:80px;">
-    </div>
+<div class="status">
+<div class="cloud">
+<div class="time" id="time"></div>
+<div class="date" id="date"></div>
+<div class="weather">
+城市: <input id="city" value="Toronto" style="width:80px">
+天气: <input id="weather" value="晴" style="width:60px">
+</div>
+</div>
 </div>
 
-<!-- ===== 私聊界面 ===== -->
-<div class="chat-page" id="chatPage">
-    <div class="chat-header">私聊</div>
-    <div class="chat-box" id="chatBox"></div>
-    <div class="input-bar">
-        <input id="msgInput" placeholder="输入消息">
-        <button onclick="sendMsg()">发送</button>
-        <button onclick="generate()">生成</button>
-    </div>
+<div class="chat-icon" onclick="openChat()">💬</div>
+
+<div class="chat" id="chat">
+<div class="messages" id="messages"></div>
+<div class="input-area">
+<input id="input">
+<button onclick="sendMsg()">发送</button>
+<button onclick="generate()">生成</button>
+</div>
 </div>
 
-<!-- ===== 设置 ===== -->
-<div class="panel" id="settingsPanel">
-    <h3>API 设置</h3>
-    BaseURL:<input id="baseUrl"><br>
-    API Key:<input id="apiKey"><br>
-    Model:<input id="modelName"><br>
-    <button onclick="saveSettings()">保存</button>
+<div class="bottom">
+<div onclick="openPanel('settings')">⚙设置</div>
+<div onclick="openPanel('beauty')">🎨美化</div>
+<div onclick="openPanel('preset')">🧠预设</div>
 </div>
 
-<!-- ===== 预设 ===== -->
-<div class="panel" id="presetPanel">
-    <h3>回复规则 / 文风</h3>
-    <textarea id="presetText"></textarea>
-    <button onclick="savePreset()">保存</button>
+<div class="panel" id="settings">
+BaseURL:<input id="baseurl" placeholder="https://api.openai.com">
+APIKey:<input id="apikey">
+Model:<input id="model" value="gpt-4o-mini">
+<button onclick="saveSettings()">保存</button>
 </div>
 
-<!-- ===== 美化 ===== -->
-<div class="panel" id="beautyPanel">
-    <h3>自定义CSS</h3>
-    <textarea id="beautyCss"></textarea>
-    <button onclick="applyBeauty()">应用</button>
+<div class="panel" id="beauty">
+自定义CSS:
+<textarea id="customCss"></textarea>
+<button onclick="applyCss()">应用</button>
 </div>
 
-<!-- ===== 底部图标 ===== -->
-<div class="icon-bar">
-    <div class="icon" onclick="openChat()">💬<br>私聊</div>
-    <div class="icon" onclick="openSettings()">⚙️<br>设置</div>
-    <div class="icon" onclick="openPreset()">📜<br>预设</div>
-    <div class="icon" onclick="openBeauty()">🎨<br>美化</div>
+<div class="panel" id="preset">
+自定义Prompt:
+<textarea id="customPrompt">
+你是一个真实生活中的朋友。
+绝对不要说自己是AI。
+回复像真人微信聊天。
+每条回复不超过20字。
+可以分多条发送。
+自然，口语化。
+可以带情绪。
+</textarea>
+<button onclick="savePrompt()">保存</button>
 </div>
 
 </div>
 
 <script>
-let history = [];
+let messages=[]
+let settings={}
 
-/* ===== 时间更新 ===== */
 function updateTime(){
-    const now = new Date();
-    document.getElementById("time").innerText =
-        now.getHours().toString().padStart(2,'0') + ":" +
-        now.getMinutes().toString().padStart(2,'0');
-    document.getElementById("date").innerText =
-        now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate();
+let now=new Date()
+document.getElementById("time").innerText=
+now.toLocaleTimeString()
+document.getElementById("date").innerText=
+now.toLocaleDateString()
 }
-setInterval(updateTime,1000);
-updateTime();
+setInterval(updateTime,1000)
+updateTime()
 
-/* ===== 页面切换 ===== */
-function openChat(){hideAll();document.getElementById("chatPage").style.display="flex";}
-function openSettings(){hideAll();document.getElementById("settingsPanel").style.display="flex";}
-function openPreset(){hideAll();document.getElementById("presetPanel").style.display="flex";}
-function openBeauty(){hideAll();document.getElementById("beautyPanel").style.display="flex";}
-function hideAll(){
-    document.querySelectorAll(".panel,.chat-page").forEach(e=>e.style.display="none");
+function openChat(){
+document.getElementById("chat").style.display="flex"
 }
 
-/* ===== 发送消息 ===== */
 function sendMsg(){
-    let val = document.getElementById("msgInput").value;
-    if(!val) return;
-    addMsg(val,"user");
-    history.push({role:"user",content:val});
-    document.getElementById("msgInput").value="";
+let val=document.getElementById("input").value
+if(!val)return
+addMsg(val,"me")
+messages.push({role:"user",content:val})
+document.getElementById("input").value=""
 }
 
 function addMsg(text,type){
-    let div=document.createElement("div");
-    div.className="msg "+type;
-    div.innerText=text;
-    document.getElementById("chatBox").appendChild(div);
-    document.getElementById("chatBox").scrollTop=99999;
+let div=document.createElement("div")
+div.className="msg "+type
+div.innerText=text
+document.getElementById("messages").appendChild(div)
+document.getElementById("messages").scrollTop=9999
 }
 
-/* ===== 保存设置 ===== */
+function openPanel(id){
+document.querySelectorAll(".panel").forEach(p=>p.style.display="none")
+document.getElementById(id).style.display="block"
+}
+
 function saveSettings(){
-    localStorage.baseUrl=baseUrl.value;
-    localStorage.apiKey=apiKey.value;
-    localStorage.modelName=modelName.value;
-    alert("已保存");
+settings.baseurl=document.getElementById("baseurl").value
+settings.apikey=document.getElementById("apikey").value
+settings.model=document.getElementById("model").value
+alert("保存成功")
 }
 
-function savePreset(){
-    localStorage.preset=presetText.value;
-    alert("已保存");
+function applyCss(){
+let css=document.getElementById("customCss").value
+let style=document.createElement("style")
+style.innerHTML=css
+document.head.appendChild(style)
 }
 
-/* ===== 美化 ===== */
-function applyBeauty(){
-    let style=document.createElement("style");
-    style.innerHTML=beautyCss.value;
-    document.head.appendChild(style);
+let customPrompt=document.getElementById("customPrompt").value
+
+function savePrompt(){
+customPrompt=document.getElementById("customPrompt").value
+alert("保存成功")
 }
 
-/* ===== 真人感 Prompt ===== */
-function buildSystemPrompt(){
-    return `
-你是一个真实存在的人类朋友。
-你在用微信和我聊天。
-说话自然口语化，有情绪。
-不要说自己是AI。
-不要解释系统规则。
-每条回复不超过20个字。
-可以连续发多条短消息。
-根据最近五轮聊天回复。
-当前时间:${time.innerText}
-日期:${date.innerText}
-城市:${city.value}
-天气:${weatherInput.value}
-${localStorage.preset || ""}
-`;
-}
-
-/* ===== 生成回复 ===== */
 async function generate(){
-    const baseUrl=localStorage.baseUrl;
-    const apiKey=localStorage.apiKey;
-    const modelName=localStorage.modelName;
-    if(!baseUrl||!apiKey||!modelName){alert("请先设置API");return;}
+let city=document.getElementById("city").value
+let weather=document.getElementById("weather").value
+let now=new Date()
 
-    let lastFive = history.slice(-10);
+let systemPrompt=
+customPrompt+
+"\n当前时间:"+now.toLocaleString()+
+"\n所在城市:"+city+
+"\n当前天气:"+weather
 
-    const response = await fetch(baseUrl+"/chat/completions",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "Authorization":"Bearer "+apiKey
-        },
-        body:JSON.stringify({
-            model:modelName,
-            messages:[
-                {role:"system",content:buildSystemPrompt()},
-                ...lastFive
-            ]
-        })
-    });
+let last5=messages.slice(-5)
 
-    const data=await response.json();
-    let reply=data.choices[0].message.content;
+let body={
+model:settings.model,
+messages:[
+{role:"system",content:systemPrompt},
+...last5
+]
+}
 
-    reply.split("\n").forEach(line=>{
-        if(line.trim()){
-            addMsg(line,"ai");
-            history.push({role:"assistant",content:line});
-        }
-    });
+let res=await fetch(settings.baseurl+"/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+settings.apikey
+},
+body:JSON.stringify(body)
+})
+
+let data=await res.json()
+let reply=data.choices[0].message.content
+
+let parts=reply.split("\n")
+parts.forEach(p=>{
+if(p.trim()){
+addMsg(p,"ai")
+messages.push({role:"assistant",content:p})
+}
+})
 }
 </script>
+
 </body>
 </html>
