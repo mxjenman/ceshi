@@ -1,899 +1,276 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>AI聊大 - Mobile</title>
-  <style>
-    :root{
-      --bg: #0b1220;
-      --card: rgba(255,255,255,.10);
-      --card2: rgba(255,255,255,.14);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.72);
-      --line: rgba(255,255,255,.12);
-      --accent: #5eead4;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>移动端 AI 聊天</title>
 
-      --radius-xl: 22px;
-      --radius-lg: 16px;
+<style>
+body{
+    margin:0;
+    background:#111;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+}
 
-      --dock-h: 82px;
-      --safe-b: env(safe-area-inset-bottom, 0px);
-      --safe-t: env(safe-area-inset-top, 0px);
-      --shadow: 0 18px 50px rgba(0,0,0,.35);
-      --font: ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
-    }
+/* 手机壳 */
+.phone{
+    width:390px;
+    height:844px;
+    background:#000;
+    border-radius:40px;
+    padding:12px;
+    box-shadow:0 0 40px rgba(0,0,0,0.8);
+    display:flex;
+}
 
-    html,body{
-      height:100%;
-      background: var(--bg);
-      margin:0;
-      font-family: var(--font);
-      color: var(--text);
-      -webkit-tap-highlight-color: transparent;
-    }
+/* 屏幕 */
+.screen{
+    background:#f2f2f7;
+    border-radius:32px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
 
-    .app{
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      background:
-        radial-gradient(1200px 800px at 20% 10%, rgba(94,234,212,.18), transparent 55%),
-        radial-gradient(900px 700px at 90% 30%, rgba(99,102,241,.18), transparent 55%),
-        linear-gradient(180deg, rgba(255,255,255,.06), transparent 32%),
-        var(--bg);
-      padding-bottom: calc(var(--dock-h) + var(--safe-b));
-    }
+/* 顶部栏 */
+.topbar{
+    background:#fff;
+    padding:8px 15px;
+    text-align:center;
+    font-weight:600;
+    border-bottom:1px solid #ddd;
+}
 
-    /* Top status cloud */
-    .top{
-      padding-top: calc(10px + var(--safe-t));
-      padding-left: 14px;
-      padding-right: 14px;
-    }
+/* 设置区域 */
+.settings{
+    padding:10px;
+    background:#fafafa;
+    border-bottom:1px solid #ddd;
+    font-size:12px;
+}
 
-    .cloud{
-      position:relative;
-      border-radius: 28px;
-      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
-      box-shadow: var(--shadow);
-      padding: 14px 14px 12px;
-      overflow:hidden;
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    .cloud::before{
-      content:"";
-      position:absolute;
-      inset:-60px -40px auto -40px;
-      height: 160px;
-      background:
-        radial-gradient(60px 46px at 18% 72%, rgba(255,255,255,.16), transparent 70%),
-        radial-gradient(72px 52px at 44% 64%, rgba(255,255,255,.14), transparent 72%),
-        radial-gradient(64px 48px at 70% 74%, rgba(255,255,255,.12), transparent 72%),
-        radial-gradient(66px 50px at 88% 62%, rgba(255,255,255,.10), transparent 72%);
-      filter: blur(0px);
-      pointer-events:none;
-    }
+.settings input, .settings select{
+    width:100%;
+    margin-bottom:6px;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:12px;
+}
 
-    .statusRow{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap: 12px;
-      position:relative;
-    }
-    .timeBox .time{
-      font-size: 34px;
-      line-height: 1;
-      font-weight: 760;
-      letter-spacing: .5px;
-    }
-    .timeBox .date{
-      margin-top: 6px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .weatherBox{
-      text-align:right;
-    }
-    .weatherBox .city{
-      font-size: 14px;
-      font-weight: 650;
-    }
-    .weatherBox .weather{
-      margin-top: 6px;
-      font-size: 13px;
-      color: var(--muted);
-    }
+.settings button{
+    width:100%;
+    padding:6px;
+    border:none;
+    border-radius:6px;
+    background:#007aff;
+    color:#fff;
+    font-size:12px;
+    margin-bottom:6px;
+}
 
-    /* Home content */
-    .home{
-      padding: 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 14px;
-    }
+/* 聊天区域 */
+.chat{
+    flex:1;
+    padding:10px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
 
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap: 14px 12px;
-      margin-top: 4px;
-    }
+.message{
+    padding:8px 10px;
+    border-radius:12px;
+    max-width:75%;
+    font-size:14px;
+    line-height:1.4;
+    word-wrap:break-word;
+}
 
-    .appIcon{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 8px;
-      user-select:none;
-    }
-    .iconTile{
-      width: 62px;
-      height: 62px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.10);
-      box-shadow: 0 12px 30px rgba(0,0,0,.28);
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-      position:relative;
-    }
-    .iconTile::after{
-      content:"";
-      position:absolute; inset:0;
-      background: linear-gradient(135deg, rgba(255,255,255,.12), transparent 55%);
-      pointer-events:none;
-    }
-    .iconLabel{
-      font-size: 12px;
-      color: rgba(255,255,255,.82);
-    }
+.user{
+    background:#007aff;
+    color:#fff;
+    align-self:flex-end;
+}
 
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.10);
-      color: var(--muted);
-      font-size: 13px;
-    }
+.assistant{
+    background:#e5e5ea;
+    color:#000;
+    align-self:flex-start;
+}
 
-    /* Dock */
-    .dock{
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      height: calc(var(--dock-h) + var(--safe-b));
-      padding: 10px 14px calc(10px + var(--safe-b));
-      display:flex;
-      align-items:flex-end;
-      justify-content:center;
-      pointer-events:none; /* allow modal click-through control */
-      z-index: 50;
-    }
-    .dockBar{
-      width: min(520px, 100%);
-      height: var(--dock-h);
-      border-radius: 26px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow);
-      display:flex;
-      align-items:center;
-      justify-content:space-around;
-      pointer-events:auto;
-    }
-    .dockBtn{
-      width: 88px;
-      height: 62px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap: 6px;
-      border-radius: 18px;
-      border: 0;
-      background: transparent;
-      color: var(--text);
-      font-family: var(--font);
-    }
-    .dockBtn:active{ transform: scale(.98); }
+/* 输入栏 */
+.inputbar{
+    display:flex;
+    padding:8px;
+    background:#fff;
+    border-top:1px solid #ddd;
+}
 
-    .dockIcon{
-      width: 28px; height: 28px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.14);
-      display:grid; place-items:center;
-      font-size: 14px;
-      color: rgba(255,255,255,.92);
-    }
-    .dockLabel{
-      font-size: 12px;
-      color: rgba(255,255,255,.82);
-    }
+.inputbar input{
+    flex:1;
+    padding:8px;
+    border-radius:20px;
+    border:1px solid #ccc;
+    font-size:14px;
+}
 
-    /* Drawer modal */
-    .overlay{
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.42);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding: 0 12px calc(var(--dock-h) + var(--safe-b) + 10px);
-      z-index: 60;
-    }
-    .overlay.show{ display:flex; }
-
-    .drawer{
-      width: min(680px, 100%);
-      border-radius: 22px;
-      background: rgba(20,24,38,.86);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(14px);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .drawerHd{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 14px 14px 10px;
-      border-bottom: 1px solid var(--line);
-    }
-    .drawerTitle{
-      font-weight: 750;
-      letter-spacing: .2px;
-    }
-    .drawerClose{
-      border:0;
-      background: rgba(255,255,255,.10);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-family: var(--font);
-    }
-    .drawerBody{
-      padding: 12px 14px 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
-
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap: 6px;
-    }
-    .field label{
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .field input, .field textarea{
-      width: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      padding: 10px 12px;
-      font-family: var(--font);
-      outline: none;
-      box-sizing: border-box;
-    }
-    textarea{ min-height: 120px; resize: vertical; }
-
-    .row{
-      display:flex;
-      gap: 10px;
-    }
-    .row > *{ flex:1; }
-
-    .btnRow{
-      display:flex;
-      gap: 10px;
-      margin-top: 4px;
-    }
-    .btn{
-      flex:1;
-      border:0;
-      border-radius: 14px;
-      padding: 11px 12px;
-      background: rgba(94,234,212,.18);
-      color: rgba(255,255,255,.92);
-      border: 1px solid rgba(94,234,212,.25);
-      font-family: var(--font);
-      font-weight: 700;
-    }
-    .btn.secondary{
-      background: rgba(255,255,255,.08);
-      border-color: rgba(255,255,255,.12);
-      font-weight: 650;
-    }
-    .hint{
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* Chat page */
-    .chat{
-      display:none;
-      flex-direction:column;
-      min-height: calc(100vh - var(--dock-h) - var(--safe-b));
-    }
-    .chat.show{ display:flex; }
-
-    .chatHd{
-      padding: 10px 14px 10px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      position: sticky;
-      top: 0;
-      background: linear-gradient(180deg, rgba(11,18,32,.92), rgba(11,18,32,.70));
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      z-index: 10;
-    }
-    .backBtn{
-      border:0;
-      background: rgba(255,255,255,.10);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-family: var(--font);
-    }
-    .chatTitle{
-      font-weight: 750;
-    }
-
-    .chatBody{
-      flex:1;
-      padding: 10px 12px 14px;
-      overflow:auto;
-    }
-    .msg{
-      display:flex;
-      margin: 10px 0;
-    }
-    .msg.me{ justify-content:flex-end; }
-    .bubble{
-      max-width: 76%;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.92);
-      line-height: 1.45;
-      font-size: 14px;
-      word-break: break-word;
-    }
-    .msg.me .bubble{
-      background: rgba(94,234,212,.16);
-      border-color: rgba(94,234,212,.20);
-    }
-
-    .chatFt{
-      padding: 10px 12px calc(10px + var(--safe-b));
-      border-top: 1px solid rgba(255,255,255,.08);
-      background: rgba(11,18,32,.72);
-      backdrop-filter: blur(10px);
-      display:flex;
-      gap: 10px;
-      align-items:flex-end;
-    }
-    .chatFt textarea{
-      min-height: 42px;
-      max-height: 120px;
-      resize: none;
-    }
-    .genBtn{
-      width: 92px;
-      border:0;
-      border-radius: 14px;
-      padding: 12px 10px;
-      background: rgba(99,102,241,.22);
-      border: 1px solid rgba(99,102,241,.26);
-      color: rgba(255,255,255,.92);
-      font-family: var(--font);
-      font-weight: 760;
-    }
-    .genBtn:disabled{ opacity:.55; }
-
-    /* User custom CSS injection */
-    #presetStyle, #beautyStyle { }
-  </style>
-
-  <style id="presetStyle"></style>
-  <style id="beautyStyle"></style>
+.inputbar button{
+    margin-left:6px;
+    padding:8px 12px;
+    border:none;
+    border-radius:20px;
+    background:#007aff;
+    color:#fff;
+    font-size:14px;
+}
+</style>
 </head>
 
 <body>
-  <div class="app" id="app">
-    <div class="top">
-      <div class="cloud" id="cloud">
-        <div class="statusRow">
-          <div class="timeBox">
-            <div class="time" id="timeText">--:--</div>
-            <div class="date" id="dateText">----</div>
-          </div>
-          <div class="weatherBox">
-            <div class="city" id="cityText">城市未设置</div>
-            <div class="weather" id="weatherText">天气未设置</div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="home" id="home">
-      <div class="pill">提示：点“私聊”进入微信对话；底部可改设置/预设/美化</div>
+<div class="phone">
+<div class="screen">
 
-      <div class="grid">
-        <div class="appIcon" id="openChat">
-          <div class="iconTile">
-            <span style="font-size:22px">💬</span>
-          </div>
-          <div class="iconLabel">私聊</div>
-        </div>
+<div class="topbar">AI 聊天</div>
 
-        <div class="appIcon">
-          <div class="iconTile"><span style="font-size:20px">📌</span></div>
-          <div class="iconLabel">占位</div>
-        </div>
-        <div class="appIcon">
-          <div class="iconTile"><span style="font-size:20px">🧩</span></div>
-          <div class="iconLabel">占位</div>
-        </div>
-        <div class="appIcon">
-          <div class="iconTile"><span style="font-size:20px">🗂️</span></div>
-          <div class="iconLabel">占位</div>
-        </div>
-      </div>
-    </div>
+<div class="settings">
+<input id="baseUrl" placeholder="API 基础地址 (Base URL) 例如 https://api.openai.com/v1">
+<input id="apiKey" placeholder="API 密钥 (API Key)">
+<select id="modelSelect">
+<option value="">请选择模型</option>
+</select>
+<button onclick="loadModels()">拉取模型列表</button>
+</div>
 
-    <div class="chat" id="chat">
-      <div class="chatHd">
-        <button class="backBtn" id="backHome">返回</button>
-        <div class="chatTitle" id="chatTitle">微信私聊</div>
-      </div>
-      <div class="chatBody" id="chatBody"></div>
-      <div class="chatFt">
-        <textarea id="inputBox" placeholder="输入消息…" rows="1"></textarea>
-        <button class="genBtn" id="genBtn">生成</button>
-      </div>
-    </div>
+<div class="chat" id="chat"></div>
 
-    <div class="dock">
-      <div class="dockBar">
-        <button class="dockBtn" data-drawer="settings">
-          <div class="dockIcon">⚙️</div>
-          <div class="dockLabel">设置</div>
-        </button>
-        <button class="dockBtn" data-drawer="beauty">
-          <div class="dockIcon">🎨</div>
-          <div class="dockLabel">美化</div>
-        </button>
-        <button class="dockBtn" data-drawer="preset">
-          <div class="dockIcon">🧾</div>
-          <div class="dockLabel">预设</div>
-        </button>
-      </div>
-    </div>
-  </div>
+<div class="inputbar">
+<input id="userInput" placeholder="输入内容...">
+<button onclick="sendMessage()">发送</button>
+</div>
 
-  <!-- Drawer Overlay -->
-  <div class="overlay" id="overlay">
-    <div class="drawer" id="drawer">
-      <div class="drawerHd">
-        <div class="drawerTitle" id="drawerTitle">设置</div>
-        <button class="drawerClose" id="drawerClose">关闭</button>
-      </div>
-      <div class="drawerBody" id="drawerBody"></div>
-    </div>
-  </div>
+</div>
+</div>
 
 <script>
-  const LS_KEYS = {
-    settings: "aichatda_settings_v1",
-    preset: "aichatda_preset_v1",
-    beauty: "aichatda_beauty_v1",
-    chat: "aichatda_chat_v1",
-  };
+let messages = [];
 
-  const state = {
-    settings: {
-      baseUrl: "https://api.openai.com",
-      apiKey: "",
-      model: "gpt-4.1-mini",
-      city: "",
-      weather: ""
-    },
-    preset: {
-      systemRulesText: "",
-      presetCss: ""
-    },
-    beauty: {
-      beautyCss: ""
-    },
-    chat: {
-      messages: [] // {role:'user'|'assistant', content:string, ts:number}
-    }
-  };
-
-  function loadLS(){
-    try{
-      const s = JSON.parse(localStorage.getItem(LS_KEYS.settings) || "null");
-      const p = JSON.parse(localStorage.getItem(LS_KEYS.preset) || "null");
-      const b = JSON.parse(localStorage.getItem(LS_KEYS.beauty) || "null");
-      const c = JSON.parse(localStorage.getItem(LS_KEYS.chat) || "null");
-      if(s) Object.assign(state.settings, s);
-      if(p) Object.assign(state.preset, p);
-      if(b) Object.assign(state.beauty, b);
-      if(c && Array.isArray(c.messages)) state.chat.messages = c.messages;
-    }catch(e){}
-  }
-
-  function saveLS(){
-    localStorage.setItem(LS_KEYS.settings, JSON.stringify(state.settings));
-    localStorage.setItem(LS_KEYS.preset, JSON.stringify(state.preset));
-    localStorage.setItem(LS_KEYS.beauty, JSON.stringify(state.beauty));
-    localStorage.setItem(LS_KEYS.chat, JSON.stringify(state.chat));
-  }
-
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function weekdayCN(d){
-    const map = ["周日","周一","周二","周三","周四","周五","周六"];
-    return map[d.getDay()];
-  }
-
-  function refreshTopBar(){
-    const now = new Date();
-    const hh = pad2(now.getHours());
-    const mm = pad2(now.getMinutes());
-    document.getElementById("timeText").textContent = `${hh}:${mm}`;
-    document.getElementById("dateText").textContent =
-      `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())} ${weekdayCN(now)}`;
-
-    document.getElementById("cityText").textContent = state.settings.city ? state.settings.city : "城市未设置";
-    document.getElementById("weatherText").textContent = state.settings.weather ? state.settings.weather : "天气未设置";
-  }
-
-  function showDrawer(kind){
-    const overlay = document.getElementById("overlay");
-    const title = document.getElementById("drawerTitle");
-    const body = document.getElementById("drawerBody");
-    overlay.classList.add("show");
-    body.innerHTML = "";
-
-    if(kind === "settings"){
-      title.textContent = "设置（OpenAI兼容）";
-      body.appendChild(renderSettings());
-    }else if(kind === "preset"){
-      title.textContent = "预设（规则 + 文风CSS）";
-      body.appendChild(renderPreset());
-    }else if(kind === "beauty"){
-      title.textContent = "美化（界面CSS）";
-      body.appendChild(renderBeauty());
-    }
-  }
-
-  function hideDrawer(){
-    document.getElementById("overlay").classList.remove("show");
-  }
-
-  function el(tag, attrs={}, children=[]){
-    const node = document.createElement(tag);
-    for(const [k,v] of Object.entries(attrs)){
-      if(k === "class") node.className = v;
-      else if(k === "text") node.textContent = v;
-      else if(k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
-      else node.setAttribute(k, v);
-    }
-    for(const c of children) node.appendChild(c);
-    return node;
-  }
-
-  function field(label, input){
-    return el("div",{class:"field"},[
-      el("label",{text:label}),
-      input
-    ]);
-  }
-
-  function applyStyles(){
-    document.getElementById("presetStyle").textContent = state.preset.presetCss || "";
-    document.getElementById("beautyStyle").textContent = state.beauty.beautyCss || "";
-  }
-
-  function renderSettings(){
-    const baseUrl = el("input",{value: state.settings.baseUrl, placeholder:"https://api.openai.com"});
-    const apiKey = el("input",{value: state.settings.apiKey, placeholder:"sk-...（前端会暴露，慎用）"});
-    const model  = el("input",{value: state.settings.model, placeholder:"gpt-4.1-mini"});
-    const city   = el("input",{value: state.settings.city, placeholder:"例如：上海"});
-    const weather= el("input",{value: state.settings.weather, placeholder:"例如：多云 12~18℃"});
-
-    const wrap = el("div",{},[
-      el("div",{class:"row"},[
-        field("Base URL", baseUrl),
-        field("Model", model),
-      ]),
-      field("API Key", apiKey),
-      el("div",{class:"row"},[
-        field("所在城市（可被API读取）", city),
-        field("天气（可被API读取）", weather),
-      ]),
-      el("div",{class:"btnRow"},[
-        el("button",{class:"btn", text:"保存并生效", onclick: ()=>{
-          state.settings.baseUrl = baseUrl.value.trim() || "https://api.openai.com";
-          state.settings.apiKey = apiKey.value.trim();
-          state.settings.model = model.value.trim() || "gpt-4.1-mini";
-          state.settings.city = city.value.trim();
-          state.settings.weather = weather.value.trim();
-          saveLS();
-          refreshTopBar();
-          hideDrawer();
-        }}),
-        el("button",{class:"btn secondary", text:"清空聊天记录", onclick: ()=>{
-          if(!confirm("确定清空聊天记录？")) return;
-          state.chat.messages = [];
-          saveLS();
-          renderChat();
-        }})
-      ]),
-      el("div",{class:"hint", text:"说明：本Demo为纯前端，API Key会保存在本地并可被查看。生产环境建议用后端代理。"})
-    ]);
-    return wrap;
-  }
-
-  function renderPreset(){
-    const rules = el("textarea",{placeholder:"写回复规则：限制词、语气、称呼等…", value: state.preset.systemRulesText || ""});
-    const css = el("textarea",{placeholder:"写CSS，影响“回复文风/规则提示区域”等（也可不写）", value: state.preset.presetCss || ""});
-
-    return el("div",{},[
-      field("规则文本（会注入system，影响对话行为）", rules),
-      field("预设CSS（可选）", css),
-      el("div",{class:"btnRow"},[
-        el("button",{class:"btn", text:"保存并生效", onclick: ()=>{
-          state.preset.systemRulesText = rules.value;
-          state.preset.presetCss = css.value;
-          saveLS();
-          applyStyles();
-          hideDrawer();
-        }}),
-        el("button",{class:"btn secondary", text:"填入示例规则", onclick: ()=>{
-          rules.value =
-`口语化、像微信聊天。
-优先简短回复，每条不超过20字。
-可以分多条发出（2-4条）。
-不要使用长段落，不要列清单。
-不要使用“作为…我…”这类说法。
-遇到敏感或不确定的问题，先反问确认。`;
-        }})
-      ]),
-      el("div",{class:"hint", text:"提示：这里的“规则文本”用于约束输出格式/风格；不要把隐私或关键密钥写进规则。"})
-    ]);
-  }
-
-  function renderBeauty(){
-    const css = el("textarea",{placeholder:"写CSS：背景图、图标样式、云朵板块背景…", value: state.beauty.beautyCss || ""});
-
-    return el("div",{},[
-      field("美化CSS（立即生效）", css),
-      el("div",{class:"btnRow"},[
-        el("button",{class:"btn", text:"保存并生效", onclick: ()=>{
-          state.beauty.beautyCss = css.value;
-          saveLS();
-          applyStyles();
-          hideDrawer();
-        }}),
-        el("button",{class:"btn secondary", text:"填入示例美化", onclick: ()=>{
-          css.value =
-`/* 整体背景图示例 */
-.app{
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55)),
-    url('https://picsum.photos/900/1600') center/cover no-repeat fixed;
+/* 本地保存 */
+window.onload = function(){
+    document.getElementById("baseUrl").value = localStorage.getItem("baseUrl") || "";
+    document.getElementById("apiKey").value = localStorage.getItem("apiKey") || "";
 }
 
-/* 云朵板块更亮 */
-.cloud{
-  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.10));
+/* 拉取模型 */
+async function loadModels(){
+    const baseUrl = document.getElementById("baseUrl").value.trim();
+    const apiKey = document.getElementById("apiKey").value.trim();
+
+    if(!baseUrl || !apiKey){
+        alert("请填写 Base URL 和 API Key");
+        return;
+    }
+
+    localStorage.setItem("baseUrl", baseUrl);
+    localStorage.setItem("apiKey", apiKey);
+
+    try{
+        const response = await fetch(baseUrl + "/models", {
+            headers:{
+                "Authorization":"Bearer " + apiKey
+            }
+        });
+
+        const data = await response.json();
+
+        const select = document.getElementById("modelSelect");
+        select.innerHTML = "";
+
+        if(data.data){
+            data.data.forEach(model=>{
+                const option = document.createElement("option");
+                option.value = model.id;
+                option.textContent = model.id;
+                select.appendChild(option);
+            });
+        }else{
+            alert("模型拉取失败");
+        }
+    }catch(e){
+        alert("请求失败，请检查接口地址");
+    }
 }
 
-/* 图标更圆润 */
-.iconTile{ border-radius: 22px; }`;
-        }})
-      ]),
-      el("div",{class:"hint", text:"说明：这里直接注入CSS。线上环境建议加白名单/沙箱，避免恶意样式。"})
-    ]);
-  }
+/* 添加消息 */
+function addMessage(content, role){
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.className = "message " + role;
+    div.innerText = content;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
 
-  function showHome(){
-    document.getElementById("home").style.display = "block";
-    document.getElementById("chat").classList.remove("show");
-  }
-  function showChat(){
-    document.getElementById("home").style.display = "none";
-    document.getElementById("chat").classList.add("show");
-    requestAnimationFrame(()=> scrollChatToBottom());
-  }
+/* 发送消息 */
+async function sendMessage(){
+    const input = document.getElementById("userInput");
+    const content = input.value.trim();
+    if(!content) return;
 
-  function renderChat(){
-    const box = document.getElementById("chatBody");
-    box.innerHTML = "";
-    for(const m of state.chat.messages){
-      const msg = el("div",{class: "msg " + (m.role === "user" ? "me":"other")},[
-        el("div",{class:"bubble", text: m.content})
-      ]);
-      box.appendChild(msg);
-    }
-    requestAnimationFrame(()=> scrollChatToBottom());
-  }
+    const baseUrl = document.getElementById("baseUrl").value.trim();
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const model = document.getElementById("modelSelect").value;
 
-  function scrollChatToBottom(){
-    const box = document.getElementById("chatBody");
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function getTopMetadata(){
-    const now = new Date();
-    return {
-      time: document.getElementById("timeText").textContent,
-      date: document.getElementById("dateText").textContent,
-      city: state.settings.city || "",
-      weather: state.settings.weather || "",
-      tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-      locale: navigator.language || "zh-CN",
-      nowISO: now.toISOString()
-    };
-  }
-
-  // Use last 5 rounds = up to 10 messages (user+assistant)
-  function getRecentDialog(maxRounds=5){
-    const msgs = state.chat.messages;
-    // Keep last 2*maxRounds messages, but ensure we start from a user boundary if possible
-    const keep = 2 * maxRounds;
-    return msgs.slice(Math.max(0, msgs.length - keep));
-  }
-
-  function buildSystemPrompt(){
-    const meta = getTopMetadata();
-    const userRules = (state.preset.systemRulesText || "").trim();
-
-    // Note: Avoid instructing the model to "pretend not AI". Focus on naturalness and brevity.
-    return `
-你在进行一段“微信私聊风格”的对话。
-目标：像真实朋友一样自然、有来有回、口语化、有情绪但克制。
-
-输出格式规则（必须遵守）：
-- 只输出对话内容本身，不要加前缀，不要加“好的/当然”式模板套话。
-- 可以分成多条消息输出：每条单独一行。
-- 每条消息不超过20个汉字（尽量更短）。
-- 总共2-4条为宜；除非用户明确要求更多。
-- 不要使用长段落、不要列清单、不要说教。
-- 不确定的信息要先问一句确认。
-
-你可读取的顶部信息（metadata）：
-- 时间: ${meta.time}
-- 日期: ${meta.date}
-- 城市: ${meta.city}
-- 天气: ${meta.weather}
-- 时区: ${meta.tz}
-
-用户自定义规则（若与上面冲突，以上面为准）：
-${userRules ? userRules : "（无）"}
-`.trim();
-  }
-
-  async function callOpenAI(){
-    const { baseUrl, apiKey, model } = state.settings;
-    if(!baseUrl || !apiKey || !model){
-      alert("请先在【设置】填写 baseUrl、apiKey、model。");
-      return;
+    if(!model){
+        alert("请选择模型");
+        return;
     }
 
-    const recent = getRecentDialog(5);
-    const system = buildSystemPrompt();
-    const meta = getTopMetadata();
+    addMessage(content,"user");
+    messages.push({role:"user",content});
+    input.value="";
 
-    const messages = [
-      { role:"system", content: system },
-      { role:"user", content:
-`（顶部信息）${JSON.stringify(meta)}
-（聊天记录，仅供参考）
-${recent.map(m => (m.role==="user"?"我":"TA")+"："+m.content).join("\n")}
-（请继续像微信一样回复我）`
-      }
-    ];
-
-    const url = baseUrl.replace(/\/+$/,"") + "/v1/chat/completions";
-
-    const resp = await fetch(url, {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer " + apiKey
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.9,
-        top_p: 0.9
-      })
-    });
-
-    if(!resp.ok){
-      const t = await resp.text().catch(()=> "");
-      throw new Error(`API错误 ${resp.status}: ${t.slice(0,400)}`);
-    }
-    const data = await resp.json();
-    const text = data?.choices?.[0]?.message?.content ?? "";
-    return text;
-  }
-
-  function splitAssistantMessages(text){
-    // Split by lines, remove empties, enforce <=20 chars soft-trim
-    const lines = String(text).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    const msgs = lines.length ? lines : [String(text).trim()].filter(Boolean);
-    return msgs.map(s => s.length > 20 ? s.slice(0,20) : s);
-  }
-
-  // Event wiring
-  loadLS();
-  applyStyles();
-  refreshTopBar();
-  setInterval(refreshTopBar, 1000 * 10);
-
-  renderChat();
-
-  document.querySelectorAll(".dockBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=> showDrawer(btn.dataset.drawer));
-  });
-  document.getElementById("drawerClose").addEventListener("click", hideDrawer);
-  document.getElementById("overlay").addEventListener("click", (e)=>{
-    if(e.target.id === "overlay") hideDrawer();
-  });
-
-  document.getElementById("openChat").addEventListener("click", showChat);
-  document.getElementById("backHome").addEventListener("click", showHome);
-
-  const inputBox = document.getElementById("inputBox");
-  inputBox.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" && !e.shiftKey){
-      e.preventDefault();
-      const v = inputBox.value.trim();
-      if(!v) return;
-      state.chat.messages.push({role:"user", content:v, ts: Date.now()});
-      inputBox.value = "";
-      saveLS();
-      renderChat();
-    }
-  });
-
-  document.getElementById("genBtn").addEventListener("click", async ()=>{
-    const btn = document.getElementById("genBtn");
-    btn.disabled = true;
-    btn.textContent = "生成中";
     try{
-      const text = await callOpenAI();
-      const msgs = splitAssistantMessages(text);
-      for(const m of msgs){
-        state.chat.messages.push({role:"assistant", content:m, ts: Date.now()});
-      }
-      saveLS();
-      renderChat();
-    }catch(err){
-      alert(String(err.message || err));
-    }finally{
-      btn.disabled = false;
-      btn.textContent = "生成";
+        const response = await fetch(baseUrl + "/chat/completions",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + apiKey
+            },
+            body:JSON.stringify({
+                model:model,
+                messages:messages
+            })
+        });
+
+        const data = await response.json();
+
+        if(data.choices){
+            const reply = data.choices[0].message.content;
+            addMessage(reply,"assistant");
+            messages.push({role:"assistant",content:reply});
+        }else{
+            addMessage("接口返回异常","assistant");
+        }
+    }catch(e){
+        addMessage("请求失败，请检查接口","assistant");
     }
-  });
+}
+
+/* 回车发送 */
+document.getElementById("userInput").addEventListener("keypress",function(e){
+    if(e.key==="Enter"){
+        sendMessage();
+    }
+});
 </script>
+
 </body>
 </html>
