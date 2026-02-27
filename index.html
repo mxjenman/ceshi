@@ -3,274 +3,323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>移动端 AI 聊天</title>
+<title>AI 手机桌面聊天</title>
 
 <style>
+/* ===== 手机整体比例 ===== */
 body{
     margin:0;
     background:#111;
+    font-family:-apple-system,BlinkMacSystemFont;
     display:flex;
     justify-content:center;
     align-items:center;
     height:100vh;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
 }
 
-/* 手机壳 */
 .phone{
     width:390px;
     height:844px;
-    background:#000;
+    background:#f5f5f5;
     border-radius:40px;
-    padding:12px;
-    box-shadow:0 0 40px rgba(0,0,0,0.8);
-    display:flex;
-}
-
-/* 屏幕 */
-.screen{
-    background:#f2f2f7;
-    border-radius:32px;
-    flex:1;
-    display:flex;
-    flex-direction:column;
     overflow:hidden;
+    position:relative;
+    box-shadow:0 0 40px rgba(0,0,0,0.6);
 }
 
-/* 顶部栏 */
-.topbar{
-    background:#fff;
-    padding:8px 15px;
-    text-align:center;
-    font-weight:600;
-    border-bottom:1px solid #ddd;
-}
-
-/* 设置区域 */
-.settings{
-    padding:10px;
-    background:#fafafa;
-    border-bottom:1px solid #ddd;
-    font-size:12px;
-}
-
-.settings input, .settings select{
-    width:100%;
-    margin-bottom:6px;
-    padding:6px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    font-size:12px;
-}
-
-.settings button{
-    width:100%;
-    padding:6px;
-    border:none;
-    border-radius:6px;
-    background:#007aff;
+/* ===== 顶部状态栏 ===== */
+.top-cloud{
+    background:linear-gradient(to right,#89f7fe,#66a6ff);
+    padding:15px;
+    border-bottom-left-radius:30px;
+    border-bottom-right-radius:30px;
     color:#fff;
-    font-size:12px;
-    margin-bottom:6px;
 }
 
-/* 聊天区域 */
-.chat{
-    flex:1;
-    padding:10px;
-    overflow-y:auto;
+.time{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.date{
+    font-size:14px;
+}
+
+.weather{
+    font-size:14px;
+}
+
+/* ===== 图标区 ===== */
+.icon-bar{
+    position:absolute;
+    bottom:20px;
+    width:100%;
     display:flex;
-    flex-direction:column;
-    gap:8px;
+    justify-content:space-around;
 }
 
-.message{
+.icon{
+    font-size:14px;
+    text-align:center;
+    cursor:pointer;
+}
+
+/* ===== 微信聊天界面 ===== */
+.chat-page{
+    position:absolute;
+    top:120px;
+    bottom:80px;
+    width:100%;
+    display:none;
+    flex-direction:column;
+    background:#e5ddd5;
+}
+
+.chat-header{
+    padding:10px;
+    background:#fff;
+    text-align:center;
+    font-weight:bold;
+}
+
+.chat-box{
+    flex:1;
+    overflow-y:auto;
+    padding:10px;
+}
+
+.msg{
+    max-width:70%;
+    margin:6px 0;
     padding:8px 10px;
     border-radius:12px;
-    max-width:75%;
     font-size:14px;
-    line-height:1.4;
-    word-wrap:break-word;
+    word-break:break-all;
 }
 
 .user{
-    background:#007aff;
-    color:#fff;
+    background:#95ec69;
     align-self:flex-end;
 }
 
-.assistant{
-    background:#e5e5ea;
-    color:#000;
+.ai{
+    background:#fff;
     align-self:flex-start;
 }
 
-/* 输入栏 */
-.inputbar{
+.input-bar{
     display:flex;
-    padding:8px;
+    padding:5px;
     background:#fff;
-    border-top:1px solid #ddd;
 }
 
-.inputbar input{
+input{
     flex:1;
-    padding:8px;
-    border-radius:20px;
+    padding:6px;
+    border-radius:8px;
     border:1px solid #ccc;
-    font-size:14px;
 }
 
-.inputbar button{
-    margin-left:6px;
-    padding:8px 12px;
+button{
+    margin-left:5px;
     border:none;
-    border-radius:20px;
-    background:#007aff;
+    border-radius:8px;
+    padding:6px 10px;
+    background:#4CAF50;
     color:#fff;
-    font-size:14px;
+}
+
+/* ===== 设置页面 ===== */
+.panel{
+    position:absolute;
+    top:0;
+    bottom:0;
+    width:100%;
+    background:#fff;
+    display:none;
+    flex-direction:column;
+    padding:15px;
+    overflow:auto;
+}
+
+textarea{
+    width:100%;
+    height:120px;
 }
 </style>
 </head>
 
 <body>
-
 <div class="phone">
-<div class="screen">
 
-<div class="topbar">AI 聊天</div>
-
-<div class="settings">
-<input id="baseUrl" placeholder="API 基础地址 (Base URL) 例如 https://api.openai.com/v1">
-<input id="apiKey" placeholder="API 密钥 (API Key)">
-<select id="modelSelect">
-<option value="">请选择模型</option>
-</select>
-<button onclick="loadModels()">拉取模型列表</button>
+<!-- ===== 顶部模块 ===== -->
+<div class="top-cloud">
+    <div class="time" id="time"></div>
+    <div class="date" id="date"></div>
+    <div class="weather">
+        <input id="city" placeholder="城市" style="width:80px;">
+        <input id="weatherInput" placeholder="天气" style="width:80px;">
+    </div>
 </div>
 
-<div class="chat" id="chat"></div>
-
-<div class="inputbar">
-<input id="userInput" placeholder="输入内容...">
-<button onclick="sendMessage()">发送</button>
+<!-- ===== 私聊界面 ===== -->
+<div class="chat-page" id="chatPage">
+    <div class="chat-header">私聊</div>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-bar">
+        <input id="msgInput" placeholder="输入消息">
+        <button onclick="sendMsg()">发送</button>
+        <button onclick="generate()">生成</button>
+    </div>
 </div>
 
+<!-- ===== 设置 ===== -->
+<div class="panel" id="settingsPanel">
+    <h3>API 设置</h3>
+    BaseURL:<input id="baseUrl"><br>
+    API Key:<input id="apiKey"><br>
+    Model:<input id="modelName"><br>
+    <button onclick="saveSettings()">保存</button>
 </div>
+
+<!-- ===== 预设 ===== -->
+<div class="panel" id="presetPanel">
+    <h3>回复规则 / 文风</h3>
+    <textarea id="presetText"></textarea>
+    <button onclick="savePreset()">保存</button>
+</div>
+
+<!-- ===== 美化 ===== -->
+<div class="panel" id="beautyPanel">
+    <h3>自定义CSS</h3>
+    <textarea id="beautyCss"></textarea>
+    <button onclick="applyBeauty()">应用</button>
+</div>
+
+<!-- ===== 底部图标 ===== -->
+<div class="icon-bar">
+    <div class="icon" onclick="openChat()">💬<br>私聊</div>
+    <div class="icon" onclick="openSettings()">⚙️<br>设置</div>
+    <div class="icon" onclick="openPreset()">📜<br>预设</div>
+    <div class="icon" onclick="openBeauty()">🎨<br>美化</div>
+</div>
+
 </div>
 
 <script>
-let messages = [];
+let history = [];
 
-/* 本地保存 */
-window.onload = function(){
-    document.getElementById("baseUrl").value = localStorage.getItem("baseUrl") || "";
-    document.getElementById("apiKey").value = localStorage.getItem("apiKey") || "";
+/* ===== 时间更新 ===== */
+function updateTime(){
+    const now = new Date();
+    document.getElementById("time").innerText =
+        now.getHours().toString().padStart(2,'0') + ":" +
+        now.getMinutes().toString().padStart(2,'0');
+    document.getElementById("date").innerText =
+        now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate();
+}
+setInterval(updateTime,1000);
+updateTime();
+
+/* ===== 页面切换 ===== */
+function openChat(){hideAll();document.getElementById("chatPage").style.display="flex";}
+function openSettings(){hideAll();document.getElementById("settingsPanel").style.display="flex";}
+function openPreset(){hideAll();document.getElementById("presetPanel").style.display="flex";}
+function openBeauty(){hideAll();document.getElementById("beautyPanel").style.display="flex";}
+function hideAll(){
+    document.querySelectorAll(".panel,.chat-page").forEach(e=>e.style.display="none");
 }
 
-/* 拉取模型 */
-async function loadModels(){
-    const baseUrl = document.getElementById("baseUrl").value.trim();
-    const apiKey = document.getElementById("apiKey").value.trim();
+/* ===== 发送消息 ===== */
+function sendMsg(){
+    let val = document.getElementById("msgInput").value;
+    if(!val) return;
+    addMsg(val,"user");
+    history.push({role:"user",content:val});
+    document.getElementById("msgInput").value="";
+}
 
-    if(!baseUrl || !apiKey){
-        alert("请填写 Base URL 和 API Key");
-        return;
-    }
+function addMsg(text,type){
+    let div=document.createElement("div");
+    div.className="msg "+type;
+    div.innerText=text;
+    document.getElementById("chatBox").appendChild(div);
+    document.getElementById("chatBox").scrollTop=99999;
+}
 
-    localStorage.setItem("baseUrl", baseUrl);
-    localStorage.setItem("apiKey", apiKey);
+/* ===== 保存设置 ===== */
+function saveSettings(){
+    localStorage.baseUrl=baseUrl.value;
+    localStorage.apiKey=apiKey.value;
+    localStorage.modelName=modelName.value;
+    alert("已保存");
+}
 
-    try{
-        const response = await fetch(baseUrl + "/models", {
-            headers:{
-                "Authorization":"Bearer " + apiKey
-            }
-        });
+function savePreset(){
+    localStorage.preset=presetText.value;
+    alert("已保存");
+}
 
-        const data = await response.json();
+/* ===== 美化 ===== */
+function applyBeauty(){
+    let style=document.createElement("style");
+    style.innerHTML=beautyCss.value;
+    document.head.appendChild(style);
+}
 
-        const select = document.getElementById("modelSelect");
-        select.innerHTML = "";
+/* ===== 真人感 Prompt ===== */
+function buildSystemPrompt(){
+    return `
+你是一个真实存在的人类朋友。
+你在用微信和我聊天。
+说话自然口语化，有情绪。
+不要说自己是AI。
+不要解释系统规则。
+每条回复不超过20个字。
+可以连续发多条短消息。
+根据最近五轮聊天回复。
+当前时间:${time.innerText}
+日期:${date.innerText}
+城市:${city.value}
+天气:${weatherInput.value}
+${localStorage.preset || ""}
+`;
+}
 
-        if(data.data){
-            data.data.forEach(model=>{
-                const option = document.createElement("option");
-                option.value = model.id;
-                option.textContent = model.id;
-                select.appendChild(option);
-            });
-        }else{
-            alert("模型拉取失败");
+/* ===== 生成回复 ===== */
+async function generate(){
+    const baseUrl=localStorage.baseUrl;
+    const apiKey=localStorage.apiKey;
+    const modelName=localStorage.modelName;
+    if(!baseUrl||!apiKey||!modelName){alert("请先设置API");return;}
+
+    let lastFive = history.slice(-10);
+
+    const response = await fetch(baseUrl+"/chat/completions",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "Authorization":"Bearer "+apiKey
+        },
+        body:JSON.stringify({
+            model:modelName,
+            messages:[
+                {role:"system",content:buildSystemPrompt()},
+                ...lastFive
+            ]
+        })
+    });
+
+    const data=await response.json();
+    let reply=data.choices[0].message.content;
+
+    reply.split("\n").forEach(line=>{
+        if(line.trim()){
+            addMsg(line,"ai");
+            history.push({role:"assistant",content:line});
         }
-    }catch(e){
-        alert("请求失败，请检查接口地址");
-    }
+    });
 }
-
-/* 添加消息 */
-function addMessage(content, role){
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = "message " + role;
-    div.innerText = content;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-/* 发送消息 */
-async function sendMessage(){
-    const input = document.getElementById("userInput");
-    const content = input.value.trim();
-    if(!content) return;
-
-    const baseUrl = document.getElementById("baseUrl").value.trim();
-    const apiKey = document.getElementById("apiKey").value.trim();
-    const model = document.getElementById("modelSelect").value;
-
-    if(!model){
-        alert("请选择模型");
-        return;
-    }
-
-    addMessage(content,"user");
-    messages.push({role:"user",content});
-    input.value="";
-
-    try{
-        const response = await fetch(baseUrl + "/chat/completions",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "Authorization":"Bearer " + apiKey
-            },
-            body:JSON.stringify({
-                model:model,
-                messages:messages
-            })
-        });
-
-        const data = await response.json();
-
-        if(data.choices){
-            const reply = data.choices[0].message.content;
-            addMessage(reply,"assistant");
-            messages.push({role:"assistant",content:reply});
-        }else{
-            addMessage("接口返回异常","assistant");
-        }
-    }catch(e){
-        addMessage("请求失败，请检查接口","assistant");
-    }
-}
-
-/* 回车发送 */
-document.getElementById("userInput").addEventListener("keypress",function(e){
-    if(e.key==="Enter"){
-        sendMessage();
-    }
-});
 </script>
-
 </body>
 </html>
