@@ -3,286 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI OS Mobile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
+    <title>AI Mobile OS</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style id="custom-theme">
+        /* 默认样式 - 可通过“美化”功能覆盖 */
         :root {
             --bg-image: url('https://images.unsplash.com/photo-1557683316-973673baf926');
-            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --accent-color: #07C160; /* 微信绿 */
         }
-        body {
-            margin: 0;
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-image: var(--bg-image);
+            background: var(--bg-image) no-repeat center center fixed;
             background-size: cover;
-            background-position: center;
-            height: 100vh;
             overflow: hidden;
-            color: white;
         }
-        .glass {
+
+        /* 顶部云朵板块 */
+        .top-panel {
+            margin: 20px;
+            padding: 20px;
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .cloud-panel {
-            border-radius: 40px 40px 80px 80px;
-            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             text-align: center;
-            margin: 20px;
+            color: #333;
         }
-        .hidden { display: none; }
+
+        .time { font-size: 3rem; font-weight: 300; margin: 0; }
+        .date { font-size: 1rem; opacity: 0.8; }
+        .weather-info { margin-top: 10px; font-size: 0.9rem; }
+
+        /* 桌面图标区域 */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
         .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .icon-box {
             width: 60px;
             height: 60px;
-            border-radius: 12px;
+            background: white;
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
         }
-        #chat-window {
+
+        .app-label { color: white; font-size: 12px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+        /* 弹窗界面 (设置/对话) */
+        .modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #f3f3f3;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #ededed;
             z-index: 100;
             display: none;
             flex-direction: column;
-            color: black;
         }
-        .msg-bubble {
-            max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 15px;
-            word-wrap: break-word;
+
+        .modal-header {
+            height: 50px;
+            background: #f3f3f3;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid #ddd;
+            justify-content: space-between;
         }
-        .msg-left { background: white; align-self: flex-start; }
-        .msg-right { background: #95ec69; align-self: flex-end; }
+
+        /* 微信对话风格 */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .msg { max-width: 70%; margin-bottom: 15px; padding: 10px 14px; border-radius: 8px; font-size: 15px; line-height: 1.5; word-wrap: break-word; }
+        .msg.user { align-self: flex-end; background: #95ec69; position: relative; }
+        .msg.ai { align-self: flex-start; background: white; }
+
+        .chat-input-area {
+            background: #f7f7f7;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #ddd;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px;
+        }
+
+        /* 底部导航栏 */
+        .dock {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(15px);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: flex;
+            gap: 25px;
+        }
+        .dock-item { font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="home-screen" class="flex flex-col h-full">
-        <div id="top-panel" class="glass cloud-panel mt-10">
-            <div id="time" class="text-5xl font-light mb-1">00:00</div>
-            <div id="date" class="text-sm opacity-80 mb-2">1月1日 星期一</div>
-            <div class="flex justify-center gap-2 text-sm">
-                <span id="display-city">北京</span>
-                <span id="display-weather">晴 25°C</span>
+    <div id="home-screen">
+        <div class="top-panel" id="clock-panel">
+            <div class="time" id="current-time">00:00</div>
+            <div class="date" id="current-date">加载中...</div>
+            <div class="weather-info">
+                <span id="display-city">北京</span> · <span id="display-weather">晴 25°C</span>
             </div>
         </div>
 
-        <div class="flex-1 p-6 grid grid-cols-4 gap-6 content-start">
-            <div onclick="openChat()" class="flex flex-col items-center gap-1">
-                <div class="app-icon bg-green-500 shadow-lg">💬</div>
-                <span class="text-xs">私聊</span>
+        <div class="app-grid">
+            <div class="app-icon" onclick="openModal('chat-modal')">
+                <div class="icon-box" style="background: #07C160; color: white;">💬</div>
+                <div class="app-label">私聊</div>
             </div>
         </div>
 
-        <div class="glass m-4 p-4 rounded-3xl flex justify-around items-center">
-            <div onclick="openModal('settings')" class="text-2xl cursor-pointer">⚙️</div>
-            <div onclick="openModal('beauty')" class="text-2xl cursor-pointer">✨</div>
-            <div onclick="openModal('preset')" class="text-2xl cursor-pointer">📝</div>
+        <div class="dock">
+            <div class="dock-item" onclick="openModal('settings-modal')">⚙️</div>
+            <div class="dock-item" onclick="openModal('beauty-modal')">🎨</div>
+            <div class="dock-item" onclick="openModal('preset-modal')">📝</div>
         </div>
     </div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[200] flex items-center justify-center p-4">
-        <div class="bg-white text-black w-full max-w-sm rounded-2xl p-6 overflow-y-auto max-h-[80vh]">
-            <h2 id="modal-title" class="text-xl font-bold mb-4">标题</h2>
-            <div id="modal-content"></div>
-            <div class="mt-6 flex justify-end">
-                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-lg mr-2">取消</button>
-                <button onclick="saveSettings()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">保存</button>
-            </div>
+    <div id="chat-modal" class="modal">
+        <div class="modal-header">
+            <span onclick="closeModal('chat-modal')">〈 返回</span>
+            <b id="chat-title">AI 好友</b>
+            <span style="opacity:0">...</span>
+        </div>
+        <div id="chat-container"></div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="输入消息...">
+            <button onclick="sendMsg()" style="margin-left:5px; background:var(--accent-color); color:white; border:none; padding:8px 15px; border-radius:5px;">发送</button>
+            <button onclick="generateAI()" style="margin-left:5px; background:#007AFF; color:white; border:none; padding:8px 15px; border-radius:5px;">生成</button>
         </div>
     </div>
 
-    <div id="chat-window" class="flex flex-col">
-        <div class="bg-[#ededed] p-4 flex items-center border-b">
-            <button onclick="closeChat()" class="mr-4">◀</button>
-            <div class="font-bold flex-1" id="chat-title">对方</div>
+    <div id="settings-modal" class="modal">
+        <div class="modal-header">
+            <span>API 设置</span>
+            <button onclick="saveSettings()">保存</button>
         </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col">
+        <div style="padding: 20px;">
+            <label>API 基础地址 (Base URL)</label>
+            <input type="text" id="base-url" placeholder="https://api.openai.com/v1">
+            <label>API 密钥 (API Key)</label>
+            <input type="password" id="api-key" placeholder="sk-...">
+            <label>模型选择</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="model-name" placeholder="gpt-3.5-turbo">
+                <button onclick="fetchModels()" style="width:80px">拉取</button>
             </div>
-        <div class="p-3 bg-[#f7f7f7] flex gap-2 border-t">
-            <input id="chat-input" type="text" class="flex-1 border rounded px-3 py-2 outline-none" placeholder="输入消息...">
-            <button onclick="sendUserMsg()" class="bg-[#07c160] text-white px-4 py-2 rounded">发送</button>
-            <button onclick="generateAI()" class="bg-blue-500 text-white px-4 py-2 rounded">生成</button>
+            <hr>
+            <label>城市设置</label>
+            <input type="text" id="set-city" value="北京">
+            <label>天气设置</label>
+            <input type="text" id="set-weather" value="晴 25°C">
+            <button onclick="closeModal('settings-modal')" style="width:100%; margin-top:20px;">取消</button>
+        </div>
+    </div>
+
+    <div id="preset-modal" class="modal">
+        <div class="modal-header">
+            <span>回复预设 (System Prompt)</span>
+            <button onclick="savePreset()">保存</button>
+        </div>
+        <div style="padding:20px;">
+            <p style="font-size:12px; color:#666;">在这里定义AI的性格和回复规则：</p>
+            <textarea id="system-prompt" rows="15" placeholder="你现在是一个真实的人类朋友..."></textarea>
+            <button onclick="closeModal('preset-modal')" style="width:100%; margin-top:10px;">返回</button>
+        </div>
+    </div>
+
+    <div id="beauty-modal" class="modal">
+        <div class="modal-header">
+            <span>界面美化 (CSS)</span>
+            <button onclick="saveBeauty()">应用</button>
+        </div>
+        <div style="padding:20px;">
+            <textarea id="custom-css" rows="15" placeholder=":root { --bg-image: url('...'); }"></textarea>
+            <button onclick="closeModal('beauty-modal')" style="width:100%; margin-top:10px;">返回</button>
         </div>
     </div>
 
     <script>
-        // --- 核心状态 ---
-        let config = {
-            baseUrl: localStorage.getItem('baseUrl') || '',
-            apiKey: localStorage.getItem('apiKey') || '',
-            model: localStorage.getItem('model') || '',
-            city: '北京',
-            weather: '晴 25°C',
-            preset: '你是一个人类好友，说话简短。',
+        // 初始化数据
+        let config = JSON.parse(localStorage.getItem('ai_config')) || {
+            baseUrl: '', apiKey: '', model: 'gpt-3.5-turbo',
+            city: '北京', weather: '晴 25°C',
+            systemPrompt: `你是一个正在和我进行微信聊天的真实人类朋友。
+回复规范：
+1. 语言极其口语化，多用“哈”、“昂”、“嘛”等语气词。
+2. 绝对不承认自己是AI，不使用“作为AI模型”等字眼。
+3. 每次回复非常简短，不超过20字，甚至可以只有几个字。
+4. 表现出情绪波动，偶尔发个[微笑]或[捂脸]（文字描述）。
+5. 逻辑要像真人，如果我不说话或发垃圾信息，你会吐槽。`,
             customCss: ''
         };
 
         let chatHistory = [];
 
-        // --- 初始化 ---
-        function init() {
-            updateTime();
-            setInterval(updateTime, 1000);
-            applyBeauty();
-        }
-
-        function updateTime() {
+        // 更新时钟
+        function updateClock() {
             const now = new Date();
-            document.getElementById('time').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('current-time').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             const options = { month: 'long', day: 'numeric', weekday: 'long' };
-            document.getElementById('date').innerText = now.toLocaleDateString('zh-CN', options);
+            document.getElementById('current-date').innerText = now.toLocaleDateString('zh-CN', options);
         }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        // --- 模态框逻辑 ---
-        function openModal(type) {
-            const overlay = document.getElementById('modal-overlay');
-            const title = document.getElementById('modal-title');
-            const content = document.getElementById('modal-content');
-            overlay.classList.remove('hidden');
-
-            if (type === 'settings') {
-                title.innerText = 'API 设置';
-                content.innerHTML = `
-                    <label class="block text-sm mb-1">Base URL</label>
-                    <input id="in-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}">
-                    <label class="block text-sm mb-1">API Key</label>
-                    <input id="in-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}">
-                    <label class="block text-sm mb-1">模型名称</label>
-                    <input id="in-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">
-                `;
-            } else if (type === 'beauty') {
-                title.innerText = '外观美化';
-                content.innerHTML = `
-                    <label class="block text-sm mb-1">城市</label>
-                    <input id="in-city" class="w-full border p-2 mb-3 rounded" value="${config.city}">
-                    <label class="block text-sm mb-1">天气</label>
-                    <input id="in-weather" class="w-full border p-2 mb-3 rounded" value="${config.weather}">
-                    <label class="block text-sm mb-1">自定义CSS (背景/图标等)</label>
-                    <textarea id="in-css" class="w-full border p-2 h-24 rounded" placeholder=":root { --bg-image: url(...) }">${config.customCss}</textarea>
-                `;
-            } else if (type === 'preset') {
-                title.innerText = 'AI 预设与规则';
-                content.innerHTML = `
-                    <label class="block text-sm mb-1">系统提示词 (Prompt)</label>
-                    <textarea id="in-preset" class="w-full border p-2 h-32 rounded">${config.preset}</textarea>
-                `;
+        // 窗口管理
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if(id === 'settings-modal') {
+                document.getElementById('base-url').value = config.baseUrl;
+                document.getElementById('api-key').value = config.apiKey;
+                document.getElementById('model-name').value = config.model;
             }
-            overlay.dataset.type = type;
+            if(id === 'preset-modal') document.getElementById('system-prompt').value = config.systemPrompt;
+            if(id === 'beauty-modal') document.getElementById('custom-css').value = config.customCss;
         }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        // 保存设置
         function saveSettings() {
-            const type = document.getElementById('modal-overlay').dataset.type;
-            if (type === 'settings') {
-                config.baseUrl = document.getElementById('in-url').value;
-                config.apiKey = document.getElementById('in-key').value;
-                config.model = document.getElementById('in-model').value;
-                localStorage.setItem('baseUrl', config.baseUrl);
-                localStorage.setItem('apiKey', config.apiKey);
-                localStorage.setItem('model', config.model);
-            } else if (type === 'beauty') {
-                config.city = document.getElementById('in-city').value;
-                config.weather = document.getElementById('in-weather').value;
-                config.customCss = document.getElementById('in-css').value;
-                document.getElementById('display-city').innerText = config.city;
-                document.getElementById('display-weather').innerText = config.weather;
-                applyBeauty();
-            } else if (type === 'preset') {
-                config.preset = document.getElementById('in-preset').value;
-            }
-            closeModal();
+            config.baseUrl = document.getElementById('base-url').value;
+            config.apiKey = document.getElementById('api-key').value;
+            config.model = document.getElementById('model-name').value;
+            config.city = document.getElementById('set-city').value;
+            config.weather = document.getElementById('set-weather').value;
+            updateDisplay();
+            saveToLocal();
+            closeModal('settings-modal');
         }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.add('hidden');
+        function savePreset() {
+            config.systemPrompt = document.getElementById('system-prompt').value;
+            saveToLocal();
+            closeModal('preset-modal');
         }
 
-        function applyBeauty() {
-            let styleTag = document.getElementById('custom-style-tag');
-            if (!styleTag) {
-                styleTag = document.createElement('style');
-                styleTag.id = 'custom-style-tag';
-                document.head.appendChild(styleTag);
-            }
-            styleTag.innerHTML = config.customCss;
+        function saveBeauty() {
+            config.customCss = document.getElementById('custom-css').value;
+            document.getElementById('custom-theme').innerHTML += config.customCss;
+            saveToLocal();
+            closeModal('beauty-modal');
         }
 
-        // --- 聊天逻辑 ---
-        function openChat() { document.getElementById('chat-window').style.display = 'flex'; }
-        function closeChat() { document.getElementById('chat-window').style.display = 'none'; }
+        function saveToLocal() { localStorage.setItem('ai_config', JSON.stringify(config)); }
 
-        function sendUserMsg() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
+        function updateDisplay() {
+            document.getElementById('display-city').innerText = config.city;
+            document.getElementById('display-weather').innerText = config.weather;
+            if(config.customCss) document.getElementById('custom-theme').innerHTML += config.customCss;
+        }
+        updateDisplay();
 
-            appendMsg(text, 'right');
-            chatHistory.push({ role: 'user', content: text });
+        // 模拟发送消息
+        function sendMsg() {
+            const input = document.getElementById('user-input');
+            if(!input.value) return;
+            appendMsg('user', input.value);
+            chatHistory.push({ role: "user", content: input.value });
             input.value = '';
         }
 
-        function appendMsg(text, side) {
-            const container = document.getElementById('chat-messages');
+        function appendMsg(role, text) {
+            const container = document.getElementById('chat-container');
             const div = document.createElement('div');
-            div.className = `msg-bubble ${side === 'right' ? 'msg-right' : 'msg-left'}`;
+            div.className = `msg ${role}`;
             div.innerText = text;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
 
+        // 调用 API
         async function generateAI() {
-            if (!config.apiKey) return alert('请先在设置中填写API Key');
+            if(!config.apiKey) return alert("请先在设置中填写API Key");
             
-            // 构造上下文：前5次对话
-            const context = chatHistory.slice(-5);
-            const messages = [
-                { role: 'system', content: config.preset + " 所在城市: " + config.city + " 当前天气: " + config.weather },
-                ...context
-            ];
+            // 构建带有时空背景的系统 Prompt
+            const now = new Date();
+            const fullSystemPrompt = `${config.systemPrompt} \n当前环境：城市-${config.city}, 天气-${config.weather}, 时间-${now.toLocaleString()}`;
+
+            // 只取最近5次对话
+            const recentHistory = chatHistory.slice(-5);
+            
+            appendMsg('ai', '正在输入...');
 
             try {
-                const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${config.apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: config.model,
-                        messages: messages,
-                        max_tokens: 100
-                    })
+                const response = await axios.post(`${config.baseUrl}/chat/completions`, {
+                    model: config.model,
+                    messages: [
+                        { role: "system", content: fullSystemPrompt },
+                        ...recentHistory
+                    ],
+                    max_tokens: 100
+                }, {
+                    headers: { 'Authorization': `Bearer ${config.apiKey}` }
                 });
 
-                const data = await response.json();
-                const reply = data.choices[0].message.content;
+                // 移除“正在输入”
+                const container = document.getElementById('chat-container');
+                container.removeChild(container.lastChild);
+
+                const reply = response.data.choices[0].message.content;
+                // 模拟微信可能发多条短消息（按句号或换行切分）
+                const segments = reply.split(/[。！？\n]/).filter(s => s.trim().length > 0);
                 
-                // 模拟真人：如果是长句则拆分，这里简单处理展示
-                const lines = reply.split(/[，。！？\n]/).filter(s => s.trim().length > 0);
-                
-                for (let line of lines) {
-                    await new Promise(r => setTimeout(r, 800 + Math.random() * 1000));
-                    appendMsg(line.substring(0, 20), 'left');
-                    chatHistory.push({ role: 'assistant', content: line });
-                }
-            } catch (e) {
-                alert('API调用失败: ' + e.message);
+                segments.forEach(seg => {
+                    appendMsg('ai', seg.substring(0, 20)); // 强制截断保护
+                    chatHistory.push({ role: "assistant", content: seg });
+                });
+
+            } catch (error) {
+                alert("API 调用失败: " + error.message);
             }
         }
 
-        init();
+        // 模拟拉取模型列表
+        async function fetchModels() {
+            if(!config.apiKey) return alert("请先填写API Key");
+            try {
+                const res = await axios.get(`${config.baseUrl}/models`, {
+                    headers: { 'Authorization': `Bearer ${config.apiKey}` }
+                });
+                alert("拉取成功，第一个可用模型是: " + res.data.data[0].id);
+                document.getElementById('model-name').value = res.data.data[0].id;
+            } catch(e) { alert("获取失败，请手动输入"); }
+        }
     </script>
 </body>
 </html>
