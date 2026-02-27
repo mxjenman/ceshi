@@ -3,217 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI OS Desktop</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>AI OS Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style id="custom-styles">
-        /* 用户美化CSS将注入此处 */
+        /* 动态美化 CSS 将注入此处 */
     </style>
     <style>
-        .cloud-bg {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 30px;
-            padding: 20px;
-            margin: 20px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
-        }
-        .app-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .chat-bubble-ai { background-color: #95ec69; position: relative; }
-        .chat-bubble-ai::before {
-            content: ''; position: absolute; left: -10px; top: 10px;
-            border: 5px solid transparent; border-right-color: #95ec69;
-        }
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+        .cloud-bg { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-radius: 30px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        .chat-dot { width: 12px; height: 12px; border-radius: 50%; background: #10b981; position: absolute; top: -2px; right: -2px; border: 2px solid white; }
+        .hidden { display: none; }
+        .wechat-input { border-top: 1px solid #ddd; background: #f7f7f7; }
+        .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 15px; position: relative; }
+        .msg-self { background: #95ec69; align-self: flex-end; margin-left: auto; }
+        .msg-ai { background: #fff; align-self: flex-start; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen overflow-hidden">
-<div id="app" class="h-full flex flex-col relative" :style="{ backgroundImage: 'url(' + settings.bgImage + ')', backgroundSize: 'cover' }">
+<body class="h-screen flex flex-col p-4">
 
-    <div class="cloud-bg text-center text-gray-800">
-        <div class="text-4xl font-light">{{ currentTime }}</div>
-        <div class="text-sm mt-1">{{ currentDate }}</div>
-        <div class="flex justify-center gap-2 mt-2 text-sm opacity-80">
-            <span>{{ config.city }}</span>
-            <span>{{ config.weather }}</span>
+    <header class="cloud-bg p-6 mb-8 text-slate-700 relative" id="header-section">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 id="current-time" class="text-4xl font-light">12:00</h1>
+                <p id="current-date" class="text-sm opacity-80">2026年2月27日 星期五</p>
+            </div>
+            <div class="text-right cursor-pointer" onclick="toggleSettings('weather-config')">
+                <p id="display-city" class="font-bold text-lg">北京</p>
+                <p id="display-weather" class="text-sm">晴 25°C</p>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <div class="flex-1 p-6">
-        <div @click="openChat" class="flex flex-col items-center gap-2 w-20 cursor-pointer">
-            <div class="app-icon text-3xl">💬</div>
-            <span class="text-xs text-white drop-shadow-md">私聊</span>
+    <main class="flex-grow grid grid-cols-4 gap-6 content-start">
+        <div class="flex flex-col items-center gap-2 cursor-pointer" onclick="openChat()">
+            <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg relative">
+                <i class="fab fa-weixin"></i>
+                <div class="chat-dot"></div>
+            </div>
+            <span class="text-xs font-medium">私聊</span>
         </div>
-    </div>
+    </main>
 
-    <div class="flex justify-around items-center p-4 bg-white/30 backdrop-blur-md pb-8">
-        <button @click="ui.showSettings = true" class="flex flex-col items-center">
-            <span class="text-2xl">⚙️</span>
+    <footer class="flex justify-around items-center py-4 glass-card mt-auto">
+        <button onclick="toggleSettings('settings-panel')" class="flex flex-col items-center gap-1">
+            <i class="fas fa-cog text-xl text-slate-600"></i>
             <span class="text-[10px]">设置</span>
         </button>
-        <button @click="ui.showStyle = true" class="flex flex-col items-center">
-            <span class="text-2xl">🎨</span>
+        <button onclick="toggleSettings('style-panel')" class="flex flex-col items-center gap-1">
+            <i class="fas fa-paint-brush text-xl text-slate-600"></i>
             <span class="text-[10px]">美化</span>
         </button>
-        <button @click="ui.showPreset = true" class="flex flex-col items-center">
-            <span class="text-2xl">📝</span>
+        <button onclick="toggleSettings('preset-panel')" class="flex flex-col items-center gap-1">
+            <i class="fas fa-scroll text-xl text-slate-600"></i>
             <span class="text-[10px]">预设</span>
         </button>
-    </div>
+    </footer>
 
-    <div v-if="ui.chatOpen" class="fixed inset-0 bg-[#ededed] flex flex-col z-50">
+    <div id="chat-window" class="fixed inset-0 bg-[#ededed] z-50 flex flex-col hidden">
         <div class="p-4 bg-[#ededed] flex items-center border-b">
-            <button @click="ui.chatOpen = false" class="mr-4 text-xl">←</button>
-            <span class="font-bold">智友</span>
+            <button onclick="closeChat()" class="mr-4 text-lg"><i class="fas fa-chevron-left"></i></button>
+            <span class="font-bold" id="chat-title">AI 好友</span>
         </div>
-        
-        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="msg-container">
-            <div v-for="msg in messages" :key="msg.id" :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-                <div :class="['max-w-[70%] p-2 rounded-lg text-sm shadow-sm', msg.role === 'user' ? 'bg-[#95ec69]' : 'bg-white']">
-                    {{ msg.content }}
-                </div>
+        <div id="chat-history" class="flex-grow overflow-y-auto p-4 flex flex-col">
             </div>
-        </div>
-
-        <div class="p-4 bg-white flex gap-2">
-            <input v-model="userInput" @keyup.enter="sendMessage" type="text" class="flex-1 border rounded p-2 outline-none">
-            <button @click="generateAI" class="bg-green-500 text-white px-4 py-2 rounded text-sm">生成</button>
+        <div class="wechat-input p-3 flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+                <input id="user-input" type="text" class="flex-grow p-2 rounded border-none outline-none" placeholder="输入消息...">
+                <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+            </div>
+            <button id="gen-btn" onclick="fetchAIResponse()" class="w-full bg-blue-500 text-white py-2 rounded font-bold">生成 AI 回复</button>
         </div>
     </div>
 
-    <div v-if="ui.showSettings || ui.showStyle || ui.showPreset" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-        <div class="bg-white rounded-xl w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
-            <h3 class="text-lg font-bold mb-4">功能配置</h3>
+    <div id="modal-container" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 overflow-y-auto max-h-[80vh]">
+            <div id="settings-panel" class="hidden space-y-4">
+                <h2 class="text-xl font-bold">API 设置</h2>
+                <input id="base-url" type="text" placeholder="Base URL (https://...)" class="w-full border p-2 rounded">
+                <input id="api-key" type="password" placeholder="API Key" class="w-full border p-2 rounded">
+                <input id="model-name" type="text" placeholder="Model Name (如 gpt-3.5-turbo)" class="w-full border p-2 rounded">
+                <button onclick="saveConfig()" class="w-full bg-black text-white py-2 rounded">保存设置</button>
+            </div>
+
+            <div id="style-panel" class="hidden space-y-4">
+                <h2 class="text-xl font-bold">美化 (CSS)</h2>
+                <textarea id="custom-css" rows="6" class="w-full border p-2 rounded text-xs" placeholder="例如: #header-section { background: pink; }"></textarea>
+                <button onclick="applyStyle()" class="w-full bg-black text-white py-2 rounded">应用样式</button>
+            </div>
+
+            <div id="preset-panel" class="hidden space-y-4">
+                <h2 class="text-xl font-bold">回复预设 (System Prompt)</h2>
+                <textarea id="system-prompt" rows="6" class="w-full border p-2 rounded text-xs" placeholder="定义AI的人设、说话风格..."></textarea>
+                <button onclick="saveConfig()" class="w-full bg-black text-white py-2 rounded">保存预设</button>
+            </div>
+
+            <div id="weather-config" class="hidden space-y-4">
+                <h2 class="text-xl font-bold">环境设置</h2>
+                <input id="city-input" type="text" placeholder="所在城市" class="w-full border p-2 rounded">
+                <input id="weather-input" type="text" placeholder="当前天气" class="w-full border p-2 rounded">
+                <button onclick="saveWeather()" class="w-full bg-black text-white py-2 rounded">确认</button>
+            </div>
             
-            <div v-if="ui.showSettings" class="space-y-3">
-                <input v-model="config.baseUrl" placeholder="Base URL" class="w-full border p-2 rounded">
-                <input v-model="config.apiKey" placeholder="API Key" type="password" class="w-full border p-2 rounded">
-                <input v-model="config.model" placeholder="Model Name" class="w-full border p-2 rounded">
-                <input v-model="config.city" placeholder="设置城市" class="w-full border p-2 rounded">
-                <input v-model="config.weather" placeholder="设置天气" class="w-full border p-2 rounded">
-            </div>
-
-            <div v-if="ui.showStyle" class="space-y-3">
-                <p class="text-xs text-gray-500">输入 CSS 改变样式</p>
-                <textarea v-model="customCSS" class="w-full border p-2 rounded h-32 font-mono text-sm"></textarea>
-            </div>
-
-            <div v-if="ui.showPreset" class="space-y-3">
-                <p class="text-xs text-gray-500">角色扮演/回复规则 Prompt</p>
-                <textarea v-model="config.systemPrompt" class="w-full border p-2 rounded h-32 text-sm"></textarea>
-            </div>
-
-            <div class="mt-6 flex justify-end gap-2">
-                <button @click="closeModals" class="px-4 py-2">取消</button>
-                <button @click="saveSettings" class="px-4 py-2 bg-blue-500 text-white rounded">保存</button>
-            </div>
+            <button onclick="closeModals()" class="mt-4 w-full text-gray-400 text-sm">关闭</button>
         </div>
     </div>
-</div>
 
-<script>
-const { createApp, ref, onMounted, onUnmounted } = Vue;
+    <script>
+        // --- 初始化与数据存储 ---
+        let config = JSON.parse(localStorage.getItem('ai_os_config')) || {
+            baseUrl: '', apiKey: '', model: 'gpt-3.5-turbo',
+            system: '你是一个真实的人类，现在我们在微信聊天。你的回复要简短，像真人一样自然，多用语气词，不要像AI。',
+            city: '北京', weather: '晴 25°C', css: ''
+        };
 
-createApp({
-    setup() {
-        const currentTime = ref('');
-        const currentDate = ref('');
-        const userInput = ref('');
-        const customCSS = ref('');
-        const messages = ref([]);
-        
-        const ui = ref({ chatOpen: false, showSettings: false, showStyle: false, showPreset: false });
-        
-        const config = ref({
-            baseUrl: 'https://api.openai.com/v1',
-            apiKey: '',
-            model: 'gpt-3.5-turbo',
-            city: '上海',
-            weather: '晴天 25°C',
-            systemPrompt: '你是一个真实的微信好友，说话简短、随性，不要像机器人。'
-        });
+        let chatHistory = [];
 
-        const settings = ref({ bgImage: 'https://picsum.photos/1080/1920' });
+        function init() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            document.getElementById('base-url').value = config.baseUrl;
+            document.getElementById('api-key').value = config.apiKey;
+            document.getElementById('model-name').value = config.model;
+            document.getElementById('system-prompt').value = config.system;
+            document.getElementById('custom-css').value = config.css;
+            document.getElementById('display-city').innerText = config.city;
+            document.getElementById('display-weather').innerText = config.weather;
+            applyStyle();
+        }
 
-        const updateTime = () => {
+        // --- 核心功能 ---
+        function updateTime() {
             const now = new Date();
-            currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            currentDate.value = now.toLocaleDateString([], { month: 'long', day: 'numeric', weekday: 'long' });
-        };
+            document.getElementById('current-time').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('current-date').innerText = now.toLocaleDateString('zh-CN', options);
+        }
 
-        const sendMessage = () => {
-            if (!userInput.value) return;
-            messages.value.push({ id: Date.now(), role: 'user', content: userInput.value });
-            userInput.value = '';
-        };
+        function toggleSettings(id) {
+            document.getElementById('modal-container').classList.remove('hidden');
+            ['settings-panel', 'style-panel', 'preset-panel', 'weather-config'].forEach(p => {
+                document.getElementById(p).classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden');
+        }
 
-        const generateAI = async () => {
-            if (messages.value.length === 0) return;
-            
-            // 获取最近5次对话
-            const history = messages.value.slice(-5).map(m => ({ role: m.role, content: m.content }));
-            
-            // 拼接环境感知信息
-            const contextPrompt = `\n[当前环境信息] 城市:${config.value.city}, 天气:${config.value.weather}, 时间:${currentTime.value}`;
+        function closeModals() { document.getElementById('modal-container').classList.add('hidden'); }
+
+        function saveConfig() {
+            config.baseUrl = document.getElementById('base-url').value;
+            config.apiKey = document.getElementById('api-key').value;
+            config.model = document.getElementById('model-name').value;
+            config.system = document.getElementById('system-prompt').value;
+            localStorage.setItem('ai_os_config', JSON.stringify(config));
+            closeModals();
+        }
+
+        function saveWeather() {
+            config.city = document.getElementById('city-input').value || config.city;
+            config.weather = document.getElementById('weather-input').value || config.weather;
+            document.getElementById('display-city').innerText = config.city;
+            document.getElementById('display-weather').innerText = config.weather;
+            saveConfig();
+        }
+
+        function applyStyle() {
+            config.css = document.getElementById('custom-css').value;
+            document.getElementById('custom-styles').innerHTML = config.css;
+            localStorage.setItem('ai_os_config', JSON.stringify(config));
+        }
+
+        // --- 聊天逻辑 ---
+        function openChat() { document.getElementById('chat-window').classList.remove('hidden'); }
+        function closeChat() { document.getElementById('chat-window').classList.add('hidden'); }
+
+        function sendUserMsg() {
+            const input = document.getElementById('user-input');
+            if(!input.value.trim()) return;
+            const text = input.value;
+            renderMsg(text, 'self');
+            chatHistory.push({ role: "user", content: text });
+            input.value = '';
+        }
+
+        function renderMsg(text, type) {
+            const container = document.getElementById('chat-history');
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${type === 'self' ? 'msg-self' : 'msg-ai'}`;
+            div.innerText = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function fetchAIResponse() {
+            if(!config.apiKey) return alert('请先在设置中填写API Key');
+            const btn = document.getElementById('gen-btn');
+            btn.innerText = "对方正在输入...";
+            btn.disabled = true;
+
+            // 获取最近5轮对话
+            const recentHistory = chatHistory.slice(-10); 
+            const contextPrompt = `当前环境：${config.city}, ${config.weather}, 时间 ${new Date().toLocaleString()}。`;
             
             try {
-                const response = await fetch(`${config.value.baseUrl}/chat/completions`, {
+                const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${config.value.apiKey}`
+                        'Authorization': `Bearer ${config.apiKey}`
                     },
                     body: JSON.stringify({
-                        model: config.value.model,
+                        model: config.model,
                         messages: [
-                            { role: 'system', content: config.value.systemPrompt + contextPrompt },
-                            ...history
+                            { role: "system", content: config.system + " " + contextPrompt },
+                            ...recentHistory
                         ],
                         temperature: 0.8
                     })
                 });
                 
                 const data = await response.json();
-                const reply = data.choices[0].message.content;
+                const aiMsg = data.choices[0].message.content;
                 
-                // 模拟真人分段回复
-                const chunks = reply.split(/[。！？]/).filter(s => s.trim().length > 0);
-                chunks.forEach((text, index) => {
-                    setTimeout(() => {
-                        messages.value.push({ id: Date.now() + index, role: 'assistant', content: text.substring(0, 20) });
-                    }, index * 1000 + 500);
-                });
-
+                // 模拟真人：如果是长句，拆分成多条（按标点或长度）
+                const messages = aiMsg.split(/[，。！？\n]/).filter(s => s.trim().length > 0);
+                
+                for(let m of messages) {
+                    const subMsg = m.substring(0, 20); // 强制限制20字
+                    renderMsg(subMsg, 'ai');
+                    chatHistory.push({ role: "assistant", content: subMsg });
+                    await new Promise(r => setTimeout(r, 800)); // 模拟输入延迟
+                }
             } catch (e) {
-                alert('API调用失败，请检查配置');
+                renderMsg("（连接API失败，请检查设置）", 'ai');
+            } finally {
+                btn.innerText = "生成 AI 回复";
+                btn.disabled = false;
             }
-        };
+        }
 
-        const saveSettings = () => {
-            document.getElementById('custom-styles').innerHTML = customCSS.value;
-            closeModals();
-        };
-
-        const closeModals = () => {
-            ui.value.showSettings = ui.value.showStyle = ui.value.showPreset = false;
-        };
-
-        onMounted(() => {
-            updateTime();
-            setInterval(updateTime, 1000);
-        });
-
-        return { currentTime, currentDate, config, ui, messages, userInput, generateAI, sendMessage, customCSS, saveSettings, closeModals, settings };
-    }
-}).mount('#app');
-</script>
+        init();
+    </script>
 </body>
 </html>
