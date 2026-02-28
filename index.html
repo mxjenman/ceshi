@@ -17,7 +17,7 @@
 
     <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
         
-        <!-- 顶部小云朵（现在上移30px） -->
+        <!-- 顶部小云朵 -->
         <div class="glass-card w-full p-6 text-center shadow-lg relative mb-12 mt-4"
              style="background: radial-gradient(circle at top, #ffffff, #e0f2fe); transform: translateY(-30px);">
             <div id="display-time" class="text-5xl font-light text-gray-800">00:00</div>
@@ -27,23 +27,21 @@
             </div>
         </div>
 
+        <!-- 应用区域 -->
         <div class="grid grid-cols-4 gap-6 w-full px-4">
             
-            <!-- 微信图标（右移240px） -->
-           <div class="col-span-4 flex justify-end">
-    <div class="flex flex-col items-center gap-1"
-         onclick="openChat()">
-        <div class="app-icon text-green-500 text-3xl">💬</div>
-        <span class="text-xs text-gray-600">微信</span>
-    </div>
-</div>
-                <div class="app-icon text-green-500 text-3xl">💬</div>
-                <span class="text-xs text-gray-600">微信</span>
+            <!-- 微信图标（已自动右对齐） -->
+            <div class="col-span-4 flex justify-end">
+                <div class="flex flex-col items-center gap-1"
+                     onclick="openChat()">
+                    <div class="app-icon text-green-500 text-3xl">💬</div>
+                    <span class="text-xs text-gray-600">微信</span>
+                </div>
             </div>
 
         </div>
 
-        <!-- 底栏（保持下移20px） -->
+        <!-- 底栏 -->
         <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
              style="transform: translateY(20px);">
             <button onclick="openModal('settings')" class="flex flex-col items-center">
@@ -96,8 +94,6 @@ let config = {
 };
 let chatHistory = [];
 
-/* JS逻辑全部保持不变 */
-
 function updateTime() {
     const now = new Date();
     document.getElementById('display-time').innerText =
@@ -109,8 +105,6 @@ function updateTime() {
 }
 setInterval(updateTime, 1000);
 updateTime();
-
-/* 其余函数完全保留 */
 
 function openModal(type){const content=document.getElementById('modal-content');document.getElementById('modal-overlay').classList.remove('hidden');if(type==='settings'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;}else if(type==='beauty'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;}else if(type==='presets'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;}}
 function closeModal(){if(document.getElementById('cfg-url')){config.baseUrl=document.getElementById('cfg-url').value;config.apiKey=document.getElementById('cfg-key').value;config.model=document.getElementById('cfg-model').value;}if(document.getElementById('cfg-css')){config.customCss=document.getElementById('cfg-css').value;document.getElementById('custom-style').innerHTML+=config.customCss;}if(document.getElementById('cfg-prompt')){config.systemPrompt=document.getElementById('cfg-prompt').value;}document.getElementById('modal-overlay').classList.add('hidden');}
