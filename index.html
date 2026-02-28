@@ -17,7 +17,10 @@
 <body class="h-screen overflow-hidden flex flex-col">
 
     <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-        <div class="glass-card w-full p-6 text-center shadow-lg relative mb-12 mt-4" style="background: radial-gradient(circle at top, #ffffff, #e0f2fe);">
+        
+        <!-- 顶部小云朵（上移50px） -->
+        <div class="glass-card w-full p-6 text-center shadow-lg relative mb-12 mt-4"
+             style="background: radial-gradient(circle at top, #ffffff, #e0f2fe); transform: translateY(-50px);">
             <div id="display-time" class="text-5xl font-light text-gray-800">00:00</div>
             <div id="display-date" class="text-sm text-gray-500 mt-1">1月1日 星期一</div>
             <div class="mt-4 flex justify-center gap-2 text-blue-600 font-medium" onclick="editWeather()">
@@ -26,13 +29,20 @@
         </div>
 
         <div class="grid grid-cols-4 gap-6 w-full px-4">
-            <div class="flex flex-col items-center gap-1" onclick="openChat()">
+            
+            <!-- 微信图标（右移200px） -->
+            <div class="flex flex-col items-center gap-1"
+                 onclick="openChat()"
+                 style="transform: translateX(200px);">
                 <div class="app-icon text-green-500 text-3xl">💬</div>
-                <span class="text-xs text-gray-600">私聊</span>
+                <span class="text-xs text-gray-600">微信</span>
             </div>
+
         </div>
 
-        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4">
+        <!-- 底栏（下移20px） -->
+        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
+             style="transform: translateY(20px);">
             <button onclick="openModal('settings')" class="flex flex-col items-center">
                 <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
             </button>
@@ -51,8 +61,8 @@
             <div class="flex-1 text-center font-bold">AI 好友</div>
             <div class="w-6"></div>
         </div>
-        <div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4">
-            </div>
+        <div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+
         <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2">
             <div class="flex gap-2">
                 <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
@@ -69,146 +79,152 @@
         </div>
     </div>
 
-    <script>
-        // --- 数据存储 ---
-        let config = {
-            baseUrl: 'https://api.openai.com/v1',
-            apiKey: '',
-            model: 'gpt-3.5-turbo',
-            city: '北京',
-            weather: '晴',
-            customCss: '',
-            systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
-        };
-        let chatHistory = [];
+<script>
+let config = {
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-3.5-turbo',
+    city: '北京',
+    weather: '晴',
+    customCss: '',
+    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
+};
+let chatHistory = [];
 
-        // --- 初始化 ---
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('display-time').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            const options = { month: 'long', day: 'numeric', weekday: 'long' };
-            document.getElementById('display-date').innerText = now.toLocaleDateString('zh-CN', options);
+function updateTime() {
+    const now = new Date();
+    document.getElementById('display-time').innerText =
+        now.getHours().toString().padStart(2, '0') + ':' +
+        now.getMinutes().toString().padStart(2, '0');
+
+    const options = { month: 'long', day: 'numeric', weekday: 'long' };
+    document.getElementById('display-date').innerText =
+        now.toLocaleDateString('zh-CN', options);
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+function openModal(type) {
+    const content = document.getElementById('modal-content');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+
+    if(type === 'settings') {
+        content.innerHTML = `
+            <h2 class="text-xl font-bold mb-4">API 设置</h2>
+            <p class="text-xs mb-1">Base URL</p>
+            <input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}">
+            <p class="text-xs mb-1">API Key</p>
+            <input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}">
+            <p class="text-xs mb-1">模型名称</p>
+            <input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">
+        `;
+    } else if(type === 'beauty') {
+        content.innerHTML = `
+            <h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2>
+            <textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>
+        `;
+    } else if(type === 'presets') {
+        content.innerHTML = `
+            <h2 class="text-xl font-bold mb-4">AI 预设</h2>
+            <textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>
+        `;
+    }
+}
+
+function closeModal() {
+    if(document.getElementById('cfg-url')) {
+        config.baseUrl = document.getElementById('cfg-url').value;
+        config.apiKey = document.getElementById('cfg-key').value;
+        config.model = document.getElementById('cfg-model').value;
+    }
+    if(document.getElementById('cfg-css')) {
+        config.customCss = document.getElementById('cfg-css').value;
+        document.getElementById('custom-style').innerHTML += config.customCss;
+    }
+    if(document.getElementById('cfg-prompt')) {
+        config.systemPrompt = document.getElementById('cfg-prompt').value;
+    }
+    document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function editWeather() {
+    const c = prompt("输入城市", config.city);
+    const w = prompt("输入天气", config.weather);
+    if(c) config.city = c;
+    if(w) config.weather = w;
+    document.getElementById('display-city').innerText = config.city;
+    document.getElementById('display-weather').innerText = config.weather;
+}
+
+function openChat() {
+    document.getElementById('chat-screen').classList.remove('hidden');
+}
+function closeChat() {
+    document.getElementById('chat-screen').classList.add('hidden');
+}
+
+function sendUserMsg() {
+    const input = document.getElementById('chat-input');
+    if(!input.value) return;
+    renderMsg(input.value, 'user');
+    chatHistory.push({ role: 'user', content: input.value });
+    input.value = '';
+}
+
+function renderMsg(text, role) {
+    const container = document.getElementById('chat-flow');
+    const div = document.createElement('div');
+    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    div.innerHTML = `<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role === 'user' ? 'chat-msg-user' : 'chat-msg-ai'}">${text}</div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function triggerAI() {
+    if(!config.apiKey) return alert("请先配置 API Key");
+
+    const btn = document.getElementById('gen-btn');
+    btn.innerText = "对方正在输入...";
+    btn.disabled = true;
+
+    const contextMsg = [
+        { role: 'system', content: `${config.systemPrompt} 当前环境：${config.city}, 天气${config.weather}, 时间${new Date().toLocaleString()}` },
+        ...chatHistory.slice(-5)
+    ];
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`
+            },
+            body: JSON.stringify({
+                model: config.model,
+                messages: contextMsg,
+                max_tokens: 100
+            })
+        });
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+
+        const parts = reply.split(/[，。！？]/).filter(p => p.length > 0);
+
+        for(let part of parts) {
+            await new Promise(r => setTimeout(r, 800));
+            renderMsg(part.substring(0, 20), 'assistant');
+            chatHistory.push({ role: 'assistant', content: part.substring(0, 20) });
         }
-        setInterval(updateTime, 1000);
-        updateTime();
 
-        // --- 弹窗逻辑 ---
-        function openModal(type) {
-            const content = document.getElementById('modal-content');
-            document.getElementById('modal-overlay').classList.remove('hidden');
-            
-            if(type === 'settings') {
-                content.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">API 设置</h2>
-                    <p class="text-xs mb-1">Base URL</p>
-                    <input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}">
-                    <p class="text-xs mb-1">API Key</p>
-                    <input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}">
-                    <p class="text-xs mb-1">模型名称</p>
-                    <input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">
-                `;
-            } else if(type === 'beauty') {
-                content.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2>
-                    <textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm" placeholder="例如：body { background: pink; }">${config.customCss}</textarea>
-                `;
-            } else if(type === 'presets') {
-                content.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">AI 预设 (System Prompt)</h2>
-                    <textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>
-                `;
-            }
-        }
+    } catch (e) {
+        renderMsg("（消息发送失败，请检查配置）", 'assistant');
+    } finally {
+        btn.innerText = "点击生成对方回复";
+        btn.disabled = false;
+    }
+}
+</script>
 
-        function closeModal() {
-            // 保存逻辑
-            if(document.getElementById('cfg-url')) {
-                config.baseUrl = document.getElementById('cfg-url').value;
-                config.apiKey = document.getElementById('cfg-key').value;
-                config.model = document.getElementById('cfg-model').value;
-            }
-            if(document.getElementById('cfg-css')) {
-                config.customCss = document.getElementById('cfg-css').value;
-                document.getElementById('custom-style').innerHTML += config.customCss;
-            }
-            if(document.getElementById('cfg-prompt')) {
-                config.systemPrompt = document.getElementById('cfg-prompt').value;
-            }
-            document.getElementById('modal-overlay').classList.add('hidden');
-        }
-
-        function editWeather() {
-            const c = prompt("输入城市", config.city);
-            const w = prompt("输入天气", config.weather);
-            if(c) config.city = c;
-            if(w) config.weather = w;
-            document.getElementById('display-city').innerText = config.city;
-            document.getElementById('display-weather').innerText = config.weather;
-        }
-
-        // --- 聊天逻辑 ---
-        function openChat() { document.getElementById('chat-screen').classList.remove('hidden'); }
-        function closeChat() { document.getElementById('chat-screen').classList.add('hidden'); }
-
-        function sendUserMsg() {
-            const input = document.getElementById('chat-input');
-            if(!input.value) return;
-            renderMsg(input.value, 'user');
-            chatHistory.push({ role: 'user', content: input.value });
-            input.value = '';
-        }
-
-        function renderMsg(text, role) {
-            const container = document.getElementById('chat-flow');
-            const div = document.createElement('div');
-            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-            div.innerHTML = `<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role === 'user' ? 'chat-msg-user' : 'chat-msg-ai'}">${text}</div>`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        async function triggerAI() {
-            if(!config.apiKey) return alert("请先在设置中配置 API Key");
-            const btn = document.getElementById('gen-btn');
-            btn.innerText = "对方正在输入...";
-            btn.disabled = true;
-
-            // 构造上下文：System Prompt + 天气城市信息 + 最近5条记录
-            const contextMsg = [
-                { role: 'system', content: `${config.systemPrompt} 当前环境：${config.city}, 天气${config.weather}, 时间${new Date().toLocaleString()}` },
-                ...chatHistory.slice(-5)
-            ];
-
-            try {
-                const response = await fetch(`${config.baseUrl}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${config.apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: config.model,
-                        messages: contextMsg,
-                        max_tokens: 100
-                    })
-                });
-                const data = await response.json();
-                const reply = data.choices[0].message.content;
-                
-                // 模拟真人可能发多条短消息
-                const parts = reply.split(/[，。！？]/).filter(p => p.length > 0);
-                for(let part of parts) {
-                    await new Promise(r => setTimeout(r, 800)); // 模拟打字停顿
-                    renderMsg(part.substring(0, 20), 'assistant');
-                    chatHistory.push({ role: 'assistant', content: part.substring(0, 20) });
-                }
-            } catch (e) {
-                renderMsg("（消息发送失败，请检查配置）", 'assistant');
-            } finally {
-                btn.innerText = "点击生成对方回复";
-                btn.disabled = false;
-            }
-        }
-    </script>
 </body>
 </html>
