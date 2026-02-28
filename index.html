@@ -55,6 +55,10 @@
         /* 互动图标样式 */
         .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
         .action-item:hover .action-icon { opacity: 1; }
+
+        /* 导航图标缩放补丁 */
+        .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
+        .back-icon { font-size: 24px; font-weight: 300; color: #1d9bf0; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -126,9 +130,11 @@
 
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
-            <button onclick="closeForum()" class="text-blue-500 font-bold">返回</button>
-            <div class="flex-1 text-center font-black text-xl italic">𝕏</div>
-            <button onclick="generateAIPosts()" class="text-blue-500 text-sm font-bold">同步广场</button>
+            <button onclick="closeForum()" class="back-icon">〈</button>
+            <div class="flex-1 text-center font-bold text-lg text-black">推文</div>
+            <button onclick="generateAIPosts()" class="flex items-center justify-center">
+                <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
+            </button>
         </div>
         
         <div id="forum-feed" class="flex-1 overflow-y-auto bg-white pb-20">
@@ -267,7 +273,7 @@ async function triggerAI(){
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 论坛功能 (核心优化区) */
+/* 论坛功能 */
 function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
 function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
 function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); validatePostContent(); }
@@ -277,7 +283,6 @@ function closeCompose(){
     clearPostImage();
 }
 
-// 校验内容，决定发布按钮状态
 function validatePostContent() {
     const text = document.getElementById('post-text').value.trim();
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
@@ -317,7 +322,6 @@ function submitPost(){
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? previewImg.src : null;
     
-    // 获取真实时间
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     
@@ -333,7 +337,6 @@ function addPostToFeed(name, text, img, time){
     const div = document.createElement('div');
     div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
     
-    // 关键优化：仅当img存在时才渲染图片节点
     let imgHtml = "";
     if(img) {
         imgHtml = `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">`;
@@ -367,7 +370,6 @@ function addPostToFeed(name, text, img, time){
     feed.prepend(div);
 }
 
-/* 批量生成逻辑 */
 async function generateAIPosts(){
     if(!config.apiKey) return alert("同步广场需要配置 API Key");
     const feed = document.getElementById('forum-feed');
