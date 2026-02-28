@@ -1,365 +1,300 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Mobile OS</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style id="custom-theme">
-        /* 默认样式 - 可通过“美化”功能覆盖 */
-        :root {
-            --bg-image: url('https://images.unsplash.com/photo-1557683316-973673baf926');
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --accent-color: #07C160; /* 微信绿 */
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI 桌面聊天</title>
 
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-image) no-repeat center center fixed;
-            background-size: cover;
-            overflow: hidden;
-        }
+<style>
+body{
+    margin:0;
+    background:#f2f2f2;
+    font-family:-apple-system,BlinkMacSystemFont;
+}
+.phone{
+    max-width:430px;
+    margin:auto;
+    background:#fff;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
 
-        /* 顶部云朵板块 */
-        .top-panel {
-            margin: 20px;
-            padding: 20px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #333;
-        }
+/* 顶部状态栏 */
+.status{
+    padding:15px;
+    background:linear-gradient(to bottom,#87ceeb,#e0f7ff);
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
+}
+.cloud{
+    background:white;
+    padding:12px;
+    border-radius:30px;
+    text-align:center;
+}
+.time{
+    font-size:22px;
+    font-weight:bold;
+}
+.date{
+    font-size:14px;
+    color:#666;
+}
 
-        .time { font-size: 3rem; font-weight: 300; margin: 0; }
-        .date { font-size: 1rem; opacity: 0.8; }
-        .weather-info { margin-top: 10px; font-size: 0.9rem; }
+/* 私聊图标 */
+.chat-entry{
+    text-align:center;
+    padding:10px;
+    font-size:20px;
+    cursor:pointer;
+}
 
-        /* 桌面图标区域 */
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            padding: 20px;
-        }
+/* 聊天界面 */
+.chat{
+    flex:1;
+    display:none;
+    flex-direction:column;
+    padding:10px;
+    overflow-y:auto;
+}
+.msg{
+    max-width:70%;
+    padding:8px 10px;
+    margin:5px 0;
+    border-radius:15px;
+    font-size:14px;
+}
+.me{
+    background:#95ec69;
+    align-self:flex-end;
+}
+.other{
+    background:#f1f1f1;
+    align-self:flex-start;
+}
 
-        .app-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-        }
+/* 输入区域 */
+.input-area{
+    display:flex;
+    padding:10px;
+    border-top:1px solid #ddd;
+}
+input{
+    flex:1;
+    padding:8px;
+    border-radius:15px;
+    border:1px solid #ccc;
+}
+button{
+    margin-left:5px;
+    border:none;
+    border-radius:10px;
+    padding:8px 12px;
+}
 
-        .icon-box {
-            width: 60px;
-            height: 60px;
-            background: white;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 5px;
-        }
+/* 底部菜单 */
+.bottom{
+    display:flex;
+    justify-content:space-around;
+    padding:10px;
+    border-top:1px solid #ddd;
+}
+.bottom div{
+    text-align:center;
+    font-size:12px;
+    cursor:pointer;
+}
 
-        .app-label { color: white; font-size: 12px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-
-        /* 弹窗界面 (设置/对话) */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #ededed;
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            height: 50px;
-            background: #f3f3f3;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            border-bottom: 1px solid #ddd;
-            justify-content: space-between;
-        }
-
-        /* 微信对话风格 */
-        #chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .msg { max-width: 70%; margin-bottom: 15px; padding: 10px 14px; border-radius: 8px; font-size: 15px; line-height: 1.5; word-wrap: break-word; }
-        .msg.user { align-self: flex-end; background: #95ec69; position: relative; }
-        .msg.ai { align-self: flex-start; background: white; }
-
-        .chat-input-area {
-            background: #f7f7f7;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            border-top: 1px solid #ddd;
-        }
-
-        input[type="text"], textarea, select {
-            width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px;
-        }
-
-        /* 底部导航栏 */
-        .dock {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.3);
-            backdrop-filter: blur(15px);
-            padding: 10px 20px;
-            border-radius: 25px;
-            display: flex;
-            gap: 25px;
-        }
-        .dock-item { font-size: 24px; cursor: pointer; }
-    </style>
+/* 面板 */
+.panel{
+    display:none;
+    padding:15px;
+    background:#fafafa;
+    overflow-y:auto;
+}
+textarea{
+    width:100%;
+    height:80px;
+    margin-bottom:10px;
+}
+</style>
 </head>
+
 <body>
+<div class="phone">
 
-    <div id="home-screen">
-        <div class="top-panel" id="clock-panel">
-            <div class="time" id="current-time">00:00</div>
-            <div class="date" id="current-date">加载中...</div>
-            <div class="weather-info">
-                <span id="display-city">北京</span> · <span id="display-weather">晴 25°C</span>
+    <!-- 顶部 -->
+    <div class="status">
+        <div class="cloud">
+            <div class="time" id="time"></div>
+            <div class="date" id="date"></div>
+            <div>
+                城市: <input id="city" value="Toronto" style="width:80px;">
+                天气: <input id="weather" value="晴" style="width:60px;">
             </div>
         </div>
-
-        <div class="app-grid">
-            <div class="app-icon" onclick="openModal('chat-modal')">
-                <div class="icon-box" style="background: #07C160; color: white;">💬</div>
-                <div class="app-label">私聊</div>
-            </div>
-        </div>
-
-        <div class="dock">
-            <div class="dock-item" onclick="openModal('settings-modal')">⚙️</div>
-            <div class="dock-item" onclick="openModal('beauty-modal')">🎨</div>
-            <div class="dock-item" onclick="openModal('preset-modal')">📝</div>
-        </div>
     </div>
 
-    <div id="chat-modal" class="modal">
-        <div class="modal-header">
-            <span onclick="closeModal('chat-modal')">〈 返回</span>
-            <b id="chat-title">AI 好友</b>
-            <span style="opacity:0">...</span>
-        </div>
-        <div id="chat-container"></div>
-        <div class="chat-input-area">
-            <input type="text" id="user-input" placeholder="输入消息...">
-            <button onclick="sendMsg()" style="margin-left:5px; background:var(--accent-color); color:white; border:none; padding:8px 15px; border-radius:5px;">发送</button>
-            <button onclick="generateAI()" style="margin-left:5px; background:#007AFF; color:white; border:none; padding:8px 15px; border-radius:5px;">生成</button>
-        </div>
+    <div class="chat-entry" onclick="openChat()">💬 私聊</div>
+
+    <div class="chat" id="chatBox"></div>
+
+    <div class="input-area" id="inputArea" style="display:none;">
+        <input id="msgInput" placeholder="输入消息">
+        <button onclick="sendMsg()">发送</button>
+        <button onclick="generate()">生成</button>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-header">
-            <span>API 设置</span>
-            <button onclick="saveSettings()">保存</button>
-        </div>
-        <div style="padding: 20px;">
-            <label>API 基础地址 (Base URL)</label>
-            <input type="text" id="base-url" placeholder="https://api.openai.com/v1">
-            <label>API 密钥 (API Key)</label>
-            <input type="password" id="api-key" placeholder="sk-...">
-            <label>模型选择</label>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="model-name" placeholder="gpt-3.5-turbo">
-                <button onclick="fetchModels()" style="width:80px">拉取</button>
-            </div>
-            <hr>
-            <label>城市设置</label>
-            <input type="text" id="set-city" value="北京">
-            <label>天气设置</label>
-            <input type="text" id="set-weather" value="晴 25°C">
-            <button onclick="closeModal('settings-modal')" style="width:100%; margin-top:20px;">取消</button>
-        </div>
+    <!-- 设置面板 -->
+    <div class="panel" id="settings">
+        <h3>API 设置</h3>
+        Base URL:<input id="baseurl"><br><br>
+        API Key:<input id="apikey"><br><br>
+        Model Name:<input id="model"><br><br>
+        <button onclick="saveSettings()">保存</button>
     </div>
 
-    <div id="preset-modal" class="modal">
-        <div class="modal-header">
-            <span>回复预设 (System Prompt)</span>
-            <button onclick="savePreset()">保存</button>
-        </div>
-        <div style="padding:20px;">
-            <p style="font-size:12px; color:#666;">在这里定义AI的性格和回复规则：</p>
-            <textarea id="system-prompt" rows="15" placeholder="你现在是一个真实的人类朋友..."></textarea>
-            <button onclick="closeModal('preset-modal')" style="width:100%; margin-top:10px;">返回</button>
-        </div>
+    <!-- 预设 -->
+    <div class="panel" id="preset">
+        <h3>系统预设</h3>
+        <textarea id="systemPrompt">
+你是一个真实人类朋友，正在用微信和我聊天。
+不要提到自己是AI。
+不要使用机器人语气。
+说话自然，有情绪。
+可以偶尔简短吐槽。
+结合当前时间、城市和天气聊天。
+每条回复最多20个字。
+可以分多条发出。
+        </textarea>
+        限制词（逗号分隔）:
+        <input id="banwords" placeholder="AI,机器人,模型">
     </div>
 
-    <div id="beauty-modal" class="modal">
-        <div class="modal-header">
-            <span>界面美化 (CSS)</span>
-            <button onclick="saveBeauty()">应用</button>
-        </div>
-        <div style="padding:20px;">
-            <textarea id="custom-css" rows="15" placeholder=":root { --bg-image: url('...'); }"></textarea>
-            <button onclick="closeModal('beauty-modal')" style="width:100%; margin-top:10px;">返回</button>
-        </div>
+    <!-- 美化 -->
+    <div class="panel" id="beauty">
+        <h3>自定义CSS</h3>
+        <textarea id="customCSS"></textarea>
+        <button onclick="applyCSS()">应用</button>
     </div>
 
-    <script>
-        // 初始化数据
-        let config = JSON.parse(localStorage.getItem('ai_config')) || {
-            baseUrl: '', apiKey: '', model: 'gpt-3.5-turbo',
-            city: '北京', weather: '晴 25°C',
-            systemPrompt: `你是一个正在和我进行微信聊天的真实人类朋友。
-回复规范：
-1. 语言极其口语化，多用“哈”、“昂”、“嘛”等语气词。
-2. 绝对不承认自己是AI，不使用“作为AI模型”等字眼。
-3. 每次回复非常简短，不超过20字，甚至可以只有几个字。
-4. 表现出情绪波动，偶尔发个[微笑]或[捂脸]（文字描述）。
-5. 逻辑要像真人，如果我不说话或发垃圾信息，你会吐槽。`,
-            customCss: ''
-        };
+    <!-- 底部菜单 -->
+    <div class="bottom">
+        <div onclick="togglePanel('settings')">⚙ 设置</div>
+        <div onclick="togglePanel('beauty')">🎨 美化</div>
+        <div onclick="togglePanel('preset')">📜 预设</div>
+    </div>
 
-        let chatHistory = [];
+</div>
 
-        // 更新时钟
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('current-time').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            const options = { month: 'long', day: 'numeric', weekday: 'long' };
-            document.getElementById('current-date').innerText = now.toLocaleDateString('zh-CN', options);
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+<script>
+let history=[];
 
-        // 窗口管理
-        function openModal(id) { 
-            document.getElementById(id).style.display = 'flex'; 
-            if(id === 'settings-modal') {
-                document.getElementById('base-url').value = config.baseUrl;
-                document.getElementById('api-key').value = config.apiKey;
-                document.getElementById('model-name').value = config.model;
-            }
-            if(id === 'preset-modal') document.getElementById('system-prompt').value = config.systemPrompt;
-            if(id === 'beauty-modal') document.getElementById('custom-css').value = config.customCss;
-        }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function updateTime(){
+    let now=new Date();
+    document.getElementById("time").innerText=
+        now.toLocaleTimeString();
+    document.getElementById("date").innerText=
+        now.toLocaleDateString();
+}
+setInterval(updateTime,1000);
+updateTime();
 
-        // 保存设置
-        function saveSettings() {
-            config.baseUrl = document.getElementById('base-url').value;
-            config.apiKey = document.getElementById('api-key').value;
-            config.model = document.getElementById('model-name').value;
-            config.city = document.getElementById('set-city').value;
-            config.weather = document.getElementById('set-weather').value;
-            updateDisplay();
-            saveToLocal();
-            closeModal('settings-modal');
-        }
+function openChat(){
+    document.getElementById("chatBox").style.display="flex";
+    document.getElementById("inputArea").style.display="flex";
+}
 
-        function savePreset() {
-            config.systemPrompt = document.getElementById('system-prompt').value;
-            saveToLocal();
-            closeModal('preset-modal');
-        }
+function sendMsg(){
+    let text=document.getElementById("msgInput").value;
+    if(!text) return;
+    addMsg(text,"me");
+    history.push({role:"user",content:text});
+    document.getElementById("msgInput").value="";
+}
 
-        function saveBeauty() {
-            config.customCss = document.getElementById('custom-css').value;
-            document.getElementById('custom-theme').innerHTML += config.customCss;
-            saveToLocal();
-            closeModal('beauty-modal');
-        }
+function addMsg(text,type){
+    let div=document.createElement("div");
+    div.className="msg "+type;
+    div.innerText=text;
+    document.getElementById("chatBox").appendChild(div);
+    document.getElementById("chatBox").scrollTop=999999;
+}
 
-        function saveToLocal() { localStorage.setItem('ai_config', JSON.stringify(config)); }
+function saveSettings(){
+    localStorage.setItem("baseurl",baseurl.value);
+    localStorage.setItem("apikey",apikey.value);
+    localStorage.setItem("model",model.value);
+    alert("保存成功");
+}
 
-        function updateDisplay() {
-            document.getElementById('display-city').innerText = config.city;
-            document.getElementById('display-weather').innerText = config.weather;
-            if(config.customCss) document.getElementById('custom-theme').innerHTML += config.customCss;
-        }
-        updateDisplay();
+function togglePanel(id){
+    document.querySelectorAll(".panel").forEach(p=>p.style.display="none");
+    document.getElementById(id).style.display="block";
+}
 
-        // 模拟发送消息
-        function sendMsg() {
-            const input = document.getElementById('user-input');
-            if(!input.value) return;
-            appendMsg('user', input.value);
-            chatHistory.push({ role: "user", content: input.value });
-            input.value = '';
-        }
+function applyCSS(){
+    let style=document.createElement("style");
+    style.innerHTML=document.getElementById("customCSS").value;
+    document.head.appendChild(style);
+}
 
-        function appendMsg(role, text) {
-            const container = document.getElementById('chat-container');
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            div.innerText = text;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
+async function generate(){
 
-        // 调用 API
-        async function generateAI() {
-            if(!config.apiKey) return alert("请先在设置中填写API Key");
-            
-            // 构建带有时空背景的系统 Prompt
-            const now = new Date();
-            const fullSystemPrompt = `${config.systemPrompt} \n当前环境：城市-${config.city}, 天气-${config.weather}, 时间-${now.toLocaleString()}`;
+    let base=localStorage.getItem("baseurl");
+    let key=localStorage.getItem("apikey");
+    let model=localStorage.getItem("model");
 
-            // 只取最近5次对话
-            const recentHistory = chatHistory.slice(-5);
-            
-            appendMsg('ai', '正在输入...');
+    let city=document.getElementById("city").value;
+    let weather=document.getElementById("weather").value;
+    let now=new Date().toLocaleString();
 
-            try {
-                const response = await axios.post(`${config.baseUrl}/chat/completions`, {
-                    model: config.model,
-                    messages: [
-                        { role: "system", content: fullSystemPrompt },
-                        ...recentHistory
-                    ],
-                    max_tokens: 100
-                }, {
-                    headers: { 'Authorization': `Bearer ${config.apiKey}` }
-                });
+    let sys=document.getElementById("systemPrompt").value;
+    let bans=document.getElementById("banwords").value;
 
-                // 移除“正在输入”
-                const container = document.getElementById('chat-container');
-                container.removeChild(container.lastChild);
+    let lastFive=history.slice(-5);
 
-                const reply = response.data.choices[0].message.content;
-                // 模拟微信可能发多条短消息（按句号或换行切分）
-                const segments = reply.split(/[。！？\n]/).filter(s => s.trim().length > 0);
-                
-                segments.forEach(seg => {
-                    appendMsg('ai', seg.substring(0, 20)); // 强制截断保护
-                    chatHistory.push({ role: "assistant", content: seg });
-                });
+    let systemContent=`
+当前时间:${now}
+城市:${city}
+天气:${weather}
 
-            } catch (error) {
-                alert("API 调用失败: " + error.message);
-            }
-        }
+${sys}
 
-        // 模拟拉取模型列表
-        async function fetchModels() {
-            if(!config.apiKey) return alert("请先填写API Key");
-            try {
-                const res = await axios.get(`${config.baseUrl}/models`, {
-                    headers: { 'Authorization': `Bearer ${config.apiKey}` }
-                });
-                alert("拉取成功，第一个可用模型是: " + res.data.data[0].id);
-                document.getElementById('model-name').value = res.data.data[0].id;
-            } catch(e) { alert("获取失败，请手动输入"); }
-        }
-    </script>
+禁止使用词语:${bans}
+`;
+
+    let messages=[
+        {role:"system",content:systemContent},
+        ...lastFive
+    ];
+
+    let res=await fetch(base,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "Authorization":"Bearer "+key
+        },
+        body:JSON.stringify({
+            model:model,
+            messages:messages,
+            temperature:0.9
+        })
+    });
+
+    let data=await res.json();
+    let reply=data.choices[0].message.content;
+
+    let lines=reply.split("\n").filter(l=>l.trim());
+
+    lines.forEach(line=>{
+        if(line.length>20) line=line.slice(0,20);
+        addMsg(line,"other");
+        history.push({role:"assistant",content:line});
+    });
+}
+</script>
+
 </body>
 </html>
