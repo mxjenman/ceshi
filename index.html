@@ -2,427 +2,188 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AI Mobile OS - Premium Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Mobile OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
     <style id="custom-style">
-        :root { --ios-blue: #007AFF; --ios-gray: #8E8E93; }
-        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        /* 玻璃拟态卡片 */
-        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); }
-        
-        /* 图标样式 */
-        .app-icon { width: 64px; height: 64px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .app-icon:active { transform: scale(0.85); }
-        .app-label { font-size: 12px; margin-top: 6px; color: #333; font-weight: 500; }
+        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
+        .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
 
-        /* 聊天气泡 */
-        .chat-msg-user { background: #95ec69; border-radius: 12px 2px 12px 12px; position: relative; }
-        .chat-msg-ai { background: white; border-radius: 2px 12px 12px 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-        /* 挂件样式 */
-        .widget-card {
-            width: 100%; border-radius: 28px; padding: 20px;
-            background: linear-gradient(135deg, #ffffff, #f3f4f6);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06); position: relative; overflow: hidden;
+        /* 新增小组件样式 */
+        .widget-card{
+            width:100%;
+            border-radius:28px;
+            padding:20px;
+            background:linear-gradient(135deg,#ffffff,#f3f4f6);
+            box-shadow:0 8px 20px rgba(0,0,0,0.08);
+            position:relative;
         }
-        .widget-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .widget-emoji { font-size: 14px; cursor: pointer; transition: transform 0.2s; }
-        .widget-emoji:hover { transform: scale(1.2); }
-        .widget-text { position: absolute; bottom: 15px; right: 20px; font-size: 12px; color: #888; cursor: pointer; }
-
-        /* 全屏覆盖层过渡 */
-        .screen-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
-        .hidden-screen { transform: translateY(100%); opacity: 0; pointer-events: none; }
-        
-        /* 自定义滚动条 */
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
-
-        /* 按钮反馈 */
-        .btn-active:active { opacity: 0.6; transform: scale(0.96); }
+        .widget-avatar{
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            object-fit:cover;
+            border:3px solid white;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        }
+        .widget-emoji{
+            font-size:14px;
+            cursor:pointer;
+        }
+        .widget-text{
+            position:absolute;
+            bottom:15px;
+            right:20px;
+            font-size:12px;
+            color:#555;
+            cursor:pointer;
+        }
     </style>
 </head>
+<body class="h-screen overflow-hidden flex flex-col">
 
-<body class="h-screen overflow-hidden flex flex-col select-none">
-
-<div id="home-screen" class="flex-1 p-8 flex flex-col items-center relative overflow-y-auto">
-    <div class="w-full flex justify-between items-center mb-10 px-2">
-        <div class="text-xl font-bold" id="clock">12:00</div>
-        <div class="flex space-x-2">
-            <div class="w-5 h-3 border border-black rounded-sm relative"><div class="absolute right-0 top-0.5 w-1 h-1.5 bg-black"></div></div>
-        </div>
-    </div>
-
-    <div class="widget-card mb-10 animate__animated animate__fadeInDown" onclick="openSettings()">
-        <div class="flex items-center space-x-4">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="widget-avatar">
-            <div>
-                <div class="font-bold text-lg text-gray-800">AI 助理</div>
-                <div class="text-sm text-green-500 font-medium">● 在线</div>
-            </div>
-        </div>
-        <div class="flex mt-4 space-x-2">
-            <span class="widget-emoji bg-gray-100 px-2 py-1 rounded-full">🤖 嗨</span>
-            <span class="widget-emoji bg-gray-100 px-2 py-1 rounded-full">✨ 灵感</span>
-            <span class="widget-emoji bg-gray-100 px-2 py-1 rounded-full">📅 计划</span>
-        </div>
-        <div class="widget-text" onclick="openSettings(event)">系统设置 ⚙️</div>
-    </div>
-
-    <div class="grid grid-cols-4 gap-8 w-full px-2">
-        <div class="flex flex-col items-center" onclick="openChat()">
-            <div class="app-icon bg-gradient-to-br from-green-400 to-green-600">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-            </div>
-            <span class="app-label">聊天</span>
-        </div>
-
-        <div class="flex flex-col items-center" onclick="openForum()">
-            <div class="app-icon bg-gradient-to-br from-blue-400 to-blue-600">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
-            <span class="app-label">论坛</span>
-        </div>
-
-        <div class="flex flex-col items-center" onclick="alert('即将推出...')">
-            <div class="app-icon bg-gradient-to-br from-purple-400 to-purple-600">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-            </div>
-            <span class="app-label">相机</span>
-        </div>
-
-        <div class="flex flex-col items-center" onclick="openSettings()">
-            <div class="app-icon bg-gradient-to-br from-gray-400 to-gray-600">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
-            </div>
-            <span class="app-label">设置</span>
-        </div>
-    </div>
-</div>
-
-<div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 screen-transition">
-    <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
-        <button onclick="closeForum()" class="w-10 h-10 flex items-center justify-center text-2xl btn-active">〈</button>
-        <div class="flex-1 text-center font-bold text-lg">数字社区</div>
-        <button onclick="generateForumPosts()" class="w-10 h-10 flex items-center justify-center text-xl btn-active">🔄</button>
-    </div>
-
-    <div id="forum-flow" class="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
-        <div class="text-center py-20 text-gray-400">还没有内容，点击右上角生成或右下角发帖</div>
-    </div>
-
-    <button onclick="openPost()"
-        class="fixed bottom-24 right-6 w-16 h-16 bg-black text-white text-3xl rounded-full shadow-2xl flex items-center justify-center transform active:scale-90 transition-transform z-50">
-        +
-    </button>
-</div>
-
-<div id="post-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[60] screen-transition">
-    <div class="h-14 flex items-center px-4 border-b">
-        <button onclick="closePost()" class="text-blue-500 font-medium btn-active">取消</button>
-        <div class="flex-1 text-center font-bold">写帖子</div>
-        <button onclick="submitPost()" class="px-5 py-1.5 rounded-full bg-blue-500 text-white font-bold text-sm btn-active">
-            发布
-        </button>
-    </div>
-
-    <div class="flex-1 overflow-y-auto p-5 space-y-4">
-        <textarea id="post-text" placeholder="这一刻的想法..." class="w-full h-40 resize-none outline-none text-lg placeholder-gray-300"></textarea>
+    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
         
-        <div id="image-preview" class="grid grid-cols-3 gap-2"></div>
+        <!-- 新顶部小组件 -->
+        <div class="widget-card mb-12 mt-4">
+            <div class="flex items-start gap-10">
+                
+                <div class="flex flex-col items-center gap-1">
+                    <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
+                    <img id="avatar-left" class="widget-avatar"
+                         src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+                         onclick="changeAvatar('left')">
+                </div>
 
-        <label class="w-24 h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center text-gray-400 text-3xl cursor-pointer active:bg-gray-100 transition-colors">
-            +
-            <input type="file" id="image-input" multiple accept="image/*" class="hidden">
-        </label>
-    </div>
-</div>
-
-<div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50 screen-transition">
-    <div class="h-14 bg-[#ededed] flex items-center px-4 border-b">
-        <button onclick="closeChat()" class="text-2xl btn-active">〈</button>
-        <div class="flex-1 text-center font-bold">AI 好友</div>
-        <div class="w-8"></div>
-    </div>
-    <div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-    <div class="p-3 bg-white border-t flex items-center space-x-2">
-        <input id="chat-input" type="text" class="flex-1 bg-gray-100 p-2 rounded-lg outline-none" placeholder="发消息...">
-        <button onclick="sendMessage()" class="bg-green-500 text-white px-4 py-2 rounded-lg font-medium btn-active">发送</button>
-    </div>
-</div>
-
-<div id="settings-screen" class="fixed inset-0 bg-[#f0f2f5] hidden flex flex-col z-[70] screen-transition">
-    <div class="h-14 bg-white flex items-center px-4 border-b">
-        <button onclick="closeSettings()" class="text-blue-500 btn-active">完成</button>
-        <div class="flex-1 text-center font-bold">系统配置</div>
-    </div>
-    <div class="p-6 space-y-4">
-        <div class="bg-white rounded-2xl p-4 shadow-sm space-y-4">
-            <div>
-                <label class="text-xs text-gray-500 block mb-1">API Key</label>
-                <input type="password" id="cfg-key" class="w-full bg-gray-50 p-2 rounded-md border" placeholder="sk-...">
+                <div class="flex flex-col items-center gap-1">
+                    <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
+                    <img id="avatar-right" class="widget-avatar"
+                         src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+                         onclick="changeAvatar('right')">
+                </div>
             </div>
-            <div>
-                <label class="text-xs text-gray-500 block mb-1">Base URL</label>
-                <input type="text" id="cfg-url" class="w-full bg-gray-50 p-2 rounded-md border" value="https://api.openai.com/v1">
-            </div>
-            <div>
-                <label class="text-xs text-gray-500 block mb-1">System Prompt</label>
-                <textarea id="cfg-prompt" class="w-full bg-gray-50 p-2 rounded-md border h-20 text-sm"></textarea>
+
+            <div id="widget-text"
+                 class="widget-text"
+                 onclick="editWidgetText()">
+                我不想隔着屏幕和你说话
             </div>
         </div>
-        <button onclick="saveSettings()" class="w-full bg-black text-white py-3 rounded-2xl font-bold shadow-lg btn-active">保存配置</button>
+
+        <!-- 应用区域 -->
+        <div class="grid grid-cols-4 gap-6 w-full px-4">
+            
+            <!-- 微信图标（已替换为图片） -->
+            <div class="col-span-4 flex justify-end">
+                <div class="flex flex-col items-center gap-1"
+                     onclick="openChat()">
+                    <div class="app-icon overflow-hidden p-0">
+                        <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png"
+                             class="w-full h-full object-cover rounded-[15px]">
+                    </div>
+                    <span class="text-xs text-gray-600">微信</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底栏 -->
+        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
+             style="transform: translateY(20px);">
+            <button onclick="openModal('settings')" class="flex flex-col items-center">
+                <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
+            </button>
+            <button onclick="openModal('beauty')" class="flex flex-col items-center">
+                <span class="text-xl">🎨</span><span class="text-[10px]">美化</span>
+            </button>
+            <button onclick="openModal('presets')" class="flex flex-col items-center">
+                <span class="text-xl">📑</span><span class="text-[10px]">预设</span>
+            </button>
+        </div>
     </div>
-</div>
+
+    <!-- 以下原代码完全保留 未删减 -->
+
+    <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+            <button onclick="closeChat()" class="text-xl">〈</button>
+            <div class="flex-1 text-center font-bold">AI 好友</div>
+            <div class="w-6"></div>
+        </div>
+        <div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+
+        <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2">
+            <div class="flex gap-2">
+                <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
+                <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+            </div>
+            <button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[60] flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div id="modal-content"></div>
+            <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
+        </div>
+    </div>
 
 <script>
-/* ================= 核心变量 ================= */
+/* 新增头像上传功能 */
+function changeAvatar(side){
+    const input=document.createElement('input');
+    input.type='file';
+    input.accept='image/*';
+    input.onchange=e=>{
+        const file=e.target.files[0];
+        const reader=new FileReader();
+        reader.onload=function(ev){
+            document.getElementById(`avatar-${side}`).src=ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+function editEmoji(side){
+    const current=document.querySelectorAll('.widget-emoji')[side==='left'?0:1].innerText;
+    const result=prompt("修改颜文字",current);
+    if(result){
+        document.querySelectorAll('.widget-emoji')[side==='left'?0:1].innerText=result;
+    }
+}
+
+function editWidgetText(){
+    const el=document.getElementById('widget-text');
+    const result=prompt("修改文案",el.innerText);
+    if(result) el.innerText=result;
+}
+</script>
+
+<!-- 原JS完整保留 -->
+<script>
 let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-3.5-turbo',
+    city: '北京',
+    weather: '晴',
     customCss: '',
     systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
 };
 let chatHistory = [];
-let forumPosts = [];
-let selectedImages = [];
 
-/* ================= 初始化 ================= */
-window.onload = () => {
-    updateClock();
-    setInterval(updateClock, 1000);
-    // 从本地加载配置
-    const saved = localStorage.getItem('ai_os_config');
-    if(saved) {
-        config = JSON.parse(saved);
-        document.getElementById('cfg-key').value = config.apiKey;
-        document.getElementById('cfg-url').value = config.baseUrl;
-        document.getElementById('cfg-prompt').value = config.systemPrompt;
-    }
-};
-
-function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-}
-
-/* ================= 界面切换功能 (保持原有并增强) ================= */
-function openForum() { 
-    const el = document.getElementById('forum-screen');
-    el.classList.remove('hidden', 'hidden-screen');
-    renderForum();
-}
-function closeForum() { 
-    document.getElementById('forum-screen').classList.add('hidden-screen');
-}
-
-function openChat() { 
-    document.getElementById('chat-screen').classList.remove('hidden', 'hidden-screen');
-}
-function closeChat() { 
-    document.getElementById('chat-screen').classList.add('hidden-screen');
-}
-
-function openSettings() {
-    document.getElementById('settings-screen').classList.remove('hidden', 'hidden-screen');
-}
-function closeSettings() {
-    document.getElementById('settings-screen').classList.add('hidden-screen');
-}
-
-function saveSettings() {
-    config.apiKey = document.getElementById('cfg-key').value;
-    config.baseUrl = document.getElementById('cfg-url').value;
-    config.systemPrompt = document.getElementById('cfg-prompt').value;
-    localStorage.setItem('ai_os_config', JSON.stringify(config));
-    alert("配置已保存");
-    closeSettings();
-}
-
-/* ================= 论坛发帖逻辑 ================= */
-function openPost() {
-    document.getElementById("post-screen").classList.remove("hidden", "hidden-screen");
-}
-
-function closePost() {
-    document.getElementById("post-screen").classList.add("hidden-screen");
-    document.getElementById("post-text").value = "";
-    selectedImages = [];
-    document.getElementById("image-preview").innerHTML = "";
-}
-
-document.getElementById("image-input")?.addEventListener("change", function(e) {
-    const files = e.target.files;
-    for(let file of files) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            selectedImages.push(event.target.result);
-            renderPreview();
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-function renderPreview() {
-    const container = document.getElementById("image-preview");
-    container.innerHTML = "";
-    selectedImages.forEach((src, index) => {
-        const div = document.createElement("div");
-        div.className = "relative w-full aspect-square";
-        div.innerHTML = `
-            <img src="${src}" class="w-full h-full object-cover rounded-xl shadow-inner">
-            <button onclick="removeImage(${index})" 
-                class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 flex items-center justify-center text-xs rounded-full shadow-lg border-2 border-white">×</button>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function removeImage(index) {
-    selectedImages.splice(index, 1);
-    renderPreview();
-}
-
-function submitPost() {
-    const text = document.getElementById("post-text").value.trim();
-    if(!text && selectedImages.length === 0) {
-        alert("请输入内容或添加图片");
-        return;
-    }
-
-    const newPost = {
-        id: Date.now(),
-        title: text ? text.substring(0, 15) : "瞬间分享",
-        content: text,
-        images: [...selectedImages],
-        author: "我",
-        time: "刚刚"
-    };
-
-    forumPosts.unshift(newPost);
-    renderForum();
-    closePost();
-}
-
-/* ================= 渲染论坛 (原有功能增强) ================= */
-function renderForum() {
-    const container = document.getElementById("forum-flow");
-    if(forumPosts.length === 0) return;
-    
-    container.innerHTML = "";
-    forumPosts.forEach(post => {
-        const div = document.createElement("div");
-        div.className = "p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-3 animate__animated animate__fadeInUp";
-
-        let imagesHtml = "";
-        if(post.images && post.images.length > 0) {
-            const gridClass = post.images.length === 1 ? "grid-cols-1" : "grid-cols-2";
-            imagesHtml = `<div class="grid ${gridClass} gap-2 mt-2">` + 
-                post.images.map(src => `<img src="${src}" class="w-full h-48 object-cover rounded-xl">`).join("") + 
-                `</div>`;
-        }
-
-        div.innerHTML = `
-            <div class="flex items-center space-x-2 mb-1">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">${post.author ? post.author[0] : '匿'}</div>
-                <div class="text-sm font-bold text-gray-800">${post.author || "匿名用户"}</div>
-                <div class="text-[10px] text-gray-400">${post.time || '10分钟前'}</div>
-            </div>
-            <h3 class="font-bold text-gray-900">${post.title}</h3>
-            <p class="text-sm text-gray-600 leading-relaxed">${post.content || ""}</p>
-            ${imagesHtml}
-            <div class="flex space-x-4 pt-2 border-t border-gray-50 text-gray-400 text-xs">
-                <span>❤️ 12</span> <span>💬 5</span> <span>🚀 分享</span>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-/* ================= AI 生成内容 ================= */
-function generateForumPosts() {
-    if(!config.apiKey) { alert("请在设置中填写 API Key"); openSettings(); return; }
-    
-    const count = Math.floor(Math.random()*3) + 3;
-    const promptText = `生成${count}条真实的社交媒体帖子，关于科技、生活或心情。返回纯JSON数组格式，字段包含title, content。严禁任何解释说明。`;
-
-    const btn = document.querySelector('button[onclick="generateForumPosts()"]');
-    btn.classList.add('animate-spin');
-
-    fetch(`${config.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
-        body: JSON.stringify({
-            model: config.model,
-            messages: [{role: "user", content: promptText}],
-            temperature: 0.8
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        try {
-            const json = JSON.parse(data.choices[0].message.content);
-            forumPosts = [...json, ...forumPosts];
-            renderForum();
-        } catch(e) {
-            console.error("解析失败", e);
-            alert("AI 返回格式不正确，请重试");
-        }
-    })
-    .catch(() => alert("请求失败，请检查网络或配置"))
-    .finally(() => btn.classList.remove('animate-spin'));
-}
-
-/* ================= 聊天逻辑 ================= */
-function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if(!text) return;
-
-    appendMsg('user', text);
-    input.value = '';
-
-    if(!config.apiKey) {
-        setTimeout(() => appendMsg('ai', '请先去“设置”配置你的 API Key 哦！'), 500);
-        return;
-    }
-
-    chatHistory.push({role: "user", content: text});
-
-    fetch(`${config.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
-        body: JSON.stringify({
-            model: config.model,
-            messages: [{role: "system", content: config.systemPrompt}, ...chatHistory]
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const reply = data.choices[0].message.content;
-        appendMsg('ai', reply);
-        chatHistory.push({role: "assistant", content: reply});
-    })
-    .catch(() => appendMsg('ai', '连接失败了...'));
-}
-
-function appendMsg(role, text) {
-    const flow = document.getElementById('chat-flow');
-    const div = document.createElement('div');
-    div.className = `flex ${role==='user'?'justify-end':'justify-start'} animate__animated animate__fadeIn`;
-    div.innerHTML = `
-        <div class="max-w-[80%] p-3 text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">
-            ${text}
-        </div>
-    `;
-    flow.appendChild(div);
-    flow.scrollTop = flow.scrollHeight;
-}
-
+function openModal(type){const content=document.getElementById('modal-content');document.getElementById('modal-overlay').classList.remove('hidden');if(type==='settings'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;}else if(type==='beauty'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;}else if(type==='presets'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;}}
+function closeModal(){if(document.getElementById('cfg-url')){config.baseUrl=document.getElementById('cfg-url').value;config.apiKey=document.getElementById('cfg-key').value;config.model=document.getElementById('cfg-model').value;}if(document.getElementById('cfg-css')){config.customCss=document.getElementById('cfg-css').value;document.getElementById('custom-style').innerHTML+=config.customCss;}if(document.getElementById('cfg-prompt')){config.systemPrompt=document.getElementById('cfg-prompt').value;}document.getElementById('modal-overlay').classList.add('hidden');}
+function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
+function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
+function sendUserMsg(){const input=document.getElementById('chat-input');if(!input.value)return;renderMsg(input.value,'user');chatHistory.push({role:'user',content:input.value});input.value='';}
+function renderMsg(text,role){const container=document.getElementById('chat-flow');const div=document.createElement('div');div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;container.appendChild(div);container.scrollTop=container.scrollHeight;}
+async function triggerAI(){if(!config.apiKey)return alert("请先配置 API Key");const btn=document.getElementById('gen-btn');btn.innerText="对方正在输入...";btn.disabled=true;const contextMsg=[{role:'system',content:`${config.systemPrompt}`},...chatHistory.slice(-5)];try{const response=await fetch(`${config.baseUrl}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},body:JSON.stringify({model:config.model,messages:contextMsg,max_tokens:100})});const data=await response.json();const reply=data.choices[0].message.content;renderMsg(reply.substring(0,20),'assistant');chatHistory.push({role:'assistant',content:reply.substring(0,20)});}catch(e){renderMsg("（消息发送失败，请检查配置）",'assistant');}finally{btn.innerText="点击生成对方回复";btn.disabled=false;}}
 </script>
+
 </body>
 </html>
