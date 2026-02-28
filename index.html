@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Mobile OS - Plus Pro Ultra</title>
+    <title>AI Mobile OS - Plus Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: all 0.3s ease; }
+        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
-        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
-        .app-icon:active { transform: scale(0.9); }
+        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; }
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
         .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
 
@@ -53,42 +52,9 @@
         /* 按钮禁用样式 */
         .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
 
-        /* 后台管理样式 */
-        #task-switcher {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(15px);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .task-card {
-            width: 220px;
-            height: 400px;
-            background: white;
-            border-radius: 20px;
-            margin: 0 15px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .task-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
+        /* 互动图标样式 */
+        .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
+        .action-item:hover .action-icon { opacity: 1; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -98,11 +64,11 @@
         <div class="widget-card mb-12 mt-4">
             <div class="flex items-start gap-10">
                 <div class="flex flex-col items-center gap-1">
-                    <span id="emoji-left" class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
+                    <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
                     <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
                 </div>
                 <div class="flex flex-col items-center gap-1">
-                    <span id="emoji-right" class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
+                    <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
                     <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
                 </div>
             </div>
@@ -129,7 +95,7 @@
             </div>
         </div>
 
-        <div id="dock-bar" class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);" onclick="handleDockClick(event)">
+        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);">
             <button onclick="openModal('settings')" class="flex flex-col items-center">
                 <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
             </button>
@@ -138,9 +104,6 @@
             </button>
             <button onclick="openModal('presets')" class="flex flex-col items-center">
                 <span class="text-xl">📑</span><span class="text-[10px]">预设</span>
-            </button>
-            <button onclick="toggleTaskManager()" class="flex flex-col items-center">
-                <span class="text-xl">🔳</span><span class="text-[10px]">后台</span>
             </button>
         </div>
     </div>
@@ -181,7 +144,7 @@
             <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
         </div>
         <div class="p-4 flex gap-3">
-            <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" id="compose-avatar" class="w-10 h-10 rounded-full">
+            <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full">
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 <div id="post-image-preview" class="mt-2 hidden relative">
@@ -197,14 +160,6 @@
         </div>
     </div>
 
-    <div id="task-switcher" onclick="toggleTaskManager()">
-        <div class="flex overflow-x-auto w-full px-10 py-10 no-scrollbar">
-            <div id="task-list" class="flex items-center">
-                </div>
-        </div>
-        <button onclick="clearAllTasks(event)" class="bg-white/20 text-white px-8 py-3 rounded-full backdrop-blur-md border border-white/30">一键清理</button>
-    </div>
-
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[60] flex items-center justify-center p-6">
         <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
             <div id="modal-content"></div>
@@ -213,7 +168,7 @@
     </div>
 
 <script>
-/* 核心配置与持久化数据锁 */
+/* 核心配置 */
 let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
@@ -221,53 +176,9 @@ let config = {
     city: '北京',
     weather: '晴',
     customCss: '',
-    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
-    widgetText: '我不想隔着屏幕和你说话',
-    emojiLeft: '(⸝⸝๑  ̫ ๑⸝⸝)',
-    emojiRight: '(˶⁃ ω ⁃˶)',
-    avatarLeft: 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg',
-    avatarRight: 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg'
+    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
 };
-
 let chatHistory = [];
-let forumPosts = [];
-let activeApps = new Set(); // 记录当前运行的后台
-
-/* 页面加载时恢复数据 */
-window.onload = function() {
-    const savedConfig = localStorage.getItem('os_config');
-    if(savedConfig) {
-        config = {...config, ...JSON.parse(savedConfig)};
-        applyConfigToUI();
-    }
-    const savedChat = localStorage.getItem('os_chat');
-    if(savedChat) {
-        chatHistory = JSON.parse(savedChat);
-        chatHistory.forEach(m => renderMsg(m.content, m.role, false));
-    }
-    const savedForum = localStorage.getItem('os_forum');
-    if(savedForum) {
-        forumPosts = JSON.parse(savedForum);
-        const feed = document.getElementById('forum-feed');
-        if(forumPosts.length > 0 && document.getElementById('empty-hint')) document.getElementById('empty-hint').remove();
-        forumPosts.forEach(p => addPostToFeed(p.name, p.text, p.img, p.time, false));
-    }
-};
-
-function saveData() {
-    localStorage.setItem('os_config', JSON.stringify(config));
-    localStorage.setItem('os_chat', JSON.stringify(chatHistory));
-    localStorage.setItem('os_forum', JSON.stringify(forumPosts));
-}
-
-function applyConfigToUI() {
-    document.getElementById('widget-text').innerText = config.widgetText;
-    document.getElementById('emoji-left').innerText = config.emojiLeft;
-    document.getElementById('emoji-right').innerText = config.emojiRight;
-    document.getElementById('avatar-left').src = config.avatarLeft;
-    document.getElementById('avatar-right').src = config.avatarRight;
-    document.getElementById('custom-style').innerHTML += config.customCss;
-}
 
 /* UI 交互逻辑 */
 function changeAvatar(side){
@@ -276,32 +187,20 @@ function changeAvatar(side){
     input.onchange=e=>{
         const file=e.target.files[0];
         const reader=new FileReader();
-        reader.onload=ev=>{ 
-            document.getElementById(`avatar-${side}`).src=ev.target.result; 
-            config[`avatar${side.charAt(0).toUpperCase() + side.slice(1)}`] = ev.target.result;
-            saveData();
-        };
+        reader.onload=ev=>{ document.getElementById(`avatar-${side}`).src=ev.target.result; };
         reader.readAsDataURL(file);
     };
     input.click();
 }
 function editEmoji(side){
-    const el=document.getElementById(`emoji-${side}`);
+    const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
     const result=prompt("修改颜文字",el.innerText);
-    if(result) {
-        el.innerText=result;
-        config[`emoji${side.charAt(0).toUpperCase() + side.slice(1)}`] = result;
-        saveData();
-    }
+    if(result) el.innerText=result;
 }
 function editWidgetText(){
     const el=document.getElementById('widget-text');
     const result=prompt("修改文案",el.innerText);
-    if(result) {
-        el.innerText=result;
-        config.widgetText = result;
-        saveData();
-    }
+    if(result) el.innerText=result;
 }
 
 /* 弹窗逻辑 */
@@ -329,32 +228,25 @@ function closeModal(){
     if(document.getElementById('cfg-prompt')){
         config.systemPrompt=document.getElementById('cfg-prompt').value;
     }
-    saveData();
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
 /* 微信功能 */
-function openChat(){
-    document.getElementById('chat-screen').classList.remove('hidden');
-    activeApps.add('微信');
-}
+function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
-function renderMsg(text,role, isNew = true){
+function renderMsg(text,role){
     const container=document.getElementById('chat-flow');
     const div=document.createElement('div');
     div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;
     div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
     container.appendChild(div);
     container.scrollTop=container.scrollHeight;
-    if(isNew) {
-        chatHistory.push({role, content: text});
-        saveData();
-    }
 }
 function sendUserMsg(){
     const input=document.getElementById('chat-input');
     if(!input.value)return;
     renderMsg(input.value,'user');
+    chatHistory.push({role:'user',content:input.value});
     input.value='';
 }
 async function triggerAI(){
@@ -369,16 +261,14 @@ async function triggerAI(){
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,50),'assistant');
+        renderMsg(reply.substring(0,25),'assistant');
+        chatHistory.push({role:'assistant',content:reply.substring(0,25)});
     }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 论坛功能 */
-function openForum(){ 
-    document.getElementById('forum-screen').classList.remove('hidden'); 
-    activeApps.add('论坛');
-}
+/* 论坛功能 (核心优化区) */
+function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
 function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
 function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); validatePostContent(); }
 function closeCompose(){ 
@@ -387,10 +277,12 @@ function closeCompose(){
     clearPostImage();
 }
 
+// 校验内容，决定发布按钮状态
 function validatePostContent() {
     const text = document.getElementById('post-text').value.trim();
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const btn = document.getElementById('post-submit-btn');
+    
     if(text.length > 0 || hasImg) {
         btn.disabled = false;
         btn.classList.remove('btn-disabled');
@@ -424,6 +316,8 @@ function submitPost(){
     const previewImg = document.getElementById('preview-img');
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? previewImg.src : null;
+    
+    // 获取真实时间
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     
@@ -431,17 +325,22 @@ function submitPost(){
     closeCompose();
 }
 
-function addPostToFeed(name, text, img, time, isNew = true){
+function addPostToFeed(name, text, img, time){
     const feed = document.getElementById('forum-feed');
     const hint = document.getElementById('empty-hint');
     if(hint) hint.remove();
     
     const div = document.createElement('div');
     div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
-    let imgHtml = img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "";
+    
+    // 关键优化：仅当img存在时才渲染图片节点
+    let imgHtml = "";
+    if(img) {
+        imgHtml = `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">`;
+    }
 
     div.innerHTML = `
-        <img src="${name==='我'?config.avatarLeft:'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg'}" class="tweet-avatar">
+        <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="tweet-avatar">
         <div class="flex-1">
             <div class="flex items-center gap-1">
                 <span class="font-bold text-[15px]">${name}</span>
@@ -449,100 +348,56 @@ function addPostToFeed(name, text, img, time, isNew = true){
             </div>
             <div class="text-[15px] mt-1 leading-normal">${text}</div>
             ${imgHtml}
-            <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[240px]">
-                <span>💬 0</span><span>🔄 0</span><span>❤️ 0</span><span>📊 0</span>
+            <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[280px]">
+                <span class="action-item hover:text-blue-400 cursor-pointer flex items-center">
+                    <img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0
+                </span>
+                <span class="action-item hover:text-green-400 cursor-pointer flex items-center">
+                    <img src="https://i.postimg.cc/m1PB9gXN/IMG-3092.png" class="action-icon"> 0
+                </span>
+                <span class="action-item hover:text-red-400 cursor-pointer flex items-center">
+                    <img src="https://i.postimg.cc/dZhwCVHr/IMG-3091.png" class="action-icon"> 0
+                </span>
+                <span class="action-item hover:text-blue-400 cursor-pointer flex items-center">
+                    <img src="https://i.postimg.cc/n9XpmhRT/IMG-3093.png" class="action-icon"> 0
+                </span>
             </div>
         </div>
     `;
-    if(isNew) {
-        feed.prepend(div);
-        forumPosts.unshift({name, text, img, time});
-        saveData();
-    } else {
-        feed.appendChild(div);
-    }
+    feed.prepend(div);
 }
 
+/* 批量生成逻辑 */
 async function generateAIPosts(){
     if(!config.apiKey) return alert("同步广场需要配置 API Key");
     const feed = document.getElementById('forum-feed');
     feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在穿梭时空抓取动态...</div>';
+    
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '模拟生成5条推文，JSON格式：{"posts":[{"name":"昵称","text":"内容"}]}'}],
+                messages: [{role: 'system', content: '模拟生成12条推文，JSON格式：{"posts":[{"name":"昵称","text":"内容"}]}.内容关于生活、技术、心情。'}],
                 response_format: { type: "json_object" }
             })
         });
         const data = await response.json();
         const posts = JSON.parse(data.choices[0].message.content).posts;
+        
         feed.innerHTML = "";
-        posts.forEach(p => addPostToFeed(p.name, p.text, null, "刚刚"));
-    } catch(e) {
-        feed.innerHTML = "";
-        alert("加载失败");
-    }
-}
-
-/* --- 后台管理系统逻辑 --- */
-function toggleTaskManager() {
-    const switcher = document.getElementById('task-switcher');
-    const taskList = document.getElementById('task-list');
-    
-    if(switcher.style.display === 'flex') {
-        switcher.style.display = 'none';
-    } else {
-        taskList.innerHTML = "";
-        if(activeApps.size === 0) {
-            taskList.innerHTML = "<div class='text-white text-lg'>暂无后台运行</div>";
-        }
-        activeApps.forEach(appName => {
-            const card = document.createElement('div');
-            card.className = "task-card";
-            card.innerHTML = `
-                <div class="p-4 bg-gray-100 border-b flex justify-between items-center">
-                    <span class="font-bold">${appName}</span>
-                </div>
-                <div class="flex items-center justify-center h-full text-gray-300">Preview</div>
-                <div class="task-close" onclick="closeTask(event, '${appName}')">×</div>
-            `;
-            card.onclick = (e) => { e.stopPropagation(); resumeApp(appName); };
-            taskList.appendChild(card);
+        posts.forEach(p => {
+            const randomHour = Math.floor(Math.random() * 24).toString().padStart(2, '0');
+            const randomMin = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+            addPostToFeed(p.name || "极客网友", p.text, null, `${randomHour}:${randomMin}`);
         });
-        switcher.style.display = 'flex';
-    }
-}
-
-function closeTask(event, appName) {
-    event.stopPropagation();
-    activeApps.delete(appName);
-    if(appName === '微信') document.getElementById('chat-screen').classList.add('hidden');
-    if(appName === '论坛') document.getElementById('forum-screen').classList.add('hidden');
-    toggleTaskManager(); 
-    toggleTaskManager(); // 刷新
-}
-
-function clearAllTasks(event) {
-    event.stopPropagation();
-    activeApps.clear();
-    document.getElementById('chat-screen').classList.add('hidden');
-    document.getElementById('forum-screen').classList.add('hidden');
-    toggleTaskManager();
-}
-
-function resumeApp(appName) {
-    if(appName === '微信') openChat();
-    if(appName === '论坛') openForum();
-    document.getElementById('task-switcher').style.display = 'none';
-}
-
-function handleDockClick(e) {
-    // 如果点击的是 Dock 栏背景（非按钮），也触发后台
-    if(e.target.id === 'dock-bar') {
-        toggleTaskManager();
+    } catch(e) {
+        alert("网络波动，加载本地缓存数据");
+        feed.innerHTML = "";
+        for(let i=1; i<=10; i++) {
+            addPostToFeed("匿名用户"+i, "探索AI OS的第"+i+"天，感觉系统越来越顺手了。 #AI #MobileOS", null, "10:24");
+        }
     }
 }
 </script>
