@@ -1,188 +1,208 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Mobile OS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
-        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
-        .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Mobile OS</title>
+<script src="https://cdn.tailwindcss.com"></script>
 
-        /* 新增小组件样式 */
-        .widget-card{
-            width:100%;
-            border-radius:28px;
-            padding:20px;
-            background:linear-gradient(135deg,#ffffff,#f3f4f6);
-            box-shadow:0 8px 20px rgba(0,0,0,0.08);
-            position:relative;
-        }
-        .widget-avatar{
-            width:60px;
-            height:60px;
-            border-radius:50%;
-            object-fit:cover;
-            border:3px solid white;
-            box-shadow:0 4px 10px rgba(0,0,0,0.1);
-        }
-        .widget-emoji{
-            font-size:14px;
-            cursor:pointer;
-        }
-        .widget-text{
-            position:absolute;
-            bottom:15px;
-            right:20px;
-            font-size:12px;
-            color:#555;
-            cursor:pointer;
-        }
-    </style>
+<style id="custom-style">
+body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+.app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
+.chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
+
+.widget-card{
+width:100%;
+border-radius:28px;
+padding:20px;
+background:linear-gradient(135deg,#ffffff,#f3f4f6);
+box-shadow:0 8px 20px rgba(0,0,0,0.08);
+position:relative;
+}
+.widget-avatar{
+width:60px;height:60px;border-radius:50%;object-fit:cover;
+border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+.widget-emoji{font-size:14px;cursor:pointer;}
+.widget-text{
+position:absolute;bottom:15px;right:20px;
+font-size:12px;color:#555;cursor:pointer;
+}
+</style>
 </head>
+
 <body class="h-screen overflow-hidden flex flex-col">
 
-    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-        
-        <!-- 新顶部小组件 -->
-        <div class="widget-card mb-12 mt-4">
-            <div class="flex items-start gap-10">
-                
-                <div class="flex flex-col items-center gap-1">
-                    <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
-                    <img id="avatar-left" class="widget-avatar"
-                         src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
-                         onclick="changeAvatar('left')">
-                </div>
+<!-- 首页 -->
+<div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
 
-                <div class="flex flex-col items-center gap-1">
-                    <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
-                    <img id="avatar-right" class="widget-avatar"
-                         src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
-                         onclick="changeAvatar('right')">
-                </div>
-            </div>
+<div class="widget-card mb-12 mt-4">
+<div class="flex items-start gap-10">
+<div class="flex flex-col items-center gap-1">
+<span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
+<img id="avatar-left" class="widget-avatar"
+src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+onclick="changeAvatar('left')">
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
+<img id="avatar-right" class="widget-avatar"
+src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+onclick="changeAvatar('right')">
+</div>
+</div>
+<div id="widget-text" class="widget-text" onclick="editWidgetText()">
+我不想隔着屏幕和你说话
+</div>
+</div>
 
-            <div id="widget-text"
-                 class="widget-text"
-                 onclick="editWidgetText()">
-                我不想隔着屏幕和你说话
-            </div>
-        </div>
+<div class="grid grid-cols-4 gap-6 w-full px-4">
 
-        <!-- 应用区域 -->
-        <div class="grid grid-cols-4 gap-6 w-full px-4">
-            
-            <!-- 微信图标（已替换为图片） -->
-            <div class="col-span-4 flex justify-end">
-                <div class="flex flex-col items-center gap-1"
-                     onclick="openChat()">
-                    <div class="app-icon overflow-hidden p-0">
-                        <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png"
-                             class="w-full h-full object-cover rounded-[15px]">
-                    </div>
-                    <span class="text-xs text-gray-600">微信</span>
-                </div>
-            </div>
+<!-- 微信 -->
+<div class="col-span-4 flex justify-end">
+<div class="flex flex-col items-center gap-1" onclick="openChat()">
+<div class="app-icon overflow-hidden p-0">
+<img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png"
+class="w-full h-full object-cover rounded-[15px]">
+</div>
+<span class="text-xs text-gray-600">微信</span>
+</div>
+</div>
 
-        </div>
+<!-- 论坛 -->
+<div class="col-span-4 flex justify-end">
+<div class="flex flex-col items-center gap-1" onclick="openForum()">
+<div class="app-icon overflow-hidden p-0">
+<img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png"
+class="w-full h-full object-cover rounded-[15px]">
+</div>
+<span class="text-xs text-gray-600">论坛</span>
+</div>
+</div>
 
-        <!-- 底栏 -->
-        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
-             style="transform: translateY(20px);">
-            <button onclick="openModal('settings')" class="flex flex-col items-center">
-                <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
-            </button>
-            <button onclick="openModal('beauty')" class="flex flex-col items-center">
-                <span class="text-xl">🎨</span><span class="text-[10px]">美化</span>
-            </button>
-            <button onclick="openModal('presets')" class="flex flex-col items-center">
-                <span class="text-xl">📑</span><span class="text-[10px]">预设</span>
-            </button>
-        </div>
-    </div>
+</div>
 
-    <!-- 以下原代码完全保留 未删减 -->
+<div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
+style="transform: translateY(20px);">
+<button onclick="openModal('settings')" class="flex flex-col items-center">
+<span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
+</button>
+<button onclick="openModal('beauty')" class="flex flex-col items-center">
+<span class="text-xl">🎨</span><span class="text-[10px]">美化</span>
+</button>
+<button onclick="openModal('presets')" class="flex flex-col items-center">
+<span class="text-xl">📑</span><span class="text-[10px]">预设</span>
+</button>
+</div>
+</div>
 
-    <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
-        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
-            <button onclick="closeChat()" class="text-xl">〈</button>
-            <div class="flex-1 text-center font-bold">AI 好友</div>
-            <div class="w-6"></div>
-        </div>
-        <div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+<!-- 微信聊天界面 -->
+<div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
+<div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+<button onclick="closeChat()" class="text-xl">〈</button>
+<div class="flex-1 text-center font-bold">AI 好友</div>
+<div class="w-6"></div>
+</div>
+<div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+<div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2">
+<div class="flex gap-2">
+<input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
+<button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+</div>
+<button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+</div>
+</div>
 
-        <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2">
-            <div class="flex gap-2">
-                <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
-                <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
-            </div>
-            <button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
-        </div>
-    </div>
+<!-- 论坛界面 -->
+<div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[60] flex items-center justify-center p-6">
-        <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6">
-            <div id="modal-content"></div>
-            <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
-        </div>
-    </div>
+<div class="h-12 bg-white flex items-center px-4 border-b relative">
+<button onclick="closeForum()" class="text-xl">〈</button>
+<div class="flex-1 text-center font-bold">论坛</div>
+<button onclick="generateForumPosts()" class="absolute right-4 text-xl">🔄</button>
+</div>
+
+<div id="forum-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+
+<button onclick="createPost()"
+class="fixed bottom-24 right-6 w-14 h-14 bg-black text-white text-3xl rounded-full shadow-lg flex items-center justify-center">
++
+</button>
+
+</div>
 
 <script>
-/* 新增头像上传功能 */
-function changeAvatar(side){
-    const input=document.createElement('input');
-    input.type='file';
-    input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=function(ev){
-            document.getElementById(`avatar-${side}`).src=ev.target.result;
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-}
+let config={baseUrl:'https://api.openai.com/v1',apiKey:'',model:'gpt-3.5-turbo',customCss:'',systemPrompt:'你是一个真实的微信好友，回复极简，控制在20字内。'};
+let chatHistory=[];
+let forumPosts=[];
 
-function editEmoji(side){
-    const current=document.querySelectorAll('.widget-emoji')[side==='left'?0:1].innerText;
-    const result=prompt("修改颜文字",current);
-    if(result){
-        document.querySelectorAll('.widget-emoji')[side==='left'?0:1].innerText=result;
-    }
-}
-
-function editWidgetText(){
-    const el=document.getElementById('widget-text');
-    const result=prompt("修改文案",el.innerText);
-    if(result) el.innerText=result;
-}
-</script>
-
-<!-- 原JS完整保留 -->
-<script>
-let config = {
-    baseUrl: 'https://api.openai.com/v1',
-    apiKey: '',
-    model: 'gpt-3.5-turbo',
-    city: '北京',
-    weather: '晴',
-    customCss: '',
-    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
-};
-let chatHistory = [];
-
-function openModal(type){const content=document.getElementById('modal-content');document.getElementById('modal-overlay').classList.remove('hidden');if(type==='settings'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;}else if(type==='beauty'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;}else if(type==='presets'){content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;}}
-function closeModal(){if(document.getElementById('cfg-url')){config.baseUrl=document.getElementById('cfg-url').value;config.apiKey=document.getElementById('cfg-key').value;config.model=document.getElementById('cfg-model').value;}if(document.getElementById('cfg-css')){config.customCss=document.getElementById('cfg-css').value;document.getElementById('custom-style').innerHTML+=config.customCss;}if(document.getElementById('cfg-prompt')){config.systemPrompt=document.getElementById('cfg-prompt').value;}document.getElementById('modal-overlay').classList.add('hidden');}
+/* 基础功能 */
+function openForum(){document.getElementById('forum-screen').classList.remove('hidden');}
+function closeForum(){document.getElementById('forum-screen').classList.add('hidden');}
 function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
-function sendUserMsg(){const input=document.getElementById('chat-input');if(!input.value)return;renderMsg(input.value,'user');chatHistory.push({role:'user',content:input.value});input.value='';}
-function renderMsg(text,role){const container=document.getElementById('chat-flow');const div=document.createElement('div');div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;container.appendChild(div);container.scrollTop=container.scrollHeight;}
-async function triggerAI(){if(!config.apiKey)return alert("请先配置 API Key");const btn=document.getElementById('gen-btn');btn.innerText="对方正在输入...";btn.disabled=true;const contextMsg=[{role:'system',content:`${config.systemPrompt}`},...chatHistory.slice(-5)];try{const response=await fetch(`${config.baseUrl}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},body:JSON.stringify({model:config.model,messages:contextMsg,max_tokens:100})});const data=await response.json();const reply=data.choices[0].message.content;renderMsg(reply.substring(0,20),'assistant');chatHistory.push({role:'assistant',content:reply.substring(0,20)});}catch(e){renderMsg("（消息发送失败，请检查配置）",'assistant');}finally{btn.innerText="点击生成对方回复";btn.disabled=false;}}
+
+function sendUserMsg(){
+const input=document.getElementById('chat-input');
+if(!input.value)return;
+renderMsg(input.value,'user');
+chatHistory.push({role:'user',content:input.value});
+input.value='';
+}
+
+function renderMsg(text,role){
+const container=document.getElementById('chat-flow');
+const div=document.createElement('div');
+div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;
+div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
+container.appendChild(div);
+container.scrollTop=container.scrollHeight;
+}
+
+/* 论坛 */
+function renderForum(){
+const container=document.getElementById("forum-flow");
+container.innerHTML="";
+forumPosts.forEach(post=>{
+const div=document.createElement("div");
+div.className="p-4 bg-gray-100 rounded-xl shadow-sm";
+div.innerHTML=`<h3 class="font-bold mb-1">${post.title}</h3>
+<p class="text-sm text-gray-600">${post.content}</p>`;
+container.appendChild(div);
+});
+}
+
+function createPost(){
+const title=prompt("输入标题");
+if(!title)return;
+const content=prompt("输入内容");
+if(!content)return;
+forumPosts.unshift({title,content});
+renderForum();
+}
+
+async function generateForumPosts(){
+if(!config.apiKey){alert("请先填写API Key");return;}
+const count=Math.floor(Math.random()*6)+10;
+const promptText=`生成${count}条真实网友论坛帖子，JSON数组格式，每条包含title和content。不要解释。`;
+try{
+const response=await fetch(`${config.baseUrl}/chat/completions`,{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
+body:JSON.stringify({
+model:config.model,
+messages:[{role:"user",content:promptText}],
+temperature:0.9
+})
+});
+const data=await response.json();
+const json=JSON.parse(data.choices[0].message.content);
+forumPosts=json;
+renderForum();
+}catch(e){alert("生成失败");}
+}
 </script>
 
 </body>
