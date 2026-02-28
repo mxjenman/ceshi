@@ -58,7 +58,8 @@
 
         /* 导航图标缩放补丁 */
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
-        .back-icon { font-size: 24px; font-weight: 300; color: #1d9bf0; }
+        /* 修改2：返回键改成黑色，并减小开口感（使用更纤细的字符） */
+        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -130,8 +131,12 @@
 
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
-            <button onclick="closeForum()" class="back-icon">〈</button>
-            <div class="flex-1 text-center font-bold text-lg text-black">推文</div>
+            <button onclick="closeForum()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
             <button onclick="generateAIPosts()" class="flex items-center justify-center">
                 <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
             </button>
