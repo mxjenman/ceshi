@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Mobile OS - Plus</title>
+    <title>AI Mobile OS - Plus Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
         body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -45,7 +45,12 @@
         /* 论坛专有样式 */
         .tweet-card { border-bottom: 1px solid #eff3f4; padding: 12px 16px; background: white; }
         .tweet-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-        .fab-btn { position: fixed; bottom: 30px; right: 20px; width: 56px; height: 56px; border-radius: 28px; background: #1d9bf0; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 24px; z-index: 60; }
+        /* 发布键右下角背景换成黑色 */
+        .fab-btn { position: fixed; bottom: 30px; right: 20px; width: 56px; height: 56px; border-radius: 28px; background: #000000; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 24px; z-index: 60; cursor: pointer; transition: transform 0.1s; }
+        .fab-btn:active { transform: scale(0.9); }
+        
+        /* 按钮禁用样式 */
+        .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -118,12 +123,12 @@
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
             <button onclick="closeForum()" class="text-blue-500 font-bold">返回</button>
-            <div class="flex-1 text-center font-black text-xl">𝕏</div>
+            <div class="flex-1 text-center font-black text-xl italic">𝕏</div>
             <button onclick="generateAIPosts()" class="text-blue-500 text-sm font-bold">同步广场</button>
         </div>
         
-        <div id="forum-feed" class="flex-1 overflow-y-auto bg-white">
-            <div class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>
+        <div id="forum-feed" class="flex-1 overflow-y-auto bg-white pb-20">
+            <div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>
         </div>
 
         <div class="fab-btn" onclick="openCompose()">+</div>
@@ -132,33 +137,34 @@
     <div id="compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
         <div class="h-14 flex items-center justify-between px-4">
             <button onclick="closeCompose()" class="text-gray-700">取消</button>
-            <button onclick="submitPost()" class="bg-[#1d9bf0] text-white px-4 py-1.5 rounded-full font-bold">发布</button>
+            <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
         </div>
         <div class="p-4 flex gap-3">
             <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full">
             <div class="flex-1">
-                <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[120px]" placeholder="有什么新鲜事？"></textarea>
+                <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 <div id="post-image-preview" class="mt-2 hidden relative">
-                    <img id="preview-img" src="" class="rounded-2xl w-full max-h-60 object-cover">
-                    <button onclick="clearPostImage()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6">×</button>
+                    <img id="preview-img" src="" class="rounded-2xl w-full max-h-60 object-cover border">
+                    <button onclick="clearPostImage()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center">×</button>
                 </div>
             </div>
         </div>
-        <div class="mt-auto border-t p-4">
-            <button onclick="triggerPostImage()" class="text-[#1d9bf0] text-2xl">🖼️</button>
+        <div class="mt-auto border-t p-4 flex items-center">
+            <button onclick="triggerPostImage()" class="text-black text-2xl mr-4">🖼️</button>
+            <span class="text-xs text-gray-400 italic">点击图标选择相册照片</span>
             <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
         </div>
     </div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[60] flex items-center justify-center p-6">
-        <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+        <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
             <div id="modal-content"></div>
             <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
         </div>
     </div>
 
 <script>
-/* 原始功能脚本 */
+/* 核心配置 */
 let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
@@ -170,6 +176,7 @@ let config = {
 };
 let chatHistory = [];
 
+/* UI 交互逻辑 */
 function changeAvatar(side){
     const input=document.createElement('input');
     input.type='file'; input.accept='image/*';
@@ -191,6 +198,8 @@ function editWidgetText(){
     const result=prompt("修改文案",el.innerText);
     if(result) el.innerText=result;
 }
+
+/* 弹窗逻辑 */
 function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -218,7 +227,7 @@ function closeModal(){
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
-/* 微信逻辑 */
+/* 微信功能 */
 function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
 function renderMsg(text,role){
@@ -254,14 +263,29 @@ async function triggerAI(){
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 论坛逻辑 (新增) */
+/* 论坛功能 (核心优化区) */
 function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
 function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
-function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); }
+function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); validatePostContent(); }
 function closeCompose(){ 
     document.getElementById('compose-screen').classList.add('hidden');
     document.getElementById('post-text').value = '';
     clearPostImage();
+}
+
+// 校验内容，决定发布按钮状态
+function validatePostContent() {
+    const text = document.getElementById('post-text').value.trim();
+    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
+    const btn = document.getElementById('post-submit-btn');
+    
+    if(text.length > 0 || hasImg) {
+        btn.disabled = false;
+        btn.classList.remove('btn-disabled');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('btn-disabled');
+    }
 }
 
 function triggerPostImage(){ document.getElementById('post-image-input').click(); }
@@ -271,6 +295,7 @@ function previewPostImage(input){
         reader.onload = function(e) {
             document.getElementById('preview-img').src = e.target.result;
             document.getElementById('post-image-preview').classList.remove('hidden');
+            validatePostContent();
         }
         reader.readAsDataURL(input.files[0]);
     }
@@ -279,23 +304,37 @@ function clearPostImage(){
     document.getElementById('post-image-input').value = '';
     document.getElementById('post-image-preview').classList.add('hidden');
     document.getElementById('preview-img').src = '';
+    validatePostContent();
 }
 
 function submitPost(){
-    const text = document.getElementById('post-text').value;
-    const img = document.getElementById('preview-img').src;
-    if(!text && !img) return;
+    const text = document.getElementById('post-text').value.trim();
+    const previewImg = document.getElementById('preview-img');
+    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
+    const imgSrc = hasImg ? previewImg.src : null;
     
-    addPostToFeed("我", text, img || null, "刚刚");
+    // 获取真实时间
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    
+    addPostToFeed("我", text, imgSrc, timeStr);
     closeCompose();
 }
 
 function addPostToFeed(name, text, img, time){
     const feed = document.getElementById('forum-feed');
-    if(feed.innerText.includes("暂无动态")) feed.innerHTML = "";
+    const hint = document.getElementById('empty-hint');
+    if(hint) hint.remove();
     
     const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3";
+    div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
+    
+    // 关键优化：仅当img存在时才渲染图片节点
+    let imgHtml = "";
+    if(img) {
+        imgHtml = `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">`;
+    }
+
     div.innerHTML = `
         <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="tweet-avatar">
         <div class="flex-1">
@@ -304,19 +343,23 @@ function addPostToFeed(name, text, img, time){
                 <span class="text-gray-500 text-[14px]">@user · ${time}</span>
             </div>
             <div class="text-[15px] mt-1 leading-normal">${text}</div>
-            ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ''}
-            <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-xs">
-                <span>💬 0</span><span>🔄 0</span><span>❤️ 0</span><span>📊 0</span>
+            ${imgHtml}
+            <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[240px]">
+                <span class="hover:text-blue-400 cursor-pointer">💬 0</span>
+                <span class="hover:text-green-400 cursor-pointer">🔄 0</span>
+                <span class="hover:text-red-400 cursor-pointer">❤️ 0</span>
+                <span class="hover:text-blue-400 cursor-pointer">📊 0</span>
             </div>
         </div>
     `;
     feed.prepend(div);
 }
 
+/* 批量生成逻辑 */
 async function generateAIPosts(){
     if(!config.apiKey) return alert("同步广场需要配置 API Key");
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在连接全球社交网络...</div>';
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在穿梭时空抓取动态...</div>';
     
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -324,21 +367,25 @@ async function generateAIPosts(){
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '模拟生成12条推特推文，格式为JSON数组：[{"name":"昵称","text":"内容"}],内容关于生活琐事、吐槽、感悟，简短。'}],
+                messages: [{role: 'system', content: '模拟生成12条推文，JSON格式：{"posts":[{"name":"昵称","text":"内容"}]}.内容关于生活、技术、心情。'}],
                 response_format: { type: "json_object" }
             })
         });
         const data = await response.json();
-        const posts = JSON.parse(data.choices[0].message.content).posts || JSON.parse(data.choices[0].message.content).推文 || Object.values(JSON.parse(data.choices[0].message.content))[0];
+        const posts = JSON.parse(data.choices[0].message.content).posts;
         
         feed.innerHTML = "";
         posts.forEach(p => {
-            addPostToFeed(p.name || "匿名网友", p.text, null, Math.floor(Math.random()*60) + "分钟前");
+            const randomHour = Math.floor(Math.random() * 24).toString().padStart(2, '0');
+            const randomMin = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+            addPostToFeed(p.name || "极客网友", p.text, null, `${randomHour}:${randomMin}`);
         });
     } catch(e) {
-        alert("API 生成失败，已为您加载本地模拟数据");
+        alert("网络波动，加载本地缓存数据");
         feed.innerHTML = "";
-        for(let i=0; i<10; i++) addPostToFeed("网友"+i, "这是一条本地模拟的消息，因为API调用出错了。", null, i+"小时前");
+        for(let i=1; i<=10; i++) {
+            addPostToFeed("匿名用户"+i, "探索AI OS的第"+i+"天，感觉系统越来越顺手了。 #AI #MobileOS", null, "10:24");
+        }
     }
 }
 </script>
