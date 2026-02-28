@@ -6,62 +6,69 @@
 <title>AI Mobile OS</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
-<style id="custom-style">
+<style>
 body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-.glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 24px; }
-.app-icon { width:60px;height:60px;background:white;border-radius:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.1);}
-.chat-msg-user { background:#95ec69;border-radius:6px 0 6px 6px;}
-.chat-msg-ai { background:white;border-radius:0 6px 6px 6px;}
-.widget-card{width:100%;border-radius:28px;padding:20px;background:linear-gradient(135deg,#ffffff,#f3f4f6);box-shadow:0 8px 20px rgba(0,0,0,0.08);position:relative;}
-.widget-avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+.glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+.app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
+.chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
+
+.widget-card{
+width:100%;
+border-radius:28px;
+padding:20px;
+background:linear-gradient(135deg,#ffffff,#f3f4f6);
+box-shadow:0 8px 20px rgba(0,0,0,0.08);
+position:relative;
+}
+
+.widget-avatar{
+width:60px;height:60px;border-radius:50%;object-fit:cover;
+border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
 .widget-emoji{font-size:14px;cursor:pointer;}
-.widget-text{position:absolute;bottom:15px;right:20px;font-size:12px;color:#555;cursor:pointer;}
+.widget-text{
+position:absolute;bottom:15px;right:20px;
+font-size:12px;color:#555;cursor:pointer;
+}
+
+/* 发帖界面 */
+.post-textarea{
+width:100%;
+border:none;
+outline:none;
+resize:none;
+font-size:16px;
+}
+
+.post-btn{
+background:#eeeeee;
+padding:6px 14px;
+border-radius:12px;
+font-size:14px;
+color:#333333;
+}
+
+.post-btn span{
+color:#333333;
+font-weight:600;
+}
+
+.preview-img{
+width:80px;
+height:80px;
+object-fit:cover;
+border-radius:12px;
+}
 </style>
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col">
 
-<!-- 首页 -->
-<div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-<div class="widget-card mb-12 mt-4">
-<div class="flex items-start gap-10">
-<div class="flex flex-col items-center gap-1">
-<span class="widget-emoji">(⸝⸝๑  ̫ ๑⸝⸝)</span>
-<img class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg">
-</div>
-<div class="flex flex-col items-center gap-1">
-<span class="widget-emoji">(˶⁃ ω ⁃˶)</span>
-<img class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg">
-</div>
-</div>
-<div class="widget-text">我不想隔着屏幕和你说话</div>
-</div>
-
-<div class="grid grid-cols-4 gap-6 w-full px-4">
-<div class="col-span-4 flex justify-end">
-<div class="flex flex-col items-center gap-1" onclick="openChat()">
-<div class="app-icon overflow-hidden p-0">
-<img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png"
-class="w-full h-full object-cover rounded-[15px]">
-</div>
-<span class="text-xs text-gray-600">微信</span>
-</div>
-</div>
-
-<div class="col-span-4 flex justify-end">
-<div class="flex flex-col items-center gap-1" onclick="openForum()">
-<div class="app-icon overflow-hidden p-0">
-<img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png"
-class="w-full h-full object-cover rounded-[15px]">
-</div>
-<span class="text-xs text-gray-600">论坛</span>
-</div>
-</div>
-</div>
-</div>
-
 <!-- 论坛界面 -->
-<div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
+<div id="forum-screen" class="fixed inset-0 bg-white flex flex-col z-40">
+
 <div class="h-12 bg-white flex items-center px-4 border-b relative">
 <button onclick="closeForum()" class="text-xl">〈</button>
 <div class="flex-1 text-center font-bold">论坛</div>
@@ -70,117 +77,119 @@ class="w-full h-full object-cover rounded-[15px]">
 
 <div id="forum-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
-<button onclick="openCreateScreen()"
+<button onclick="openPostScreen()"
 class="fixed bottom-24 right-6 w-14 h-14 bg-black text-white text-3xl rounded-full shadow-lg flex items-center justify-center">
 +
 </button>
-</div>
-
-<!-- 发帖界面 -->
-<div id="create-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
-
-<div class="h-12 flex items-center px-4 border-b relative">
-<button onclick="closeCreate()" class="text-xl">〈</button>
-<div class="flex-1 text-center font-bold">发布帖子</div>
-<button onclick="publishPost()" class="absolute right-4 text-blue-600 font-bold">发布</button>
-</div>
-
-<div class="flex-1 overflow-y-auto p-4 space-y-4">
-
-<textarea id="post-text" placeholder="分享点什么..."
-class="w-full h-32 border-none outline-none text-lg resize-none"></textarea>
-
-<input type="file" id="post-images" accept="image/*" multiple class="hidden">
-
-<div>
-<button onclick="document.getElementById('post-images').click()"
-class="px-4 py-2 bg-gray-200 rounded-lg">添加照片</button>
-</div>
-
-<div id="preview-area" class="grid grid-cols-3 gap-2"></div>
 
 </div>
+
+<!-- 全屏发帖界面 -->
+<div id="post-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
+
+<div class="h-12 flex items-center px-4 border-b">
+<button onclick="closePostScreen()">取消</button>
+<div class="flex-1"></div>
+<button onclick="submitPost()" class="post-btn">
+<span>发布</span>
+</button>
+</div>
+
+<div class="flex-1 p-4 overflow-y-auto">
+<textarea id="post-content" class="post-textarea" rows="5" placeholder="说点什么吧..."></textarea>
+
+<div id="image-preview" class="flex gap-3 flex-wrap mt-4"></div>
+
+<input type="file" id="image-input" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
+</div>
+
+<div class="p-4 border-t">
+<button onclick="document.getElementById('image-input').click()"
+class="w-full py-2 bg-gray-100 rounded-xl">
+📷 添加图片
+</button>
+</div>
+
 </div>
 
 <script>
 let forumPosts=[];
 let selectedImages=[];
 
-function openForum(){document.getElementById("forum-screen").classList.remove("hidden");}
-function closeForum(){document.getElementById("forum-screen").classList.add("hidden");}
+/* 打开发帖界面 */
+function openPostScreen(){
+document.getElementById("post-screen").classList.remove("hidden");
+}
 
-function openCreateScreen(){
+/* 关闭发帖 */
+function closePostScreen(){
+document.getElementById("post-screen").classList.add("hidden");
+document.getElementById("post-content").value="";
+document.getElementById("image-preview").innerHTML="";
 selectedImages=[];
-document.getElementById("post-text").value="";
-document.getElementById("preview-area").innerHTML="";
-document.getElementById("create-screen").classList.remove("hidden");
 }
 
-function closeCreate(){
-document.getElementById("create-screen").classList.add("hidden");
-}
-
-document.getElementById("post-images").addEventListener("change",function(e){
-selectedImages=[...e.target.files];
-const preview=document.getElementById("preview-area");
-preview.innerHTML="";
-selectedImages.forEach(file=>{
+/* 图片上传 */
+function handleImageUpload(event){
+const files=event.target.files;
+for(let file of files){
 const reader=new FileReader();
-reader.onload=function(ev){
-const img=document.createElement("img");
-img.src=ev.target.result;
-img.className="w-full h-24 object-cover rounded";
-preview.appendChild(img);
+reader.onload=function(e){
+selectedImages.push(e.target.result);
+renderPreview();
 };
 reader.readAsDataURL(file);
-});
-});
+}
+}
 
-function publishPost(){
-const text=document.getElementById("post-text").value.trim();
-if(!text && selectedImages.length===0){alert("至少输入文字或选择图片");return;}
-
-const imagePromises=selectedImages.map(file=>{
-return new Promise(resolve=>{
-const reader=new FileReader();
-reader.onload=e=>resolve(e.target.result);
-reader.readAsDataURL(file);
-});
-});
-
-Promise.all(imagePromises).then(images=>{
-forumPosts.unshift({text,images});
-renderForum();
-closeCreate();
+/* 渲染图片预览 */
+function renderPreview(){
+const container=document.getElementById("image-preview");
+container.innerHTML="";
+selectedImages.forEach(img=>{
+const image=document.createElement("img");
+image.src=img;
+image.className="preview-img";
+container.appendChild(image);
 });
 }
 
+/* 发布帖子 */
+function submitPost(){
+const content=document.getElementById("post-content").value.trim();
+if(!content && selectedImages.length===0){
+alert("内容不能为空");
+return;
+}
+forumPosts.unshift({
+title:"用户发布",
+content:content,
+images:[...selectedImages]
+});
+renderForum();
+closePostScreen();
+}
+
+/* 渲染论坛 */
 function renderForum(){
 const container=document.getElementById("forum-flow");
 container.innerHTML="";
 forumPosts.forEach(post=>{
 const div=document.createElement("div");
-div.className="p-4 bg-gray-100 rounded-xl shadow-sm space-y-2";
-if(post.text){
-div.innerHTML+=`<p class="text-sm">${post.text}</p>`;
-}
-if(post.images && post.images.length){
-const imgWrap=document.createElement("div");
-imgWrap.className="grid grid-cols-3 gap-2";
-post.images.forEach(src=>{
-const img=document.createElement("img");
-img.src=src;
-img.className="w-full h-24 object-cover rounded";
-imgWrap.appendChild(img);
+div.className="p-4 bg-gray-100 rounded-xl shadow-sm";
+let imgHtml="";
+if(post.images){
+post.images.forEach(img=>{
+imgHtml+=`<img src="${img}" class="mt-2 w-full rounded-xl">`;
 });
-div.appendChild(imgWrap);
 }
+div.innerHTML=`
+<h3 class="font-bold mb-1">${post.title}</h3>
+<p class="text-sm text-gray-600">${post.content}</p>
+${imgHtml}
+`;
 container.appendChild(div);
 });
-}
-
-async function generateForumPosts(){
-alert("这里保留你原来的API生成逻辑（未删除）");
 }
 </script>
 
