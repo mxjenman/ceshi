@@ -6,7 +6,7 @@
 <title>AI Mobile OS</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
-<style>
+<style id="custom-style">
 body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
 .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -21,53 +21,102 @@ background:linear-gradient(135deg,#ffffff,#f3f4f6);
 box-shadow:0 8px 20px rgba(0,0,0,0.08);
 position:relative;
 }
-
 .widget-avatar{
 width:60px;height:60px;border-radius:50%;object-fit:cover;
 border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.1);
 }
-
 .widget-emoji{font-size:14px;cursor:pointer;}
 .widget-text{
 position:absolute;bottom:15px;right:20px;
 font-size:12px;color:#555;cursor:pointer;
-}
-
-/* 发帖界面 */
-.post-textarea{
-width:100%;
-border:none;
-outline:none;
-resize:none;
-font-size:16px;
-}
-
-.post-btn{
-background:#eeeeee;
-padding:6px 14px;
-border-radius:12px;
-font-size:14px;
-color:#333333;
-}
-
-.post-btn span{
-color:#333333;
-font-weight:600;
-}
-
-.preview-img{
-width:80px;
-height:80px;
-object-fit:cover;
-border-radius:12px;
 }
 </style>
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col">
 
+<!-- 首页 -->
+<div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
+
+<div class="widget-card mb-12 mt-4">
+<div class="flex items-start gap-10">
+<div class="flex flex-col items-center gap-1">
+<span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
+<img id="avatar-left" class="widget-avatar"
+src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+onclick="changeAvatar('left')">
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
+<img id="avatar-right" class="widget-avatar"
+src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
+onclick="changeAvatar('right')">
+</div>
+</div>
+<div id="widget-text" class="widget-text" onclick="editWidgetText()">
+我不想隔着屏幕和你说话
+</div>
+</div>
+
+<div class="grid grid-cols-4 gap-6 w-full px-4">
+
+<!-- 微信 -->
+<div class="col-span-4 flex justify-end">
+<div class="flex flex-col items-center gap-1" onclick="openChat()">
+<div class="app-icon overflow-hidden p-0">
+<img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png"
+class="w-full h-full object-cover rounded-[15px]">
+</div>
+<span class="text-xs text-gray-600">微信</span>
+</div>
+</div>
+
+<!-- 论坛 -->
+<div class="col-span-4 flex justify-end">
+<div class="flex flex-col items-center gap-1" onclick="openForum()">
+<div class="app-icon overflow-hidden p-0">
+<img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png"
+class="w-full h-full object-cover rounded-[15px]">
+</div>
+<span class="text-xs text-gray-600">论坛</span>
+</div>
+</div>
+
+</div>
+
+<div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4"
+style="transform: translateY(20px);">
+<button onclick="openModal('settings')" class="flex flex-col items-center">
+<span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
+</button>
+<button onclick="openModal('beauty')" class="flex flex-col items-center">
+<span class="text-xl">🎨</span><span class="text-[10px]">美化</span>
+</button>
+<button onclick="openModal('presets')" class="flex flex-col items-center">
+<span class="text-xl">📑</span><span class="text-[10px]">预设</span>
+</button>
+</div>
+</div>
+
+<!-- 微信聊天界面 -->
+<div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
+<div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+<button onclick="closeChat()" class="text-xl">〈</button>
+<div class="flex-1 text-center font-bold">AI 好友</div>
+<div class="w-6"></div>
+</div>
+<div id="chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+<div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2">
+<div class="flex gap-2">
+<input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
+<button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+</div>
+<button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+</div>
+</div>
+
 <!-- 论坛界面 -->
-<div id="forum-screen" class="fixed inset-0 bg-white flex flex-col z-40">
+<div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
 
 <div class="h-12 bg-white flex items-center px-4 border-b relative">
 <button onclick="closeForum()" class="text-xl">〈</button>
@@ -77,119 +126,82 @@ border-radius:12px;
 
 <div id="forum-flow" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
-<button onclick="openPostScreen()"
+<button onclick="createPost()"
 class="fixed bottom-24 right-6 w-14 h-14 bg-black text-white text-3xl rounded-full shadow-lg flex items-center justify-center">
 +
 </button>
 
 </div>
 
-<!-- 全屏发帖界面 -->
-<div id="post-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50">
-
-<div class="h-12 flex items-center px-4 border-b">
-<button onclick="closePostScreen()">取消</button>
-<div class="flex-1"></div>
-<button onclick="submitPost()" class="post-btn">
-<span>发布</span>
-</button>
-</div>
-
-<div class="flex-1 p-4 overflow-y-auto">
-<textarea id="post-content" class="post-textarea" rows="5" placeholder="说点什么吧..."></textarea>
-
-<div id="image-preview" class="flex gap-3 flex-wrap mt-4"></div>
-
-<input type="file" id="image-input" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
-</div>
-
-<div class="p-4 border-t">
-<button onclick="document.getElementById('image-input').click()"
-class="w-full py-2 bg-gray-100 rounded-xl">
-📷 添加图片
-</button>
-</div>
-
-</div>
-
 <script>
+let config={baseUrl:'https://api.openai.com/v1',apiKey:'',model:'gpt-3.5-turbo',customCss:'',systemPrompt:'你是一个真实的微信好友，回复极简，控制在20字内。'};
+let chatHistory=[];
 let forumPosts=[];
-let selectedImages=[];
 
-/* 打开发帖界面 */
-function openPostScreen(){
-document.getElementById("post-screen").classList.remove("hidden");
-}
+/* 基础功能 */
+function openForum(){document.getElementById('forum-screen').classList.remove('hidden');}
+function closeForum(){document.getElementById('forum-screen').classList.add('hidden');}
+function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
+function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
 
-/* 关闭发帖 */
-function closePostScreen(){
-document.getElementById("post-screen").classList.add("hidden");
-document.getElementById("post-content").value="";
-document.getElementById("image-preview").innerHTML="";
-selectedImages=[];
-}
-
-/* 图片上传 */
-function handleImageUpload(event){
-const files=event.target.files;
-for(let file of files){
-const reader=new FileReader();
-reader.onload=function(e){
-selectedImages.push(e.target.result);
-renderPreview();
-};
-reader.readAsDataURL(file);
-}
+function sendUserMsg(){
+const input=document.getElementById('chat-input');
+if(!input.value)return;
+renderMsg(input.value,'user');
+chatHistory.push({role:'user',content:input.value});
+input.value='';
 }
 
-/* 渲染图片预览 */
-function renderPreview(){
-const container=document.getElementById("image-preview");
-container.innerHTML="";
-selectedImages.forEach(img=>{
-const image=document.createElement("img");
-image.src=img;
-image.className="preview-img";
-container.appendChild(image);
-});
+function renderMsg(text,role){
+const container=document.getElementById('chat-flow');
+const div=document.createElement('div');
+div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;
+div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
+container.appendChild(div);
+container.scrollTop=container.scrollHeight;
 }
 
-/* 发布帖子 */
-function submitPost(){
-const content=document.getElementById("post-content").value.trim();
-if(!content && selectedImages.length===0){
-alert("内容不能为空");
-return;
-}
-forumPosts.unshift({
-title:"用户发布",
-content:content,
-images:[...selectedImages]
-});
-renderForum();
-closePostScreen();
-}
-
-/* 渲染论坛 */
+/* 论坛 */
 function renderForum(){
 const container=document.getElementById("forum-flow");
 container.innerHTML="";
 forumPosts.forEach(post=>{
 const div=document.createElement("div");
 div.className="p-4 bg-gray-100 rounded-xl shadow-sm";
-let imgHtml="";
-if(post.images){
-post.images.forEach(img=>{
-imgHtml+=`<img src="${img}" class="mt-2 w-full rounded-xl">`;
-});
-}
-div.innerHTML=`
-<h3 class="font-bold mb-1">${post.title}</h3>
-<p class="text-sm text-gray-600">${post.content}</p>
-${imgHtml}
-`;
+div.innerHTML=`<h3 class="font-bold mb-1">${post.title}</h3>
+<p class="text-sm text-gray-600">${post.content}</p>`;
 container.appendChild(div);
 });
+}
+
+function createPost(){
+const title=prompt("输入标题");
+if(!title)return;
+const content=prompt("输入内容");
+if(!content)return;
+forumPosts.unshift({title,content});
+renderForum();
+}
+
+async function generateForumPosts(){
+if(!config.apiKey){alert("请先填写API Key");return;}
+const count=Math.floor(Math.random()*6)+10;
+const promptText=`生成${count}条真实网友论坛帖子，JSON数组格式，每条包含title和content。不要解释。`;
+try{
+const response=await fetch(`${config.baseUrl}/chat/completions`,{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
+body:JSON.stringify({
+model:config.model,
+messages:[{role:"user",content:promptText}],
+temperature:0.9
+})
+});
+const data=await response.json();
+const json=JSON.parse(data.choices[0].message.content);
+forumPosts=json;
+renderForum();
+}catch(e){alert("生成失败");}
 }
 </script>
 
