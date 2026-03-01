@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="AI Mobile OS">
     
-    <title>AI Mobile OS - Plus Pro</title>
+    <title>AI Mobile OS - Plus Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
         body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -69,20 +69,24 @@
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 微信专有样式更新 */
-        .wechat-nav-active { color: #07c160 !important; font-weight: bold; }
+        /* 微信专有样式 */
+        .wechat-nav-active { color: #07c160 !important; }
         .moments-header { height: 200px; background: #333; position: relative; width: 100%; }
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        
-        /* 微信“我”界面新样式 */
-        .wx-me-header { background: white; padding: 60px 24px 30px 24px; }
-        .wx-avatar-img { width: 64px; height: 64px; border-radius: 50%; background: #eee; object-fit: cover; }
-        .wx-status-tag { border: 1px solid #e0e0e0; border-radius: 12px; padding: 2px 10px; font-size: 12px; color: #07c160; display: inline-flex; align-items: center; gap: 4px; }
-        .wx-status-tag::before { content: ""; width: 6px; height: 6px; background: #07c160; border-radius: 50%; }
-        .wx-list-item { background: white; padding: 16px 20px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f0f0f0; }
-        .wx-list-item:active { background: #f5f5f5; }
-        .wx-list-arrow { color: #ccc; font-size: 14px; }
+
+        /* 微信“我”页面还原样式 */
+        .wx-me-header { padding: 40px 24px 30px 24px; background: white; display: flex; flex-direction: column; }
+        .wx-me-info-row { display: flex; align-items: flex-start; gap: 20px; }
+        .wx-status-tag { display: inline-flex; align-items: center; border: 1px solid #e0e0e0; border-radius: 12px; padding: 2px 10px; font-size: 13px; color: #777; margin-top: 8px; cursor: pointer; transition: all 0.2s; }
+        .wx-status-tag:active { background: #f2f2f2; }
+        .wx-status-dot { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 6px; }
+        .wx-menu-item { background: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f0f0f0; cursor: pointer; transition: background 0.2s; }
+        .wx-menu-item:active { background: #f5f5f5; }
+        .wx-menu-item:last-child { border-bottom: none; }
+        .wx-chevron { color: #ccc; font-size: 14px; font-family: serif; }
+        .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
+        .slide-hidden { transform: translateX(100%); }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -173,45 +177,67 @@
                 </div>
             </div>
 
-            <div id="wechat-tab-me" class="hidden bg-[#ffffff] min-h-full">
-                <div class="wx-me-header flex flex-col items-center">
-                    <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-avatar-img mb-4" onclick="editProfilePart('avatar')">
-                    <div class="flex items-center gap-2 mb-1">
-                        <h1 id="wx-me-name" class="text-2xl font-bold" onclick="editProfilePart('name')">Gemini User</h1>
-                        <div class="wx-status-tag" onclick="editUserStatus()">
-                            <span id="wx-me-status">状态</span>
+            <div id="wechat-tab-me" class="hidden bg-[#f0f0f0] min-h-full">
+                <div class="wx-me-header">
+                    <div class="wx-me-info-row">
+                        <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-[64px] h-[64px] rounded-lg object-cover bg-gray-100" onclick="editProfilePart('avatar')">
+                        <div class="flex-1 pt-1">
+                            <div class="flex items-center">
+                                <span class="text-[22px] font-bold text-black" id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
+                            </div>
+                            <div class="text-gray-400 text-[15px] mt-1" id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
+                            <div class="wx-status-tag" onclick="editStatus()">
+                                <span class="wx-status-dot"></span>
+                                <span id="wx-me-status">状态</span>
+                            </div>
                         </div>
                     </div>
-                    <p id="wx-me-handle" class="text-gray-400 text-sm mb-8" onclick="editProfilePart('handle')">@user_ai</p>
                 </div>
                 
                 <div class="mt-2">
-                    <div class="wx-list-item" onclick="openSubPage('钱包')">
+                    <div class="wx-menu-item" onclick="openMePage('钱包')">
                         <span>钱包</span>
-                        <span class="wx-list-arrow">〉</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
-                    <div class="wx-list-item" onclick="openSubPage('个人资料')">
+                </div>
+                
+                <div class="mt-2">
+                    <div class="wx-menu-item" onclick="openMePage('个人资料')">
                         <span>个人资料</span>
-                        <span class="wx-list-arrow">〉</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
-                    <div class="wx-list-item" onclick="openSubPage('设置')">
+                </div>
+                
+                <div class="mt-2">
+                    <div class="wx-menu-item" onclick="openMePage('设置')">
                         <span>设置</span>
-                        <span class="wx-list-arrow">〉</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="h-14 bg-[#f7f7f7] border-t flex items-center justify-around text-gray-500 text-[12px]">
-            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active">
-                <span class="text-base">微信</span>
+            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4">
+                <span class="font-medium">微信</span>
             </div>
-            <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center">
-                <span class="text-base">朋友圈</span>
+            <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4">
+                <span class="font-medium">朋友圈</span>
             </div>
-            <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center">
-                <span class="text-base">我</span>
+            <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center px-4">
+                <span class="font-medium">我</span>
             </div>
+        </div>
+    </div>
+
+    <div id="me-detail-page" class="page-layer slide-hidden flex flex-col">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeMePage()" class="text-xl">〈</button>
+            <div id="me-detail-title" class="flex-1 text-center font-bold"></div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 flex flex-center justify-center items-center text-gray-400 italic">
+            这里暂时空空如也...
         </div>
     </div>
 
@@ -242,20 +268,18 @@
                 <div class="px-4 mt-2">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h2 id="profile-name" class="text-xl font-black" onclick="editProfilePart('name')">Gemini User</h2>
+                            <h2 id="profile-name" class="text-xl font-black" onclick="editProfilePart('name')">{{user}}</h2>
                             <p id="profile-handle" class="text-gray-500 text-sm" onclick="editProfilePart('handle')">@user_ai</p>
                         </div>
-                        <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm">编辑资料</button>
+                        <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm" onclick="alert('编辑资料请直接点击文字或图片')">编辑资料</button>
                     </div>
                     <p id="profile-bio" class="mt-3 text-[15px]" onclick="editProfilePart('bio')">探索AI OS的无限可能。</p>
-                    <div class="flex gap-4 mt-3 text-sm">
-                        <span onclick="editProfilePart('following')"><strong id="count-following">128</strong> <span class="text-gray-500">正在关注</span></span>
-                        <span onclick="editProfilePart('followers')"><strong id="count-followers">1024</strong> <span class="text-gray-500">关注者</span></span>
-                    </div>
                 </div>
                 <div class="flex border-b mt-4">
                     <div class="flex-1 text-center py-3 tab-active text-sm">推文</div>
                     <div class="flex-1 text-center py-3 text-gray-500 text-sm">回复</div>
+                    <div class="flex-1 text-center py-3 text-gray-500 text-sm">媒体</div>
+                    <div class="flex-1 text-center py-3 text-gray-500 text-sm">喜欢</div>
                 </div>
                 <div id="profile-posts-feed"></div>
             </div>
@@ -265,10 +289,17 @@
             <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-blue-500">
                 <span class="text-xs font-bold">首页</span>
             </button>
+            <button onclick="alert('搜索功能暂未开放')" class="flex flex-col items-center text-gray-400">
+                <span class="text-xs font-bold">搜索</span>
+            </button>
+            <button onclick="alert('通知中心为空')" class="flex flex-col items-center text-gray-400">
+                <span class="text-xs font-bold">通知</span>
+            </button>
             <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400">
                 <span class="text-xs font-bold">我</span>
             </button>
         </div>
+
         <div class="fab-btn" onclick="openCompose()">+</div>
     </div>
 
@@ -287,8 +318,8 @@
                 </div>
             </div>
         </div>
-        <div class="mt-auto border-t p-4">
-            <button onclick="triggerPostImage()" class="text-black text-2xl">🖼️</button>
+        <div class="mt-auto border-t p-4 flex items-center">
+            <button onclick="triggerPostImage()" class="text-black text-2xl mr-4">🖼️</button>
             <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
         </div>
     </div>
@@ -297,17 +328,6 @@
         <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
             <div id="modal-content"></div>
             <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
-        </div>
-    </div>
-
-    <div id="sub-page" class="fixed inset-0 bg-white hidden z-[80] flex flex-col">
-        <div class="h-12 flex items-center px-4 border-b">
-            <button onclick="closeSubPage()" class="text-xl">〈</button>
-            <div id="sub-page-title" class="flex-1 text-center font-bold">标题</div>
-            <div class="w-6"></div>
-        </div>
-        <div class="flex-1 flex flex-center items-center justify-center text-gray-300">
-            内容开发中...
         </div>
     </div>
 
@@ -321,9 +341,8 @@ let config = {
     customCss: ''
 };
 
-// 用户资料状态
 let userProfile = {
-    name: "Gemini User",
+    name: "{{user}}",
     handle: "@user_ai",
     avatar: "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
     bio: "探索AI OS的无限可能。",
@@ -331,6 +350,17 @@ let userProfile = {
 };
 
 let chatHistory = [];
+
+/* 同步用户信息到 AI 的提示词 */
+function syncProfileToAI() {
+    config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
+    当前对话的用户信息：
+    昵称: ${userProfile.name}
+    账号: ${userProfile.handle}
+    个性签名: ${userProfile.bio}
+    当前状态: ${userProfile.status}`;
+    console.log("AI 已同步用户动态");
+}
 
 /* UI 基础逻辑 */
 function changeAvatar(side){
@@ -342,16 +372,17 @@ function changeAvatar(side){
         reader.onload=ev=>{ 
             const newSrc = ev.target.result;
             document.getElementById(`avatar-${side}`).src=newSrc; 
-            syncAvatarEverywhere(newSrc);
+            updateGlobalAvatar(newSrc);
         };
         reader.readAsDataURL(file);
     };
     input.click();
 }
 
-function syncAvatarEverywhere(src){
+function updateGlobalAvatar(src) {
     userProfile.avatar = src;
-    ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync'].forEach(id => {
+    const ids = ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync', 'avatar-left', 'avatar-right'];
+    ids.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.src = src;
     });
@@ -369,20 +400,13 @@ function editWidgetText(){
     if(result) el.innerText=result;
 }
 
-function editUserStatus() {
-    const res = prompt("你现在的状态是？(AI会看到哦)", userProfile.status);
-    if (res !== null) {
+function editStatus() {
+    const res = prompt("设置我的状态", userProfile.status);
+    if(res !== null) {
         userProfile.status = res;
         document.getElementById('wx-me-status').innerText = res;
-        // 动态同步给AI
-        updateAISystemPromptWithStatus();
+        syncProfileToAI();
     }
-}
-
-function updateAISystemPromptWithStatus() {
-    // 注入用户当前状态到AI认知中
-    const statusNote = `\n[系统注意：用户当前的状态/动态是：“${userProfile.status}”，请在对话中适时感知或体现。]`;
-    // 这里仅做逻辑储备，在triggerAI时会合并
 }
 
 /* 微信导航逻辑 */
@@ -398,11 +422,17 @@ function switchWechatTab(tab) {
     document.getElementById(`wechat-tab-${tab}`).classList.remove('hidden');
     document.getElementById(`wx-nav-${tab}`).classList.add('wechat-nav-active');
     document.getElementById('wechat-title').innerText = titles[tab];
+
+    // 同步展示
+    document.getElementById('wx-moments-name').innerText = userProfile.name;
+    document.getElementById('wx-me-name').innerText = userProfile.name;
+    document.getElementById('wx-me-id').innerText = userProfile.handle;
 }
 
 /* 微信聊天逻辑 */
 function openChat(){
     document.getElementById('chat-screen').classList.remove('hidden');
+    switchWechatTab('messages');
 }
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
 
@@ -424,32 +454,34 @@ function sendUserMsg(){
 }
 
 async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key");
+    if(!config.apiKey)return alert("请先配置 API Key (在主屏设置中)");
+    syncProfileToAI(); // 生成前同步动态
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
-    
-    // 这里的Prompt融合了用户的当前状态
-    const dynamicPrompt = `${config.systemPrompt}\n已知用户当前的状态是：${userProfile.status}。`;
-    
     try{
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-            body:JSON.stringify({
-                model:config.model,
-                messages:[{role:'system',content:dynamicPrompt},...chatHistory.slice(-5)],
-                max_tokens:100
-            })
+            body:JSON.stringify({model:config.model,messages:[{role:'system',content:config.systemPrompt},...chatHistory.slice(-5)],max_tokens:100})
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
         renderMsg(reply.substring(0,50),'assistant');
         chatHistory.push({role:'assistant',content:reply});
-    }catch(e){ renderMsg("（连接失败）",'assistant'); }
+    }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 论坛逻辑 */
+/* 微信“我”页面的子页面控制 */
+function openMePage(title) {
+    document.getElementById('me-detail-title').innerText = title;
+    document.getElementById('me-detail-page').classList.remove('slide-hidden');
+}
+function closeMePage() {
+    document.getElementById('me-detail-page').classList.add('slide-hidden');
+}
+
+/* 论坛与资料逻辑 */
 function switchForumTab(tab){
     const square = document.getElementById('view-square');
     const profile = document.getElementById('view-profile');
@@ -457,18 +489,17 @@ function switchForumTab(tab){
     const tabPr = document.getElementById('tab-profile');
     
     if(tab === 'square'){
-        square.classList.remove('hidden'); profile.classList.add('hidden');
+        square.classList.remove('hidden');
+        profile.classList.add('hidden');
         tabSq.classList.add('text-blue-500'); tabSq.classList.remove('text-gray-400');
         tabPr.classList.add('text-gray-400'); tabPr.classList.remove('text-blue-500');
     } else {
-        square.classList.add('hidden'); profile.classList.remove('hidden');
+        square.classList.add('hidden');
+        profile.classList.remove('hidden');
         tabPr.classList.add('text-blue-500'); tabPr.classList.remove('text-gray-400');
         tabSq.classList.add('text-gray-400'); tabSq.classList.remove('text-blue-500');
     }
 }
-
-function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
-function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
 
 function editProfilePart(part){
     if(part === 'bg' || part === 'avatar'){
@@ -479,45 +510,55 @@ function editProfilePart(part){
             const reader = new FileReader();
             reader.onload = ev => {
                 if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
-                if(part === 'avatar') syncAvatarEverywhere(ev.target.result);
+                if(part === 'avatar') updateGlobalAvatar(ev.target.result);
             };
             reader.readAsDataURL(file);
         };
         input.click();
     } else {
-        const labels = { 'name': '昵称', 'handle': '账号', 'bio': '简介' };
-        const res = prompt(`修改${labels[part] || part}`, userProfile[part]);
+        const map = {
+            'name': ['wx-me-name', '修改昵称', 'name'],
+            'handle': ['wx-me-id', '修改账号', 'handle'],
+            'bio': ['profile-bio', '修改简介', 'bio']
+        };
+        const cfg = map[part];
+        const el = document.getElementById(cfg[0]);
+        const res = prompt(cfg[1], el.innerText);
         if(res !== null){
-            userProfile[part] = res;
-            if(part === 'name') {
+            userProfile[cfg[2]] = res;
+            if(cfg[2] === 'name') {
                 document.getElementById('wx-me-name').innerText = res;
-                document.getElementById('wx-moments-name').innerText = res;
                 document.getElementById('profile-name').innerText = res;
-            }
-            if(part === 'handle') {
-                document.getElementById('wx-me-handle').innerText = res;
+                document.getElementById('wx-moments-name').innerText = res;
+            } else if(cfg[2] === 'handle') {
+                document.getElementById('wx-me-id').innerText = res;
                 document.getElementById('profile-handle').innerText = res;
+            } else {
+                document.getElementById('profile-bio').innerText = res;
             }
+            syncProfileToAI();
         }
     }
 }
 
-/* 子页面逻辑 */
-function openSubPage(title) {
-    document.getElementById('sub-page').classList.remove('hidden');
-    document.getElementById('sub-page-title').innerText = title;
+/* 发帖逻辑 */
+function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
+function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
+function openCompose(){ 
+    document.getElementById('compose-screen').classList.remove('hidden'); 
+    document.getElementById('compose-avatar-sync').src = userProfile.avatar;
+    validatePostContent(); 
 }
-function closeSubPage() {
-    document.getElementById('sub-page').classList.add('hidden');
+function closeCompose(){ 
+    document.getElementById('compose-screen').classList.add('hidden');
+    document.getElementById('post-text').value = '';
+    clearPostImage();
 }
-
-/* 原始发帖功能保留 */
-function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); }
-function closeCompose(){ document.getElementById('compose-screen').classList.add('hidden'); }
 function validatePostContent() {
     const text = document.getElementById('post-text').value.trim();
+    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const btn = document.getElementById('post-submit-btn');
-    btn.disabled = text.length === 0;
+    btn.disabled = !(text.length > 0 || hasImg);
     btn.classList.toggle('btn-disabled', btn.disabled);
 }
 function triggerPostImage(){ document.getElementById('post-image-input').click(); }
@@ -527,58 +568,112 @@ function previewPostImage(input){
         reader.onload = e => {
             document.getElementById('preview-img').src = e.target.result;
             document.getElementById('post-image-preview').classList.remove('hidden');
+            validatePostContent();
         }
         reader.readAsDataURL(input.files[0]);
     }
 }
 function clearPostImage(){
+    document.getElementById('post-image-input').value = '';
     document.getElementById('post-image-preview').classList.add('hidden');
+    validatePostContent();
 }
 function submitPost(){
-    const text = document.getElementById('post-text').value;
-    addPostToFeed(userProfile.name, userProfile.handle, text, null, "现在", true);
+    const text = document.getElementById('post-text').value.trim();
+    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
+    const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    addPostToFeed(userProfile.name, userProfile.handle, text, imgSrc, timeStr, true);
     closeCompose();
 }
-function addPostToFeed(name, handle, text, img, time, isUserPost){
-    const feed = document.getElementById('forum-feed');
-    const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3 animate-in";
-    div.innerHTML = `<img src="${isUserPost?userProfile.avatar:'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg'}" class="tweet-avatar"><div><div class="font-bold">${name} <span class="text-gray-400 font-normal">${handle}</span></div><div class="mt-1">${text}</div></div>`;
-    feed.prepend(div);
-}
-async function generateAIPosts(){
-    // 保持原样逻辑
-    alert("正在同步广场...");
+
+function addPostToFeed(name, handle, text, img, time, isUserPost = false){
+    const squareFeed = document.getElementById('forum-feed');
+    const profileFeed = document.getElementById('profile-posts-feed');
+    const hint = document.getElementById('empty-hint');
+    if(hint) hint.remove();
+    
+    const createNode = () => {
+        const div = document.createElement('div');
+        div.className = "tweet-card flex gap-3 animate-in";
+        const avatarUrl = isUserPost ? userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+        div.innerHTML = `
+            <img src="${avatarUrl}" class="tweet-avatar">
+            <div class="flex-1">
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-[15px]">${name}</span>
+                    <span class="text-gray-500 text-[14px]">${handle} · ${time}</span>
+                </div>
+                <div class="text-[15px] mt-1 leading-normal">${text}</div>
+                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
+            </div>
+        `;
+        return div;
+    };
+    squareFeed.prepend(createNode());
+    if(isUserPost) profileFeed.prepend(createNode());
 }
 
-/* 设置逻辑 */
+async function generateAIPosts(){
+    if(!config.apiKey) return alert("同步广场需要配置 API Key");
+    const feed = document.getElementById('forum-feed');
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在同步广场...</div>';
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'system', content: '生成10条搞笑的简短社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
+                response_format: { type: "json_object" }
+            })
+        });
+        const data = await response.json();
+        const posts = JSON.parse(data.choices[0].message.content).posts;
+        feed.innerHTML = "";
+        posts.forEach(p => addPostToFeed(p.name, p.handle, p.text, null, "刚刚"));
+    } catch(e) {
+        feed.innerHTML = "";
+        addPostToFeed("开发者", "@dev", "连接超时，请检查网络和 API Key", null, "1s");
+    }
+}
+
+/* 设置与美化弹窗 */
 function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
     if(type==='settings'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" placeholder="API Key" value="${config.apiKey}">`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;
     }else if(type==='beauty'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">CSS</h2><textarea id="cfg-css" class="w-full border p-2 h-40">${config.customCss}</textarea>`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">CSS 美化</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;
     }else if(type==='presets'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40">${config.systemPrompt}</textarea>`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;
     }
 }
+
 function closeModal(){
-    if(document.getElementById('cfg-url')) {
+    if(document.getElementById('cfg-url')){
         config.baseUrl=document.getElementById('cfg-url').value;
         config.apiKey=document.getElementById('cfg-key').value;
+        config.model=document.getElementById('cfg-model').value;
     }
-    if(document.getElementById('cfg-css')) {
-        config.customCss = document.getElementById('cfg-css').value;
-        document.getElementById('custom-style').innerHTML += config.customCss;
+    if(document.getElementById('cfg-css')){
+        const css = document.getElementById('cfg-css').value;
+        config.customCss = css;
+        const styleTag = document.getElementById('custom-style');
+        styleTag.innerHTML += css;
     }
-    if(document.getElementById('cfg-prompt')) {
-        config.systemPrompt = document.getElementById('cfg-prompt').value;
+    if(document.getElementById('cfg-prompt')){
+        config.systemPrompt=document.getElementById('cfg-prompt').value;
     }
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
-window.onload = () => { switchWechatTab('messages'); };
+window.onload = () => {
+    switchWechatTab('messages');
+    syncProfileToAI();
+};
 </script>
 </body>
 </html>
