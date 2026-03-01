@@ -58,7 +58,7 @@
         .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
         .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
-        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; display: flex; align-items: center; }
 
         /* 论坛主页样式扩展 */
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
@@ -75,27 +75,24 @@
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* 微信“我”页面还原样式 - 升级版 */
-        .wx-me-header { padding: 60px 24px 40px 24px; background: white; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .wx-me-avatar-container { margin-bottom: 16px; }
-        .wx-me-main-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; background: #f7f7f7; }
-        .wx-me-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
-        .wx-status-tag-new { display: inline-flex; align-items: center; border: 1px solid #f0f0f0; border-radius: 20px; padding: 2px 10px; font-size: 11px; color: #999; cursor: pointer; transition: all 0.2s; background: #fafafa; }
-        .wx-status-tag-new:active { background: #f2f2f2; }
-        .wx-status-dot-green { width: 5px; height: 5px; background: #07c160; border-radius: 50%; margin-right: 4px; }
+        /* 微信“我”页面 截图二 风格还原 */
+        .wx-me-header-v2 { padding: 60px 24px 30px 24px; background: white; display: flex; flex-direction: column; align-items: flex-start; }
+        .wx-me-avatar-rect { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; background: #f5f5f5; cursor: pointer; }
+        .wx-me-info-v2 { margin-top: 20px; width: 100%; }
+        .wx-me-name-row { display: flex; align-items: center; gap: 8px; }
+        .wx-status-tag-v2 { display: inline-flex; align-items: center; border: 1px solid #e8e8e8; border-radius: 14px; padding: 2px 10px; font-size: 12px; color: #888; cursor: pointer; background: #fff; transform: translateY(2px); }
+        .wx-status-dot-v2 { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 4px; }
         
-        .wx-menu-list { background: white; margin-top: 0px; }
-        .wx-menu-item { background: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f2f2f2; cursor: pointer; transition: background 0.2s; }
-        .wx-menu-item:active { background: #f5f5f5; }
-        .wx-menu-item:last-child { border-bottom: none; }
-        .wx-menu-text { font-size: 16px; color: #000; }
-        .wx-chevron { color: #d1d1d1; font-size: 14px; }
+        /* 菜单项细灰线 */
+        .wx-menu-group { background: white; margin-top: 1px; }
+        .wx-menu-item-v2 { background: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; position: relative; }
+        .wx-menu-item-v2::after { content: ""; position: absolute; bottom: 0; left: 20px; right: 0; height: 0.5px; background: #f0f0f0; }
+        .wx-menu-item-v2:last-child::after { display: none; }
+        .wx-menu-item-v2:active { background: #f5f5f5; }
+        .wx-chevron-v2 { color: #d1d1d1; font-size: 14px; transform: scaleY(1.4); }
 
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
-        
-        /* 统一返回图标样式 */
-        .unified-back-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -148,14 +145,14 @@
     </div>
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
-        <div class="h-12 bg-[#ededed] flex items-center px-2 border-b border-gray-200">
-            <button onclick="closeChat()" class="unified-back-btn">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+            <button onclick="closeChat()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div id="wechat-title" class="flex-1 text-center font-bold"></div>
-            <div class="w-10 text-xl flex items-center justify-center">＋</div>
+            <div id="wechat-title" class="flex-1 text-center font-bold">微信</div>
+            <div class="w-6 text-xl text-right">＋</div>
         </div>
 
         <div id="wechat-content" class="flex-1 overflow-y-auto">
@@ -175,7 +172,7 @@
             <div id="wechat-tab-moments" class="hidden bg-white min-h-full">
                 <div class="moments-header">
                     <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800" class="w-full h-full object-cover">
-                    <span class="moments-name" id="wx-moments-name">{{user}}</span>
+                    <span class="moments-name" id="wx-moments-name">Gemini User</span>
                     <img id="wx-moments-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="moments-avatar">
                 </div>
                 <div class="mt-10 p-4 space-y-8">
@@ -190,40 +187,40 @@
                 </div>
             </div>
 
-            <div id="wechat-tab-me" class="hidden bg-white min-h-full">
-                <div class="wx-me-header">
-                    <div class="wx-me-avatar-container">
-                        <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-main-avatar" onclick="editProfilePart('avatar')">
-                    </div>
-                    <div class="wx-me-name-row">
-                        <span class="text-[20px] font-bold text-black" id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
-                        <div class="wx-status-tag-new" onclick="editStatus()">
-                            <span class="wx-status-dot-green"></span>
-                            <span id="wx-me-status">状态</span>
+            <div id="wechat-tab-me" class="hidden bg-[#f0f0f0] min-h-full">
+                <div class="wx-me-header-v2">
+                    <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
+                    <div class="wx-me-info-v2">
+                        <div class="wx-me-name-row">
+                            <span class="text-[24px] font-bold text-black" id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
+                            <div class="wx-status-tag-v2" onclick="editStatus()">
+                                <span class="wx-status-dot-v2"></span>
+                                <span id="wx-me-status">状态</span>
+                            </div>
                         </div>
+                        <div class="text-gray-400 text-[15px] mt-0.5" id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                     </div>
-                    <div class="text-gray-400 text-[13px] mt-1" id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                 </div>
                 
-                <div class="wx-menu-list">
-                    <div class="wx-menu-item" onclick="openMePage('钱包')">
-                        <span class="wx-menu-text">钱包</span>
-                        <span class="wx-chevron">〉</span>
+                <div class="mt-2 wx-menu-group">
+                    <div class="wx-menu-item-v2" onclick="openMePage('钱包')">
+                        <span class="text-[16px]">钱包</span>
+                        <span class="wx-chevron-v2">〉</span>
                     </div>
-                    <div class="wx-menu-item" onclick="openMePage('个人资料')">
-                        <span class="wx-menu-text">个人资料</span>
-                        <span class="wx-chevron">〉</span>
+                    <div class="wx-menu-item-v2" onclick="openMePage('个人资料')">
+                        <span class="text-[16px]">个人资料</span>
+                        <span class="wx-chevron-v2">〉</span>
                     </div>
-                    <div class="wx-menu-item" onclick="openMePage('设置')">
-                        <span class="wx-menu-text">设置</span>
-                        <span class="wx-chevron">〉</span>
+                    <div class="wx-menu-item-v2" onclick="openMePage('设置')">
+                        <span class="text-[16px]">设置</span>
+                        <span class="wx-chevron-v2">〉</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="h-14 bg-[#f7f7f7] border-t flex items-center justify-around text-gray-500 text-[12px]">
-            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center px-4">
+            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4">
                 <span class="font-medium">微信</span>
             </div>
             <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4">
@@ -236,14 +233,14 @@
     </div>
 
     <div id="me-detail-page" class="page-layer slide-hidden flex flex-col">
-        <div class="h-12 bg-white flex items-center px-2 border-b">
-            <button onclick="closeMePage()" class="unified-back-btn">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeMePage()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
             <div id="me-detail-title" class="flex-1 text-center font-bold"></div>
-            <div class="w-10"></div>
+            <div class="w-6"></div>
         </div>
         <div class="flex-1 flex flex-center justify-center items-center text-gray-400 italic">
             这里暂时空空如也...
@@ -253,14 +250,14 @@
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div id="forum-content-container" class="flex-1 overflow-y-auto pb-16">
             <div id="view-square">
-                <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-2 border-b sticky top-0 z-10">
-                    <button onclick="closeForum()" class="unified-back-btn">
+                <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
+                    <button onclick="closeForum()" class="back-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
-                    <div class="flex-1 text-center font-bold text-[16px] text-black">广场</div>
-                    <button onclick="generateAIPosts()" class="w-10 flex items-center justify-center">
+                    <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
+                    <button onclick="generateAIPosts()" class="flex items-center justify-center">
                         <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
                     </button>
                 </div>
@@ -421,7 +418,7 @@ function editStatus() {
 /* 微信导航逻辑 */
 function switchWechatTab(tab) {
     const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '微信', moments: '朋友圈', me: '' }; // “我”Tab标题留空
+    const titles = { messages: '微信', moments: '朋友圈', me: '' }; // 去除“我”页面的顶栏文字
     
     tabs.forEach(t => {
         document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
@@ -464,7 +461,7 @@ function sendUserMsg(){
 
 async function triggerAI(){
     if(!config.apiKey)return alert("请先配置 API Key (在主屏设置中)");
-    syncProfileToAI(); 
+    syncProfileToAI(); // 生成前同步动态
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
     try{
