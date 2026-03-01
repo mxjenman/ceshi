@@ -58,11 +58,11 @@
         .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
         .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
-        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; display: flex; align-items: center; }
+        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; display: flex; align-items: center; justify-content: center; }
 
         /* 论坛主页样式扩展 */
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
-        .profile-avatar-main { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
+        .profile-avatar-main { width: 80px; height: 80px; border-radius: 20px; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
         .tab-active { border-bottom: 4px solid #1d9bf0; color: #000; font-weight: bold; }
         
         /* 进场动画 */
@@ -75,22 +75,17 @@
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* 微信“我”页面 截图二 风格还原 */
-        .wx-me-header-v2 { padding: 60px 24px 30px 24px; background: white; display: flex; flex-direction: column; align-items: flex-start; }
-        .wx-me-avatar-rect { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; background: #f5f5f5; cursor: pointer; }
-        .wx-me-info-v2 { margin-top: 20px; width: 100%; }
-        .wx-me-name-row { display: flex; align-items: center; gap: 8px; }
-        .wx-status-tag-v2 { display: inline-flex; align-items: center; border: 1px solid #e8e8e8; border-radius: 14px; padding: 2px 10px; font-size: 12px; color: #888; cursor: pointer; background: #fff; transform: translateY(2px); }
-        .wx-status-dot-v2 { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 4px; }
+        /* 微信“我”页面还原样式 - 深度定制版 */
+        .wx-me-header { padding: 40px 24px 30px 24px; background: white; display: flex; flex-direction: column; align-items: flex-start; }
+        .wx-me-avatar-rect { width: 72px; height: 72px; border-radius: 16px; object-fit: cover; background: #f0f0f0; margin-bottom: 16px; cursor: pointer; }
+        .wx-status-tag { display: inline-flex; align-items: center; border: 1px solid #e8e8e8; border-radius: 20px; padding: 2px 10px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s; background: #fdfdfd; }
+        .wx-status-tag:active { background: #f2f2f2; }
+        .wx-status-dot { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 6px; }
         
-        /* 菜单项细灰线 */
-        .wx-menu-group { background: white; margin-top: 1px; }
-        .wx-menu-item-v2 { background: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; position: relative; }
-        .wx-menu-item-v2::after { content: ""; position: absolute; bottom: 0; left: 20px; right: 0; height: 0.5px; background: #f0f0f0; }
-        .wx-menu-item-v2:last-child::after { display: none; }
-        .wx-menu-item-v2:active { background: #f5f5f5; }
-        .wx-chevron-v2 { color: #d1d1d1; font-size: 14px; transform: scaleY(1.4); }
-
+        .wx-menu-item { background: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f2f2f2; cursor: pointer; transition: background 0.2s; }
+        .wx-menu-item:active { background: #f5f5f5; }
+        .wx-menu-item:last-child { border-bottom: none; }
+        .wx-chevron { color: #d1d1d1; font-size: 14px; font-family: serif; }
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
     </style>
@@ -151,8 +146,8 @@
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div id="wechat-title" class="flex-1 text-center font-bold">微信</div>
-            <div class="w-6 text-xl text-right">＋</div>
+            <div id="wechat-title" class="flex-1 text-center font-bold text-[17px]">微信</div>
+            <div class="w-6 text-2xl flex justify-center">＋</div>
         </div>
 
         <div id="wechat-content" class="flex-1 overflow-y-auto">
@@ -188,32 +183,35 @@
             </div>
 
             <div id="wechat-tab-me" class="hidden bg-[#f0f0f0] min-h-full">
-                <div class="wx-me-header-v2">
+                <div class="wx-me-header">
                     <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
-                    <div class="wx-me-info-v2">
-                        <div class="wx-me-name-row">
-                            <span class="text-[24px] font-bold text-black" id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
-                            <div class="wx-status-tag-v2" onclick="editStatus()">
-                                <span class="wx-status-dot-v2"></span>
-                                <span id="wx-me-status">状态</span>
-                            </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="text-[24px] font-bold text-black" id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
+                        <div class="wx-status-tag" onclick="editStatus()">
+                            <span class="wx-status-dot"></span>
+                            <span id="wx-me-status">状态</span>
                         </div>
-                        <div class="text-gray-400 text-[15px] mt-0.5" id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
+                    </div>
+                    
+                    <div class="text-gray-400 text-[15px] mt-1" id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
+                </div>
+                
+                <div class="mt-2">
+                    <div class="wx-menu-item" onclick="openMePage('钱包')">
+                        <span class="text-[16px]">钱包</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
                 </div>
                 
-                <div class="mt-2 wx-menu-group">
-                    <div class="wx-menu-item-v2" onclick="openMePage('钱包')">
-                        <span class="text-[16px]">钱包</span>
-                        <span class="wx-chevron-v2">〉</span>
-                    </div>
-                    <div class="wx-menu-item-v2" onclick="openMePage('个人资料')">
+                <div class="mt-2">
+                    <div class="wx-menu-item" onclick="openMePage('个人资料')">
                         <span class="text-[16px]">个人资料</span>
-                        <span class="wx-chevron-v2">〉</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
-                    <div class="wx-menu-item-v2" onclick="openMePage('设置')">
+                    <div class="wx-menu-item" onclick="openMePage('设置')">
                         <span class="text-[16px]">设置</span>
-                        <span class="wx-chevron-v2">〉</span>
+                        <span class="wx-chevron">〉</span>
                     </div>
                 </div>
             </div>
@@ -357,7 +355,7 @@ let userProfile = {
 
 let chatHistory = [];
 
-/* 同步用户信息到 AI 的提示词 */
+/* 同步用户信息到 AI */
 function syncProfileToAI() {
     config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
     当前对话的用户信息：
@@ -365,7 +363,6 @@ function syncProfileToAI() {
     账号: ${userProfile.handle}
     个性签名: ${userProfile.bio}
     当前状态: ${userProfile.status}`;
-    console.log("AI 已同步用户动态");
 }
 
 /* UI 基础逻辑 */
@@ -418,7 +415,7 @@ function editStatus() {
 /* 微信导航逻辑 */
 function switchWechatTab(tab) {
     const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '微信', moments: '朋友圈', me: '' }; // 去除“我”页面的顶栏文字
+    const titles = { messages: '微信', moments: '朋友圈', me: '' }; // "我"页面去标题
     
     tabs.forEach(t => {
         document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
@@ -460,8 +457,8 @@ function sendUserMsg(){
 }
 
 async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key (在主屏设置中)");
-    syncProfileToAI(); // 生成前同步动态
+    if(!config.apiKey)return alert("请先配置 API Key");
+    syncProfileToAI();
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
     try{
@@ -478,7 +475,6 @@ async function triggerAI(){
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 微信“我”页面的子页面控制 */
 function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
@@ -631,7 +627,7 @@ async function generateAIPosts(){
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '生成10条搞笑的简短社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
+                messages: [{role: 'system', content: '生成10条社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
                 response_format: { type: "json_object" }
             })
         });
@@ -641,11 +637,11 @@ async function generateAIPosts(){
         posts.forEach(p => addPostToFeed(p.name, p.handle, p.text, null, "刚刚"));
     } catch(e) {
         feed.innerHTML = "";
-        addPostToFeed("开发者", "@dev", "连接超时，请检查网络和 API Key", null, "1s");
+        addPostToFeed("开发者", "@dev", "连接超时，请检查 API 设置", null, "1s");
     }
 }
 
-/* 设置与美化弹窗 */
+/* 弹窗控制 */
 function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -667,8 +663,7 @@ function closeModal(){
     if(document.getElementById('cfg-css')){
         const css = document.getElementById('cfg-css').value;
         config.customCss = css;
-        const styleTag = document.getElementById('custom-style');
-        styleTag.innerHTML += css;
+        document.getElementById('custom-style').innerHTML += css;
     }
     if(document.getElementById('cfg-prompt')){
         config.systemPrompt=document.getElementById('cfg-prompt').value;
