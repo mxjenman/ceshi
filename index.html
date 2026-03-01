@@ -6,10 +6,7 @@
     <title>AI Mobile OS - Plus Pro Max Ultra</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background 0.5s ease; }
-        /* 背景遮罩，用于更换壁纸 */
-        #wallpaper-layer { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; }
-        
+        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background 0.3s; }
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; }
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
@@ -20,8 +17,7 @@
             width:100%;
             border-radius:28px;
             padding:20px;
-            background:linear-gradient(135deg,rgba(255,255,255,0.9),rgba(243,244,246,0.8));
-            backdrop-filter: blur(10px);
+            background:linear-gradient(135deg,#ffffff,#f3f4f6);
             box-shadow:0 8px 20px rgba(0,0,0,0.08);
             position:relative;
         }
@@ -32,7 +28,6 @@
             object-fit:cover;
             border:3px solid white;
             box-shadow:0 4px 10px rgba(0,0,0,0.1);
-            cursor: pointer;
         }
         .widget-emoji{
             font-size:14px;
@@ -49,44 +44,45 @@
 
         /* 论坛专有样式 */
         .tweet-card { border-bottom: 1px solid #eff3f4; padding: 12px 16px; background: white; }
-        .tweet-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+        .tweet-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         
         /* 发布键 */
         .fab-btn { position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; border-radius: 28px; background: #000000; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 24px; z-index: 60; cursor: pointer; transition: transform 0.1s; }
         .fab-btn:active { transform: scale(0.9); }
         
-        /* 按钮禁用样式 */
         .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
 
-        /* 互动图标样式 */
         .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
         .action-item:hover .action-icon { opacity: 1; }
 
-        /* 导航图标缩放补丁 */
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
         .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; }
 
-        /* 底部Tab栏样式 */
-        .bottom-tab-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: white; border-top: 1px solid #eff3f4; display: flex; justify-content: space-around; align-items: center; z-index: 65; padding-bottom: 15px; }
-        .tab-item { display: flex; flex-direction: column; items-center; justify-content: center; color: #536471; font-size: 11px; flex: 1; height: 100%; transition: 0.2s; cursor: pointer; }
-        .tab-item.active { color: #000000; font-weight: bold; }
-        .tab-icon-svg { width: 22px; height: 22px; margin-bottom: 2px; fill: currentColor; }
+        /* 底部Tab栏重构 - 去掉Emoji */
+        .bottom-tab-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: white; border-top: 1px solid #eff3f4; display: flex; justify-content: space-around; align-items: center; z-index: 65; padding-bottom: 10px; }
+        .tab-item { display: flex; flex-direction: column; items-center; justify-content: center; color: #536471; flex: 1; height: 100%; transition: 0.2s; cursor: pointer; }
+        .tab-item.active { color: #000000; font-weight: 900; }
+        .tab-text { font-size: 15px; }
 
-        /* Twitter 风格列表 */
         .trend-item { padding: 12px 16px; border-bottom: 1px solid #eff3f4; }
         .msg-item { padding: 12px 16px; border-bottom: 1px solid #eff3f4; display: flex; gap: 12px; }
-        .profile-header { height: 120px; background: #cfd9de; position: relative; cursor: pointer; background-size: cover; background-position: center; }
-        .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; position: absolute; bottom: -40px; left: 16px; background: #eee; cursor: pointer; object-fit: cover; }
         
-        /* 隐藏滚动条 */
-        ::-webkit-scrollbar { display: none; }
+        /* 个人主页背景 */
+        .profile-header { height: 140px; background: #cfd9de; position: relative; background-size: cover; background-position: center; cursor: pointer; }
+        .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; position: absolute; bottom: -40px; left: 16px; background: #eee; object-fit: cover; cursor: pointer; }
+
+        /* 渐变动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col">
+<body id="main-body" class="h-screen overflow-hidden flex flex-col">
 
-    <div id="wallpaper-layer"></div>
+    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center relative overflow-hidden">
+        <input type="file" id="bg-input" class="hidden" accept="image/*" onchange="changeSystemBg(this)">
+        
+        <div class="absolute inset-0 z-[-1]" onclick="document.getElementById('bg-input').click()"></div>
 
-    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center relative z-10">
         <div class="widget-card mb-12 mt-4">
             <div class="flex items-start gap-10">
                 <div class="flex flex-col items-center gap-1">
@@ -99,7 +95,6 @@
                 </div>
             </div>
             <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
-            <div class="absolute top-2 left-2 text-[8px] opacity-20" onclick="changeSystemWallpaper()">🖼️ 更换壁纸</div>
         </div>
 
         <div class="grid grid-cols-4 gap-6 w-full px-4">
@@ -108,7 +103,7 @@
                     <div class="app-icon overflow-hidden p-0">
                         <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
                     </div>
-                    <span class="text-xs text-white drop-shadow-md">微信</span>
+                    <span class="text-xs text-gray-600 font-bold">微信</span>
                 </div>
             </div>
 
@@ -117,12 +112,12 @@
                     <div class="app-icon overflow-hidden p-0">
                         <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
                     </div>
-                    <span class="text-xs text-white drop-shadow-md">论坛</span>
+                    <span class="text-xs text-gray-600 font-bold">论坛</span>
                 </div>
             </div>
         </div>
 
-        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4">
+        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);">
             <button onclick="openModal('settings')" class="flex flex-col items-center">
                 <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
             </button>
@@ -179,18 +174,13 @@
                         <div class="font-bold">#Gemini 3 Flash 移动端发布#</div>
                         <div class="text-xs text-gray-500">2.5万 推文</div>
                     </div>
-                    <div class="trend-item">
-                        <div class="text-xs text-gray-500">生活 · 正在热议</div>
-                        <div class="font-bold">#2026 开启全新 AI 纪元#</div>
-                        <div class="text-xs text-gray-500">15.4万 推文</div>
-                    </div>
                 </div>
             </div>
 
             <div id="tab-content-messages" class="absolute inset-0 overflow-y-auto pb-20 hidden bg-white">
                 <div class="p-4 font-black text-xl">私信</div>
                 <div class="msg-item">
-                    <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-12 h-12 rounded-full sync-user-avatar">
+                    <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-12 h-12 rounded-full">
                     <div>
                         <div class="flex gap-1"><span class="font-bold">系统通知</span><span class="text-gray-500">@system</span></div>
                         <div class="text-gray-500 text-sm">欢迎来到全新的 AI 社交广场！</div>
@@ -199,17 +189,18 @@
             </div>
 
             <div id="tab-content-profile" class="absolute inset-0 overflow-y-auto pb-20 hidden bg-white">
-                <div id="profile-banner" class="profile-header" onclick="editProfileField('banner')">
-                    <img id="profile-avatar-display" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="profile-avatar-large sync-user-avatar" onclick="event.stopPropagation(); editProfileField('avatar')">
+                <div class="profile-header" id="profile-bg-display" onclick="changeProfileBg()">
+                    <input type="file" id="profile-bg-input" class="hidden" accept="image/*" onchange="previewProfileBg(this)">
+                    <img id="profile-avatar-display" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="profile-avatar-large" onclick="event.stopPropagation(); changeAvatar('right')">
                 </div>
                 <div class="mt-12 px-4">
-                    <button onclick="editFullProfile()" class="float-right border border-gray-300 rounded-full px-4 py-1 font-bold text-sm">编辑资料</button>
-                    <div id="display-nickname" class="font-black text-xl mt-4">我</div>
-                    <div id="display-handle" class="text-gray-500">@user_2026</div>
-                    <div id="display-bio" class="mt-3 text-[15px]">一个热爱生活与 AI 的探索者。</div>
+                    <button onclick="editProfile()" class="float-right border border-gray-300 rounded-full px-4 py-1 font-bold text-sm">编辑资料</button>
+                    <div class="font-black text-xl mt-4" id="user-nickname">我</div>
+                    <div class="text-gray-500" id="user-handle">@user_2026</div>
+                    <div class="mt-3 text-[15px]" id="user-bio">一个热爱生活与 AI 的探索者。</div>
                     <div class="flex gap-4 mt-3 text-sm">
-                        <span onclick="editProfileField('following')"><strong id="display-following" class="text-black">128</strong> <span class="text-gray-500">正在关注</span></span>
-                        <span onclick="editProfileField('followers')"><strong id="display-followers" class="text-black">1024</strong> <span class="text-gray-500">关注者</span></span>
+                        <span><strong class="text-black" id="user-following">128</strong> <span class="text-gray-500">正在关注</span></span>
+                        <span><strong class="text-black" id="user-followers">1024</strong> <span class="text-gray-500">关注者</span></span>
                     </div>
                 </div>
                 <div class="flex border-b mt-4">
@@ -218,26 +209,22 @@
                     <div class="flex-1 text-center py-3 text-gray-500">媒体</div>
                     <div class="flex-1 text-center py-3 text-gray-500">喜欢</div>
                 </div>
-                <div id="user-own-posts"></div>
+                <div id="user-own-tweets" class="bg-white"></div>
             </div>
         </div>
 
         <div class="bottom-tab-bar">
             <div class="tab-item active" onclick="switchTab('tweets')">
-                <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M21.58 13.91l-9-10a2 2 0 00-3.16 0l-9 10a2 2 0 001.58 3.42h1.58v6a2 2 0 002 2h8a2 2 0 002-2v-6h1.58a2 2 0 001.58-3.42z"></path></svg>
-                <span>推文</span>
+                <span class="tab-text">推文</span>
             </div>
             <div class="tab-item" onclick="switchTab('trends')">
-                <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M21.53 20.47l-3.66-3.66a8 8 0 10-1.06 1.06l3.66 3.66a.75.75 0 101.06-1.06zM10 16.5a6.5 6.5 0 110-13 6.5 6.5 0 010 13z"></path></svg>
-                <span>热点</span>
+                <span class="tab-text">热点</span>
             </div>
             <div class="tab-item" onclick="switchTab('messages')">
-                <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M1.998 5.5c0-1.381 1.119-2.5 2.5-2.5h15c1.381 0 2.5 1.119 2.5 2.5v13c0 1.381-1.119 2.5-2.5 2.5h-15c-1.381 0-2.5-1.119-2.5-2.5v-13zm2.5-.5a.5.5 0 00-.5.5v12.333L10.334 12 3.998 7.333V5.5a.5.5 0 00.5-.5zm14.5 0h-14v1.167L12 11.5l7-5.333V5zm.5 2.333L13.666 12l6.332 5.833V5.5a.5.5 0 00-.5-.5zm-1.167 11.167L12 12.5l-6.333 5.667h12.666z"></path></svg>
-                <span>私信</span>
+                <span class="tab-text">私信</span>
             </div>
             <div class="tab-item" onclick="switchTab('profile')">
-                <svg class="tab-icon-svg" viewBox="0 0 24 24"><path d="M17.863 13.44c1.477 1.58 2.366 3.8 2.366 6.31 0 .41-.34.75-.75.75H4.52a.75.75 0 01-.75-.75c0-2.51.889-4.73 2.366-6.31 1.252-1.34 3.163-2.19 5.864-2.19s4.612.85 5.863 2.19zm-5.863-1.94a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"></path></svg>
-                <span>主页</span>
+                <span class="tab-text">主页</span>
             </div>
         </div>
 
@@ -250,7 +237,7 @@
             <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
         </div>
         <div class="p-4 flex gap-3">
-            <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full sync-user-avatar">
+            <img id="compose-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full object-cover">
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 <div id="post-image-preview" class="mt-2 hidden relative">
@@ -274,131 +261,102 @@
     </div>
 
 <script>
-/* 核心配置与状态 */
+/* 核心配置 */
 let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4o-mini',
     systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
-    userProfile: {
-        nickname: '我',
-        handle: '@user_2026',
-        bio: '一个热爱生活与 AI 的探索者。',
-        following: '128',
-        followers: '1024',
-        avatar: 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg',
-        banner: ''
+    userData: {
+        nickname: "我",
+        handle: "@user_2026",
+        bio: "一个热爱生活与 AI 的探索者。",
+        following: 128,
+        followers: 1024
     }
 };
 let chatHistory = [];
+let myPosts = []; // 存储我发布的帖子
 
-/* 初始化加载 */
-window.onload = () => {
-    // 渲染初始资料
-    syncProfileUI();
-};
-
-/* --- 1. 用户资料同步系统 --- */
-function syncProfileUI() {
-    document.getElementById('display-nickname').innerText = config.userProfile.nickname;
-    document.getElementById('display-handle').innerText = config.userProfile.handle;
-    document.getElementById('display-bio').innerText = config.userProfile.bio;
-    document.getElementById('display-following').innerText = config.userProfile.following;
-    document.getElementById('display-followers').innerText = config.userProfile.followers;
-    
-    // 同步所有头像
-    const avatars = document.querySelectorAll('.sync-user-avatar');
-    avatars.forEach(img => img.src = config.userProfile.avatar);
-    document.getElementById('avatar-right').src = config.userProfile.avatar;
-
-    // 同步背景
-    if(config.userProfile.banner) {
-        document.getElementById('profile-banner').style.backgroundImage = `url(${config.userProfile.banner})`;
-    }
-}
-
-function editFullProfile() {
-    const p = config.userProfile;
-    const content = document.getElementById('modal-content');
-    document.getElementById('modal-overlay').classList.remove('hidden');
-    content.innerHTML = `
-        <h2 class="text-xl font-bold mb-4">编辑个人资料</h2>
-        <div class="space-y-3 text-sm">
-            <div><p class="mb-1">昵称</p><input id="edit-nick" class="w-full border p-2 rounded" value="${p.nickname}"></div>
-            <div><p class="mb-1">用户名</p><input id="edit-handle" class="w-full border p-2 rounded" value="${p.handle}"></div>
-            <div><p class="mb-1">简介</p><textarea id="edit-bio" class="w-full border p-2 rounded">${p.bio}</textarea></div>
-            <div class="flex gap-2">
-                <div class="flex-1"><p class="mb-1">关注中</p><input id="edit-follow" class="w-full border p-2 rounded" value="${p.following}"></div>
-                <div class="flex-1"><p class="mb-1">关注者</p><input id="edit-fans" class="w-full border p-2 rounded" value="${p.followers}"></div>
-            </div>
-        </div>
-    `;
-    // 劫持closeModal逻辑
-    const originalClose = window.closeModal;
-    window.closeModal = function() {
-        if(document.getElementById('edit-nick')) {
-            config.userProfile.nickname = document.getElementById('edit-nick').value;
-            config.userProfile.handle = document.getElementById('edit-handle').value;
-            config.userProfile.bio = document.getElementById('edit-bio').value;
-            config.userProfile.following = document.getElementById('edit-follow').value;
-            config.userProfile.followers = document.getElementById('edit-fans').value;
-            syncProfileUI();
-        }
-        document.getElementById('modal-overlay').classList.add('hidden');
-        window.closeModal = originalClose;
-    };
-}
-
-function editProfileField(field) {
-    if(field === 'avatar' || field === 'banner') {
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = 'image/*';
-        input.onchange = e => {
-            const reader = new FileReader();
-            reader.onload = ev => {
-                const src = ev.target.result;
-                if(field === 'avatar') config.userProfile.avatar = src;
-                else config.userProfile.banner = src;
-                syncProfileUI();
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
-        input.click();
-    }
-}
-
-/* --- 2. 主页交互逻辑 --- */
-function changeSystemWallpaper() {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = e => {
+/* 背景更换 */
+function changeSystemBg(input) {
+    if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = ev => {
-            document.getElementById('wallpaper-layer').style.backgroundImage = `url(${ev.target.result})`;
+        reader.onload = e => {
+            document.getElementById('home-screen').style.backgroundImage = `url(${e.target.result})`;
+            document.getElementById('home-screen').style.backgroundSize = 'cover';
         };
-        reader.readAsDataURL(e.target.files[0]);
-    };
-    input.click();
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
+/* 头像更换与同步 */
 function changeAvatar(side){
     const input=document.createElement('input');
     input.type='file'; input.accept='image/*';
     input.onchange=e=>{
+        const file=e.target.files[0];
         const reader=new FileReader();
         reader.onload=ev=>{ 
             const src = ev.target.result;
             document.getElementById(`avatar-${side}`).src=src; 
             if(side === 'right') {
-                config.userProfile.avatar = src;
-                syncProfileUI();
+                document.getElementById('profile-avatar-display').src = src;
+                document.getElementById('compose-avatar').src = src;
+                // 更新已发布的帖子头像
+                refreshAllMyAvatars(src);
             }
         };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsDataURL(file);
     };
     input.click();
 }
 
+function refreshAllMyAvatars(src) {
+    const avatars = document.querySelectorAll('.my-avatar');
+    avatars.forEach(img => img.src = src);
+}
+
+/* 个人主页编辑 */
+function editProfile() {
+    const content = document.getElementById('modal-content');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    content.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">编辑个人资料</h2>
+        <p class="text-xs mb-1">昵称</p>
+        <input id="edit-nickname" class="w-full border p-2 mb-3 rounded" value="${config.userData.nickname}">
+        <p class="text-xs mb-1">账号名</p>
+        <input id="edit-handle" class="w-full border p-2 mb-3 rounded" value="${config.userData.handle}">
+        <p class="text-xs mb-1">简介</p>
+        <textarea id="edit-bio" class="w-full border p-2 mb-3 rounded h-20">${config.userData.bio}</textarea>
+        <div class="flex gap-4">
+            <div class="flex-1">
+                <p class="text-xs mb-1">关注中</p>
+                <input id="edit-following" type="number" class="w-full border p-2 rounded" value="${config.userData.following}">
+            </div>
+            <div class="flex-1">
+                <p class="text-xs mb-1">关注者</p>
+                <input id="edit-followers" type="number" class="w-full border p-2 rounded" value="${config.userData.followers}">
+            </div>
+        </div>
+    `;
+}
+
+function changeProfileBg() {
+    document.getElementById('profile-bg-input').click();
+}
+
+function previewProfileBg(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('profile-bg-display').style.backgroundImage = `url(${e.target.result})`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+/* 小组件互动 */
 function editEmoji(side){
     const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
     const result=prompt("修改颜文字",el.innerText);
@@ -410,19 +368,30 @@ function editWidgetText(){
     if(result) el.innerText=result;
 }
 
-/* --- 3. 弹窗与设置 --- */
+/* 设置与弹窗 */
 function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
     if(type==='settings'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;
     }else if(type==='beauty'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm" placeholder="例如：body { filter: grayscale(1); }">${config.customCss || ''}</textarea>`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm" placeholder="例如: body { filter: sepia(0.2); }">${config.customCss || ''}</textarea>`;
     }else if(type==='presets'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;
     }
 }
+
 function closeModal(){
+    const editNick = document.getElementById('edit-nickname');
+    if(editNick) {
+        config.userData.nickname = editNick.value;
+        config.userData.handle = document.getElementById('edit-handle').value;
+        config.userData.bio = document.getElementById('edit-bio').value;
+        config.userData.following = document.getElementById('edit-following').value;
+        config.userData.followers = document.getElementById('edit-followers').value;
+        updateProfileUI();
+    }
+    
     if(document.getElementById('cfg-url')){
         config.baseUrl=document.getElementById('cfg-url').value;
         config.apiKey=document.getElementById('cfg-key').value;
@@ -430,8 +399,13 @@ function closeModal(){
     }
     if(document.getElementById('cfg-css')){
         config.customCss=document.getElementById('cfg-css').value;
-        const style = document.getElementById('custom-style');
-        style.innerHTML += config.customCss;
+        let styleTag = document.getElementById('injected-style');
+        if(!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'injected-style';
+            document.head.appendChild(styleTag);
+        }
+        styleTag.innerHTML = config.customCss;
     }
     if(document.getElementById('cfg-prompt')){
         config.systemPrompt=document.getElementById('cfg-prompt').value;
@@ -439,7 +413,15 @@ function closeModal(){
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
-/* --- 4. 微信功能 --- */
+function updateProfileUI() {
+    document.getElementById('user-nickname').innerText = config.userData.nickname;
+    document.getElementById('user-handle').innerText = config.userData.handle;
+    document.getElementById('user-bio').innerText = config.userData.bio;
+    document.getElementById('user-following').innerText = config.userData.following;
+    document.getElementById('user-followers').innerText = config.userData.followers;
+}
+
+/* 微信聊天逻辑 */
 function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
 function renderMsg(text,role){
@@ -458,7 +440,7 @@ function sendUserMsg(){
     input.value='';
 }
 async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key");
+    if(!config.apiKey)return alert("请先在设置中配置 API Key");
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
     try{
@@ -469,42 +451,34 @@ async function triggerAI(){
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,30),'assistant');
+        renderMsg(reply,'assistant');
         chatHistory.push({role:'assistant',content:reply});
-    }catch(e){ renderMsg("（连接超时）",'assistant'); }
+    }catch(e){ renderMsg("（连接API失败，请检查配置）",'assistant'); }
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* --- 5. 论坛与 Tab 逻辑 --- */
+/* 论坛逻辑 */
 function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
 function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
 
 function switchTab(tabId) {
-    const ids = ['tweets', 'trends', 'messages', 'profile'];
-    ids.forEach(id => document.getElementById(`tab-content-${id}`).classList.add('hidden'));
+    const tabs = ['tweets', 'trends', 'messages', 'profile'];
+    tabs.forEach(t => document.getElementById(`tab-content-${t}`).classList.add('hidden'));
     
-    const tabs = document.querySelectorAll('.tab-item');
-    tabs.forEach(t => t.classList.remove('active'));
+    const tabItems = document.querySelectorAll('.tab-item');
+    tabItems.forEach(t => t.classList.remove('active'));
 
-    const titles = { 'tweets': '推文', 'trends': '正在热搜', 'messages': '私信', 'profile': '主页' };
     document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
-    document.getElementById('forum-title').innerText = titles[tabId];
-
-    const index = ids.indexOf(tabId);
-    tabs[index].classList.add('active');
+    document.getElementById('forum-title').innerText = {'tweets':'推文','trends':'正在热搜','messages':'私信','profile':'主页'}[tabId];
+    tabItems[tabs.indexOf(tabId)].classList.add('active');
 
     const fab = document.getElementById('forum-fab');
     const syncBtn = document.getElementById('sync-btn');
-    if(tabId === 'tweets') { fab.classList.remove('hidden'); syncBtn.classList.remove('hidden'); }
+    if(tabId === 'tweets') { fab.classList.remove('hidden'); syncBtn.classList.remove('hidden'); } 
     else { fab.classList.add('hidden'); syncBtn.classList.add('hidden'); }
 }
 
-/* --- 6. 发帖与同步逻辑 --- */
-function openCompose(){ 
-    document.getElementById('compose-screen').classList.remove('hidden'); 
-    syncProfileUI(); // 确保发帖头像同步
-    validatePostContent(); 
-}
+function openCompose(){ document.getElementById('compose-screen').classList.remove('hidden'); validatePostContent(); }
 function closeCompose(){ 
     document.getElementById('compose-screen').classList.add('hidden');
     document.getElementById('post-text').value = '';
@@ -539,42 +513,46 @@ function clearPostImage(){
 
 function submitPost(){
     const text = document.getElementById('post-text').value.trim();
-    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
-    const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
-    
+    const imgSrc = !document.getElementById('post-image-preview').classList.contains('hidden') ? document.getElementById('preview-img').src : null;
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     
-    // 1. 发送到广场
-    addPostToFeed(config.userProfile.nickname, text, imgSrc, timeStr, true, config.userProfile.avatar, config.userProfile.handle);
-    
-    // 2. 发送到主页推文
-    addPostToProfile(config.userProfile.nickname, text, imgSrc, timeStr, config.userProfile.avatar, config.userProfile.handle);
+    // 发帖数据
+    const postObj = {
+        name: config.userData.nickname,
+        handle: config.userData.handle,
+        text: text,
+        img: imgSrc,
+        time: timeStr,
+        avatar: document.getElementById('profile-avatar-display').src
+    };
+
+    // 渲染到广场
+    addPostToContainer(postObj, 'forum-feed', true);
+    // 同步渲染到个人主页
+    addPostToContainer(postObj, 'user-own-tweets', true);
     
     closeCompose();
 }
 
-// 广场渲染函数 (增强版)
-function addPostToFeed(name, text, img, time, isUser=false, customAvatar=null, customHandle=null){
-    const feed = document.getElementById('forum-feed');
-    const hint = document.getElementById('empty-hint');
+function addPostToContainer(data, containerId, isMe){
+    const container = document.getElementById(containerId);
+    const hint = container.querySelector('#empty-hint');
     if(hint) hint.remove();
     
     const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3";
-    const avatar = customAvatar || (isUser ? config.userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg");
-    const handle = customHandle || (isUser ? config.userProfile.handle : "@anonymous");
+    div.className = "tweet-card flex gap-3 animate-in";
     
-    let imgHtml = img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "";
+    const imgHtml = data.img ? `<img src="${data.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "";
 
     div.innerHTML = `
-        <img src="${avatar}" class="tweet-avatar ${isUser?'sync-user-avatar':''}">
+        <img src="${data.avatar}" class="tweet-avatar ${isMe ? 'my-avatar' : ''}">
         <div class="flex-1">
             <div class="flex items-center gap-1">
-                <span class="font-bold text-[15px]">${name}</span>
-                <span class="text-gray-500 text-[14px]">${handle} · ${time}</span>
+                <span class="font-bold text-[15px]">${data.name}</span>
+                <span class="text-gray-500 text-[14px]">${data.handle} · ${data.time}</span>
             </div>
-            <div class="text-[15px] mt-1 leading-normal">${text}</div>
+            <div class="text-[15px] mt-1 leading-normal">${data.text}</div>
             ${imgHtml}
             <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[280px]">
                 <span class="action-item flex items-center"><img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0</span>
@@ -584,34 +562,13 @@ function addPostToFeed(name, text, img, time, isUser=false, customAvatar=null, c
             </div>
         </div>
     `;
-    feed.prepend(div);
-}
-
-// 主页渲染函数
-function addPostToProfile(name, text, img, time, avatar, handle){
-    const container = document.getElementById('user-own-posts');
-    const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3 border-t";
-    let imgHtml = img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "";
-    
-    div.innerHTML = `
-        <img src="${avatar}" class="tweet-avatar sync-user-avatar">
-        <div class="flex-1">
-            <div class="flex items-center gap-1">
-                <span class="font-bold text-[15px]">${name}</span>
-                <span class="text-gray-500 text-[14px]">${handle} · ${time}</span>
-            </div>
-            <div class="text-[15px] mt-1 leading-normal">${text}</div>
-            ${imgHtml}
-        </div>
-    `;
     container.prepend(div);
 }
 
 async function generateAIPosts(){
     if(!config.apiKey) return alert("同步广场需要配置 API Key");
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在穿梭时空抓取动态...</div>';
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在抓取最新推文...</div>';
     
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -619,7 +576,7 @@ async function generateAIPosts(){
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '模拟生成8条推文，JSON格式：{"posts":[{"name":"昵称","handle":"@账号","text":"内容"}]}.'}],
+                messages: [{role: 'system', content: '生成10条推文JSON：{"posts":[{"name":"昵称","handle":"@id","text":"内容"}]}'}],
                 response_format: { type: "json_object" }
             })
         });
@@ -627,10 +584,18 @@ async function generateAIPosts(){
         const posts = JSON.parse(data.choices[0].message.content).posts;
         feed.innerHTML = "";
         posts.forEach(p => {
-            addPostToFeed(p.name, p.text, null, "刚刚", false, null, p.handle);
+            addPostToContainer({
+                name: p.name,
+                handle: p.handle,
+                text: p.text,
+                img: null,
+                time: "刚刚",
+                avatar: `https://i.pravatar.cc/150?u=${Math.random()}`
+            }, 'forum-feed', false);
         });
     } catch(e) {
-        feed.innerHTML = '<div class="p-10 text-center text-red-400">同步失败，请检查 API 设置</div>';
+        alert("API 异常，已加载本地缓存");
+        feed.innerHTML = '<div class="p-4 text-center text-gray-400">网络连接超时，请重试</div>';
     }
 }
 </script>
