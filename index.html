@@ -24,8 +24,8 @@
             width:100%;
             border-radius:28px;
             padding:20px;
-            background:linear-gradient(135deg,#ffffff,#f3f4f6);
-            box-shadow:0 8px 20px rgba(0,0,0,0.08);
+            background:white;
+            box-shadow:0 8px 20px rgba(0,0,0,0.05);
             position:relative;
             transition: all 0.3s ease;
         }
@@ -34,20 +34,71 @@
             height:60px;
             border-radius:50%;
             object-fit:cover;
-            border:3px solid white;
-            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+            background: #e5e7eb;
         }
         .widget-emoji{
             font-size:14px;
             cursor:pointer;
+            font-weight: bold;
         }
         .widget-text{
             position:absolute;
             bottom:15px;
             right:20px;
             font-size:12px;
-            color:#555;
+            color:#888;
             cursor:pointer;
+        }
+
+        /* 截图同款照片小组件 */
+        .photo-widget {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 20px;
+            padding: 10px;
+            width: 150px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+        }
+        .photo-display {
+            background: #666;
+            flex: 1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 4px;
+        }
+        .photo-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .time-box {
+            font-size: 10px;
+            color: #333;
+            line-height: 1.2;
+            font-weight: bold;
+        }
+        .text-btn {
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* 占位APP样式 */
+        .app-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #666;
+            border-radius: 15px;
         }
 
         /* 论坛专有样式 */
@@ -75,18 +126,13 @@
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* 微信“我”页面还原样式 - 深度定制版 */
-        /* 3. 整体下移2px (25px -> 27px) */
         .wx-me-header { padding: 27px 24px 20px 24px; background: white; display: flex; flex-direction: column; align-items: flex-start; }
-        /* 1. 头像放大10px (72px -> 82px) */
         .wx-me-avatar-rect { width: 82px; height: 82px; border-radius: 50%; object-fit: cover; background: #f0f0f0; margin-bottom: 16px; cursor: pointer; }
         .wx-status-tag { display: inline-flex; align-items: center; border: 1px solid #e8e8e8; border-radius: 20px; padding: 2px 10px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s; background: #fdfdfd; }
         .wx-status-tag:active { background: #f2f2f2; }
         .wx-status-dot { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 6px; }
         
-        /* 2. 名字样式调整 */
         #wx-me-name { font-size: 22px; font-weight: 600; color: #303030; cursor: pointer; }
-        /* 2. 账号字体粗细调整 (名字600/2=300) */
         #wx-me-id { color: #9ca3af; font-size: 15px; font-weight: 300; margin-top: 4px; cursor: pointer; }
 
         .wx-menu-item { background: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f2f2f2; cursor: pointer; transition: background 0.2s; }
@@ -96,37 +142,51 @@
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
 
-        /* 细线替代宽横线 */
         .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
 
     <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-        <div class="widget-card mb-12 mt-4">
-            <div class="flex items-start gap-10">
+        <div class="widget-card mb-8 mt-4">
+            <div class="flex items-start gap-12">
                 <div class="flex flex-col items-center gap-1">
                     <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
-                    <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
+                    <div class="rounded-full bg-gray-200 overflow-hidden w-[60px] h-[60px]">
+                        <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
+                    </div>
                 </div>
                 <div class="flex flex-col items-center gap-1">
                     <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
-                    <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
+                    <div class="rounded-full bg-gray-200 overflow-hidden w-[60px] h-[60px]">
+                        <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
+                    </div>
                 </div>
             </div>
             <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
         </div>
 
-        <div class="grid grid-cols-4 gap-6 w-full px-4">
-            <div class="col-span-4 flex justify-end">
+        <div class="w-full flex justify-between px-2 items-start">
+            <div class="photo-widget">
+                <div class="photo-display">照片</div>
+                <div class="photo-info">
+                    <div class="time-box">
+                        ❤️ 月 - 日<br>
+                        ⭐ 时 : 分
+                    </div>
+                    <div class="text-btn">文本</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-6 gap-y-8">
+                <div class="app-placeholder"></div>
                 <div class="flex flex-col items-center gap-1" onclick="openChat()">
                     <div class="app-icon overflow-hidden p-0">
                         <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
                     </div>
                     <span class="text-xs text-gray-600">微信</span>
                 </div>
-            </div>
-            <div class="col-span-4 flex justify-end mt-4">
+                <div class="app-placeholder"></div>
                 <div class="flex flex-col items-center gap-1" onclick="openForum()">
                     <div class="app-icon overflow-hidden p-0">
                         <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
@@ -134,6 +194,20 @@
                     <span class="text-xs text-gray-600">论坛</span>
                 </div>
             </div>
+        </div>
+
+        <div class="mt-12 w-full flex flex-col gap-4 px-4 opacity-80">
+            <div class="flex items-center gap-3">
+                 <div class="text-[10px] italic text-gray-400 bg-white px-2 rounded-full border">char</div>
+                 <div class="w-10 h-10 bg-[#666] rounded-full flex items-center justify-center text-[10px] text-white">头像</div>
+            </div>
+            <div class="bg-white border rounded-full px-4 py-1 text-[10px] w-fit text-gray-400">文本文本文本文本文本文本 <span class="text-[8px] ml-2">已读</span></div>
+            
+            <div class="flex items-center gap-3 self-end">
+                <div class="w-10 h-10 bg-[#666] rounded-full flex items-center justify-center text-[10px] text-white">头像</div>
+                <div class="text-[10px] italic text-gray-400 bg-white px-2 rounded-full border">user</div>
+            </div>
+            <div class="bg-black text-white rounded-full px-4 py-1 text-[10px] self-end">文本文本文本文本文本文本 <span class="text-[8px] ml-2 opacity-50">未读</span></div>
         </div>
 
         <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);">
@@ -195,7 +269,6 @@
             <div id="wechat-tab-me" class="hidden bg-white min-h-full">
                 <div class="wx-me-header">
                     <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
-                    
                     <div class="flex items-center gap-3">
                         <span id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
                         <div class="wx-status-tag" onclick="editStatus()">
@@ -203,21 +276,16 @@
                             <span id="wx-me-status">状态</span>
                         </div>
                     </div>
-                    
                     <div id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                 </div>
-                
                 <div class="wx-divider-thin"></div>
-                
                 <div class="bg-white">
                     <div class="wx-menu-item" onclick="openMePage('钱包')">
                         <span class="text-[16px]">钱包</span>
                         <span class="wx-chevron">〉</span>
                     </div>
                 </div>
-                
                 <div class="wx-divider-thin"></div>
-                
                 <div class="bg-white">
                     <div class="wx-menu-item" onclick="openMePage('个人资料')">
                         <span class="text-[16px]">个人资料</span>
@@ -318,7 +386,6 @@
                 <span class="text-xs font-bold">我</span>
             </button>
         </div>
-
         <div class="fab-btn" onclick="openCompose()">+</div>
     </div>
 
