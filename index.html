@@ -103,7 +103,7 @@
 <body class="h-screen overflow-hidden flex flex-col">
 
     <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-        <div class="widget-card mb-6 mt-4">
+        <div class="widget-card mb-12 mt-4">
             <div class="flex items-start gap-10">
                 <div class="flex flex-col items-center gap-1">
                     <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
@@ -117,47 +117,40 @@
             <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
         </div>
 
-        <div class="flex gap-4 w-full px-4 mb-6">
-            <div class="flex-1 bg-white rounded-[24px] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col justify-between" style="min-height: 110px;">
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-red-500 font-bold text-lg leading-none">♥</span>
-                    <span class="text-yellow-400 font-bold text-lg leading-none">★</span>
+        <div class="flex w-full px-1 gap-5 mt-2 justify-between items-start z-10">
+            
+            <div class="w-[160px] h-[160px] rounded-[24px] border-[1.5px] border-[#333] p-2.5 flex flex-col relative bg-transparent transition-transform active:scale-95 cursor-default">
+                <div class="flex-1 bg-[#5c5c5c] rounded-[16px] flex items-center justify-center text-black text-[28px] font-black mb-2.5 shadow-sm overflow-hidden relative cursor-pointer" onclick="alert('照片展示功能待开发')">
+                    <span class="relative z-10 tracking-widest font-sans">照片</span>
                 </div>
-                <div class="mt-2 text-left">
-                    <div id="desktop-live-time" class="text-[32px] font-black text-gray-800 tracking-tight leading-none">00:00</div>
-                    <div id="desktop-live-date" class="text-[13px] font-bold text-gray-500 mt-1.5">0月0日</div>
+                <div class="h-[42px] flex gap-2">
+                    <div class="flex-1 border-[1.5px] border-[#333] rounded-[14px] flex flex-col justify-center items-start pl-2 pr-1 text-[11px] font-bold text-[#333] leading-[1.2]">
+                        <div id="widget-date-display" class="tracking-widest">♥ 月 - 日</div>
+                        <div id="widget-time-display" class="tracking-widest mt-[2px]">★ 时 : 分</div>
+                    </div>
+                    <div class="w-[42px] border-[1.5px] border-[#333] rounded-full flex items-center justify-center text-[11px] font-bold text-[#333] cursor-pointer hover:bg-gray-100 transition-colors" onclick="alert('文本编辑待开发')">
+                        文本
+                    </div>
                 </div>
             </div>
-            <div class="flex-1 bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] rounded-[24px] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col justify-center items-center">
-                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-2 shadow-sm text-xl">🚀</div>
-                <span class="text-[12px] text-gray-500 font-bold">探索未来</span>
-            </div>
-        </div>
-        <div class="grid grid-cols-4 gap-6 w-full px-4">
-            <div class="col-span-1 flex justify-center">
-                <div class="flex flex-col items-center gap-1" onclick="openPlaceholderApp('占位1')">
-                    <div class="app-icon bg-gradient-to-tr from-gray-100 to-white border border-gray-100 p-0 text-xl font-black text-gray-300">1</div>
+
+            <div class="flex-1 grid grid-cols-2 gap-x-2 gap-y-4 place-items-end pt-0 pr-1">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(1)">
+                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
                     <span class="text-xs text-gray-600">占位1</span>
                 </div>
-            </div>
-            <div class="col-span-1 flex justify-center">
-                <div class="flex flex-col items-center gap-1" onclick="openPlaceholderApp('占位2')">
-                    <div class="app-icon bg-gradient-to-tr from-gray-100 to-white border border-gray-100 p-0 text-xl font-black text-gray-300">2</div>
-                    <span class="text-xs text-gray-600">占位2</span>
-                </div>
-            </div>
-            
-            <div class="col-span-4 flex justify-end">
-                <div class="flex flex-col items-center gap-1" onclick="openChat()">
-                    <div class="app-icon overflow-hidden p-0">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openChat()">
+                    <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                         <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
                     </div>
                     <span class="text-xs text-gray-600">微信</span>
                 </div>
-            </div>
-            <div class="col-span-4 flex justify-end mt-4">
-                <div class="flex flex-col items-center gap-1" onclick="openForum()">
-                    <div class="app-icon overflow-hidden p-0">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
+                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
+                    <span class="text-xs text-gray-600">占位2</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
+                    <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                         <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
                     </div>
                     <span class="text-xs text-gray-600">论坛</span>
@@ -178,21 +171,6 @@
         </div>
     </div>
 
-    <div id="placeholder-app-screen" class="fixed inset-0 bg-[#f5f5f5] hidden flex flex-col z-[80]">
-        <div class="h-14 bg-white flex items-center px-4 border-b">
-            <button onclick="closePlaceholderApp()" class="back-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <div id="placeholder-app-title" class="flex-1 text-center font-bold text-[17px]">占位</div>
-            <div class="w-6"></div>
-        </div>
-        <div class="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <div class="text-4xl mb-4 opacity-50">🚧</div>
-            <div>此页面暂且空白，等待后续开发...</div>
-        </div>
-    </div>
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
             <button onclick="closeChat()" class="back-icon">
@@ -387,6 +365,21 @@
         </div>
     </div>
 
+    <div id="placeholder-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closePlaceholder()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div id="placeholder-title" class="flex-1 text-center font-bold">占位APP</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 flex items-center justify-center text-gray-400 italic">
+            暂且空白...
+        </div>
+    </div>
+
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-6">
         <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
             <div id="modal-content"></div>
@@ -413,30 +406,6 @@ let userProfile = {
 };
 
 let chatHistory = [];
-
-/* 【新增功能】桌面小组件实时时间同步 */
-function updateDesktopTime() {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    
-    const timeEl = document.getElementById('desktop-live-time');
-    const dateEl = document.getElementById('desktop-live-date');
-    if(timeEl) timeEl.innerText = `${hours}:${minutes}`;
-    if(dateEl) dateEl.innerText = `${month}月${day}日`;
-}
-setInterval(updateDesktopTime, 1000); // 每秒刷新时间
-
-/* 【新增功能】占位APP打开与关闭 */
-function openPlaceholderApp(appName) {
-    document.getElementById('placeholder-app-title').innerText = appName;
-    document.getElementById('placeholder-app-screen').classList.remove('hidden');
-}
-function closePlaceholderApp() {
-    document.getElementById('placeholder-app-screen').classList.add('hidden');
-}
 
 function syncProfileToAI() {
     config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
@@ -746,10 +715,38 @@ function closeModal(){
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
+// 占位APP开关功能
+function openPlaceholder(id) {
+    document.getElementById('placeholder-title').innerText = '占位APP ' + id;
+    document.getElementById('placeholder-screen').classList.remove('hidden');
+}
+
+function closePlaceholder() {
+    document.getElementById('placeholder-screen').classList.add('hidden');
+}
+
+// 实时更新时间和小组件日期功能
+function updateWidgetTime() {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    
+    const dateEl = document.getElementById('widget-date-display');
+    const timeEl = document.getElementById('widget-time-display');
+    
+    if (dateEl) dateEl.innerText = `♥ ${month} - ${day}`;
+    if (timeEl) timeEl.innerText = `★ ${hours} : ${minutes}`;
+}
+
+// 立即执行一次并设置定时器
+updateWidgetTime();
+setInterval(updateWidgetTime, 1000);
+
 window.onload = () => {
     switchWechatTab('messages');
     syncProfileToAI();
-    updateDesktopTime(); // 初始化实时时间
 };
 </script>
 </body>
