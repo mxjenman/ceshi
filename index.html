@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+    <link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AI Mobile OS">
+    
     <title>AI Mobile OS - Plus Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
-        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; }
+        .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .app-icon:active { transform: scale(0.85); }
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
         .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
 
@@ -20,6 +27,7 @@
             background:linear-gradient(135deg,#ffffff,#f3f4f6);
             box-shadow:0 8px 20px rgba(0,0,0,0.08);
             position:relative;
+            transition: all 0.3s ease;
         }
         .widget-avatar{
             width:60px;
@@ -56,6 +64,10 @@
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
         .profile-avatar-main { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
         .tab-active { border-bottom: 4px solid #1d9bf0; color: #000; font-weight: bold; }
+        
+        /* 进场动画 */
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -168,8 +180,7 @@
                     <div class="flex-1 text-center py-3 text-gray-500 text-sm">媒体</div>
                     <div class="flex-1 text-center py-3 text-gray-500 text-sm">喜欢</div>
                 </div>
-                <div id="profile-posts-feed">
-                    </div>
+                <div id="profile-posts-feed"></div>
             </div>
         </div>
 
@@ -226,10 +237,11 @@ let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4o-mini',
-    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
+    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
+    customCss: ''
 };
 
-// 用户资料状态枢纽
+// 用户资料状态
 let userProfile = {
     name: "Gemini User",
     handle: "@user_ai",
@@ -253,11 +265,13 @@ function changeAvatar(side){
     };
     input.click();
 }
+
 function editEmoji(side){
     const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
     const result=prompt("修改颜文字",el.innerText);
     if(result) el.innerText=result;
 }
+
 function editWidgetText(){
     const el=document.getElementById('widget-text');
     const result=prompt("修改文案",el.innerText);
@@ -267,14 +281,16 @@ function editWidgetText(){
 /* 微信聊天逻辑 */
 function openChat(){document.getElementById('chat-screen').classList.remove('hidden');}
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
+
 function renderMsg(text,role){
     const container=document.getElementById('chat-flow');
     const div=document.createElement('div');
-    div.className=`flex ${role==='user'?'justify-end':'justify-start'}`;
+    div.className=`flex ${role==='user'?'justify-end':'justify-start'} animate-in`;
     div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
     container.appendChild(div);
     container.scrollTop=container.scrollHeight;
 }
+
 function sendUserMsg(){
     const input=document.getElementById('chat-input');
     if(!input.value)return;
@@ -282,8 +298,9 @@ function sendUserMsg(){
     chatHistory.push({role:'user',content:input.value});
     input.value='';
 }
+
 async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key");
+    if(!config.apiKey)return alert("请先配置 API Key (在主屏设置中)");
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
     try{
@@ -294,8 +311,8 @@ async function triggerAI(){
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,25),'assistant');
-        chatHistory.push({role:'assistant',content:reply.substring(0,25)});
+        renderMsg(reply.substring(0,50),'assistant');
+        chatHistory.push({role:'assistant',content:reply});
     }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
@@ -320,7 +337,6 @@ function switchForumTab(tab){
     }
 }
 
-// 资料编辑功能
 function editProfilePart(part){
     if(part === 'bg' || part === 'avatar'){
         const input = document.createElement('input');
@@ -347,12 +363,12 @@ function editProfilePart(part){
             'following': ['count-following', '修改关注数', null],
             'followers': ['count-followers', '修改粉丝数', null]
         };
-        const config = map[part];
-        const el = document.getElementById(config[0]);
-        const res = prompt(config[1], el.innerText);
+        const cfg = map[part];
+        const el = document.getElementById(cfg[0]);
+        const res = prompt(cfg[1], el.innerText);
         if(res !== null){
             el.innerText = res;
-            if(config[2]) userProfile[config[2]] = res;
+            if(cfg[2]) userProfile[cfg[2]] = res;
         }
     }
 }
@@ -405,12 +421,10 @@ function submitPost(){
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     
-    // 发送到广场和个人主页
     addPostToFeed(userProfile.name, userProfile.handle, text, imgSrc, timeStr, true);
     closeCompose();
 }
 
-// 统一发帖函数
 function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     const squareFeed = document.getElementById('forum-feed');
     const profileFeed = document.getElementById('profile-posts-feed');
@@ -419,7 +433,7 @@ function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     
     const createNode = () => {
         const div = document.createElement('div');
-        div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
+        div.className = "tweet-card flex gap-3 animate-in";
         const avatarUrl = isUserPost ? userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
         
         div.innerHTML = `
@@ -432,10 +446,10 @@ function addPostToFeed(name, handle, text, img, time, isUserPost = false){
                 <div class="text-[15px] mt-1 leading-normal">${text}</div>
                 ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
                 <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[280px]">
-                    <span class="action-item flex items-center"><img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0</span>
-                    <span class="action-item flex items-center"><img src="https://i.postimg.cc/m1PB9gXN/IMG-3092.png" class="action-icon"> 0</span>
-                    <span class="action-item flex items-center"><img src="https://i.postimg.cc/dZhwCVHr/IMG-3091.png" class="action-icon"> 0</span>
-                    <span class="action-item flex items-center"><img src="https://i.postimg.cc/n9XpmhRT/IMG-3093.png" class="action-icon"> 0</span>
+                    <span class="flex items-center"><img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0</span>
+                    <span class="flex items-center"><img src="https://i.postimg.cc/m1PB9gXN/IMG-3092.png" class="action-icon"> 0</span>
+                    <span class="flex items-center"><img src="https://i.postimg.cc/dZhwCVHr/IMG-3091.png" class="action-icon"> 0</span>
+                    <span class="flex items-center"><img src="https://i.postimg.cc/n9XpmhRT/IMG-3093.png" class="action-icon"> 0</span>
                 </div>
             </div>
         `;
@@ -479,11 +493,12 @@ function openModal(type){
     if(type==='settings'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;
     }else if(type==='beauty'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss || ""}</textarea>`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm" placeholder="例如: body { background: pink; }">${config.customCss}</textarea>`;
     }else if(type==='presets'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;
     }
 }
+
 function closeModal(){
     if(document.getElementById('cfg-url')){
         config.baseUrl=document.getElementById('cfg-url').value;
@@ -493,7 +508,8 @@ function closeModal(){
     if(document.getElementById('cfg-css')){
         const css = document.getElementById('cfg-css').value;
         config.customCss = css;
-        document.getElementById('custom-style').innerHTML += css;
+        const styleTag = document.getElementById('custom-style');
+        styleTag.innerHTML += css;
     }
     if(document.getElementById('cfg-prompt')){
         config.systemPrompt=document.getElementById('cfg-prompt').value;
