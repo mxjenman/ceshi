@@ -44,21 +44,21 @@
 
         /* 论坛专有样式 */
         .tweet-card { border-bottom: 1px solid #eff3f4; padding: 12px 16px; background: white; }
-        .tweet-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .tweet-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
         .fab-btn { position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; border-radius: 28px; background: #000000; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 24px; z-index: 60; cursor: pointer; transition: transform 0.1s; }
         .fab-btn:active { transform: scale(0.9); }
         
         .btn-disabled { background-color: #cccccc !important; cursor: not-allowed !important; opacity: 0.6; }
+
         .action-icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 4px; opacity: 0.6; }
         .action-item:hover .action-icon { opacity: 1; }
+
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
-        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; }
+        .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; border:none; background:none; }
 
         /* 个人主页样式 */
-        .profile-banner { width: 100%; height: 150px; background: #cfd9de; object-fit: cover; cursor: pointer; }
-        .profile-avatar-container { margin-top: -40px; padding: 0 16px; position: relative; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; cursor: pointer; }
-        .tab-active { border-bottom: 4px solid #1d9bf0; font-weight: bold; }
+        .profile-header-img { width: 100%; height: 150px; object-fit: cover; background: #e5e7eb; cursor: pointer; }
+        .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; position: absolute; left: 16px; bottom: -40px; cursor: pointer; object-fit: cover; background: #fff; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -129,71 +129,66 @@
     </div>
 
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
-        <div id="forum-feed-view" class="flex flex-col h-full">
-            <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
-                <button onclick="closeForum()" class="back-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
-                <button onclick="generateAIPosts()" class="flex items-center justify-center">
-                    <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
-                </button>
-            </div>
-            <div id="forum-feed" class="flex-1 overflow-y-auto bg-white pb-24">
-                <div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>
-            </div>
+        <div class="h-14 bg-white/80 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10">
+            <button onclick="openProfile()" class="w-8 h-8 rounded-full overflow-hidden border">
+                <img id="forum-top-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
+            </button>
+            <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
+            <button onclick="generateAIPosts()" class="flex items-center justify-center">
+                <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
+            </button>
+        </div>
+        
+        <div id="forum-feed" class="flex-1 overflow-y-auto bg-white pb-20">
+            <div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>
         </div>
 
-        <div id="forum-profile-view" class="flex flex-col h-full hidden overflow-y-auto bg-white">
-            <div class="relative">
-                <img id="user-banner" src="https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000" class="profile-banner" onclick="changeUserAsset('banner')">
-                <div class="absolute top-4 left-4 bg-black/30 rounded-full p-1" onclick="switchForumTab('feed')">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 18L9 12L15 6"/></svg>
-                </div>
-            </div>
-            <div class="profile-avatar-container flex justify-between items-end">
-                <img id="user-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="profile-avatar" onclick="changeUserAsset('avatar')">
-                <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm mb-2 mr-4">编辑个人资料</button>
-            </div>
-            <div class="px-4 mt-3">
-                <div class="font-black text-xl flex items-center gap-1">
-                    <span id="user-name-display" onclick="editUserProfile('name')">AI 用户</span>
-                </div>
-                <div class="text-gray-500 text-sm" id="user-handle-display" onclick="editUserProfile('handle')">@ai_user_plus</div>
-                <div class="mt-3 text-[15px]" id="user-bio-display" onclick="editUserProfile('bio')">点击此处修改你的个性签名。</div>
-                <div class="flex gap-4 mt-3 text-sm">
-                    <span onclick="editUserProfile('following')"><b id="count-following">128</b> <span class="text-gray-500">正在关注</span></span>
-                    <span onclick="editUserProfile('followers')"><b id="count-followers">1024</b> <span class="text-gray-500">关注者</span></span>
-                </div>
-            </div>
-            <div class="flex border-b mt-4">
-                <div class="flex-1 py-3 text-center tab-active">推文</div>
-                <div class="flex-1 py-3 text-center text-gray-500">回复</div>
-                <div class="flex-1 py-3 text-center text-gray-500">媒体</div>
-                <div class="flex-1 py-3 text-center text-gray-500">喜欢</div>
-            </div>
-            <div id="user-post-feed" class="bg-white pb-24">
-                </div>
-        </div>
-
-        <div class="fixed bottom-0 w-full bg-white border-t flex justify-around py-3 z-[55]">
-            <button onclick="switchForumTab('feed')" class="flex flex-col items-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 13.91l-9-10c-.38-.42-1.03-.42-1.41 0l-9 10c-.26.29-.33.71-.17 1.07.16.36.52.59.91.59h2v6c0 .55.45 1 1 1h5v-5h2v5h5c.55 0 1-.45 1-1v-6h2c.39 0 .75-.23.91-.59.16-.36.09-.78-.17-1.07z"/></svg>
+        <div class="h-14 border-t flex items-center justify-around bg-white">
+            <button onclick="openForum()" class="flex flex-col items-center">
+                <span class="text-black font-bold text-xs">首页</span>
             </button>
-            <button class="flex flex-col items-center text-gray-400">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <button class="flex flex-col items-center">
+                <span class="text-gray-400 text-xs">搜索</span>
             </button>
-            <button class="flex flex-col items-center text-gray-400">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <button class="flex flex-col items-center">
+                <span class="text-gray-400 text-xs">通知</span>
             </button>
-            <button onclick="switchForumTab('profile')" class="flex flex-col items-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <button class="flex flex-col items-center">
+                <span class="text-gray-400 text-xs">私信</span>
             </button>
         </div>
 
         <div class="fab-btn" onclick="openCompose()">+</div>
+    </div>
+
+    <div id="profile-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[55] overflow-y-auto">
+        <div class="absolute top-4 left-4 z-10">
+            <button onclick="closeProfile()" class="bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+        </div>
+        <img id="profile-bg" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="profile-header-img" onclick="changeProfileItem('bg')">
+        <div class="relative px-4 pb-4">
+            <img id="profile-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="profile-avatar-large" onclick="changeProfileItem('avatar')">
+            <div class="flex justify-end pt-3">
+                <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm">编辑个人资料</button>
+            </div>
+            <div class="mt-6">
+                <div id="profile-name" class="font-bold text-xl leading-tight" onclick="changeProfileItem('name')">AI Explorer</div>
+                <div id="profile-handle" class="text-gray-500 text-sm" onclick="changeProfileItem('handle')">@explorer_ai</div>
+            </div>
+            <div id="profile-bio" class="mt-3 text-[15px]" onclick="changeProfileItem('bio')">点击这里修改你的个人简介，让别人更了解你。</div>
+            <div class="flex gap-4 mt-3 text-sm">
+                <span onclick="changeProfileItem('following')"><strong id="profile-following">128</strong> <span class="text-gray-500">正在关注</span></span>
+                <span onclick="changeProfileItem('followers')"><strong id="profile-followers">1024</strong> <span class="text-gray-500">关注者</span></span>
+            </div>
+        </div>
+        <div class="border-b flex">
+            <div class="px-4 py-3 border-b-4 border-black font-bold text-sm">推文</div>
+            <div class="px-4 py-3 text-gray-500 font-bold text-sm">回复</div>
+            <div class="px-4 py-3 text-gray-500 font-bold text-sm">媒体</div>
+            <div class="px-4 py-3 text-gray-500 font-bold text-sm">喜欢</div>
+        </div>
+        <div id="profile-posts-feed" class="flex-1">
+            </div>
     </div>
 
     <div id="compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
@@ -202,7 +197,7 @@
             <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
         </div>
         <div class="p-4 flex gap-3">
-            <img id="compose-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full object-cover">
+            <img id="compose-user-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full">
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 <div id="post-image-preview" class="mt-2 hidden relative">
@@ -231,23 +226,13 @@ let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4o-mini',
-    city: '北京',
-    weather: '晴',
-    customCss: '',
-    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。'
+    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
+    userName: 'AI Explorer',
+    userHandle: '@explorer_ai',
+    userBio: '点击这里修改你的个人简介，让别人更了解你。',
+    following: '128',
+    followers: '1024'
 };
-
-// 论坛用户信息
-let userData = {
-    name: "AI 用户",
-    handle: "@ai_user_plus",
-    bio: "探索未来，从这里开始。",
-    avatar: "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
-    banner: "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000",
-    following: 128,
-    followers: 1024
-};
-
 let chatHistory = [];
 
 /* UI 交互逻辑 */
@@ -273,65 +258,38 @@ function editWidgetText(){
     if(result) el.innerText=result;
 }
 
-/* 论坛视图切换 */
-function switchForumTab(tab) {
-    const feedView = document.getElementById('forum-feed-view');
-    const profileView = document.getElementById('forum-profile-view');
-    const fab = document.querySelector('.fab-btn');
-    
-    if(tab === 'profile') {
-        feedView.classList.add('hidden');
-        profileView.classList.remove('hidden');
-        fab.classList.add('hidden');
-        syncProfileUI();
-    } else {
-        feedView.classList.remove('hidden');
-        profileView.classList.add('hidden');
-        fab.classList.remove('hidden');
-    }
+/* 个人资料修改逻辑 */
+function openProfile() { 
+    document.getElementById('profile-screen').classList.remove('hidden'); 
 }
+function closeProfile() { document.getElementById('profile-screen').classList.add('hidden'); }
 
-/* 用户资料修改 */
-function syncProfileUI() {
-    document.getElementById('user-avatar').src = userData.avatar;
-    document.getElementById('user-banner').src = userData.banner;
-    document.getElementById('user-name-display').innerText = userData.name;
-    document.getElementById('user-handle-display').innerText = userData.handle;
-    document.getElementById('user-bio-display').innerText = userData.bio;
-    document.getElementById('count-following').innerText = userData.following;
-    document.getElementById('count-followers').innerText = userData.followers;
-    document.getElementById('compose-avatar').src = userData.avatar;
-}
-
-function changeUserAsset(type) {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = ev => {
-            if(type === 'avatar') {
-                userData.avatar = ev.target.result;
-            } else {
-                userData.banner = ev.target.result;
-            }
-            syncProfileUI();
+function changeProfileItem(type) {
+    if(type === 'bg' || type === 'avatar') {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = 'image/*';
+        input.onchange = e => {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const src = ev.target.result;
+                if(type === 'bg') document.getElementById('profile-bg').src = src;
+                if(type === 'avatar') {
+                    document.getElementById('profile-avatar').src = src;
+                    document.getElementById('forum-top-avatar').src = src;
+                    document.getElementById('compose-user-avatar').src = src;
+                }
+            };
+            reader.readAsDataURL(e.target.files[0]);
         };
-        reader.readAsDataURL(e.target.files[0]);
-    };
-    input.click();
-}
-
-function editUserProfile(field) {
-    let newVal;
-    if(field === 'name') newVal = prompt("修改昵称", userData.name);
-    if(field === 'handle') newVal = prompt("修改账号", userData.handle);
-    if(field === 'bio') newVal = prompt("修改简介", userData.bio);
-    if(field === 'following') newVal = prompt("修改关注数", userData.following);
-    if(field === 'followers') newVal = prompt("修改粉丝数", userData.followers);
-    
-    if(newVal !== null) {
-        userData[field] = newVal;
-        syncProfileUI();
+        input.click();
+    } else {
+        const el = document.getElementById(`profile-${type}`);
+        const result = prompt("修改内容", el.innerText);
+        if(result) {
+            el.innerText = result;
+            if(type === 'name') config.userName = result;
+            if(type === 'handle') config.userHandle = result;
+        }
     }
 }
 
@@ -342,7 +300,7 @@ function openModal(type){
     if(type==='settings'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型名称</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;
     }else if(type==='beauty'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;
+        content.innerHTML=`<h2 class="text-xl font-bold mb-4">UI 美化 (CSS)</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss || ''}</textarea>`;
     }else if(type==='presets'){
         content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;
     }
@@ -399,15 +357,14 @@ async function triggerAI(){
     finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
 }
 
-/* 论坛功能 */
-function openForum(){ 
-    document.getElementById('forum-screen').classList.remove('hidden'); 
-    syncProfileUI();
-}
+/* 论坛核心功能 */
+function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
 function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
+
 function openCompose(){ 
     document.getElementById('compose-screen').classList.remove('hidden'); 
-    document.getElementById('compose-avatar').src = userData.avatar;
+    // 发帖前同步当前主页头像
+    document.getElementById('compose-user-avatar').src = document.getElementById('profile-avatar').src;
     validatePostContent(); 
 }
 function closeCompose(){ 
@@ -450,53 +407,61 @@ function clearPostImage(){
 
 function submitPost(){
     const text = document.getElementById('post-text').value.trim();
-    const previewImg = document.getElementById('preview-img');
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
-    const imgSrc = hasImg ? previewImg.src : null;
+    const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
     
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     
-    // 同步到广场和个人页
-    addPostToFeed(userData.name, text, imgSrc, timeStr, true, userData.handle, userData.avatar);
+    // 使用个人资料中的信息
+    const name = document.getElementById('profile-name').innerText;
+    const handle = document.getElementById('profile-handle').innerText;
+    const avatar = document.getElementById('profile-avatar').src;
+
+    addPostToFeed(name, handle, avatar, text, imgSrc, timeStr, true);
     closeCompose();
 }
 
-function addPostToFeed(name, text, img, time, isUser=false, handle="@user", avatar=""){
+function addPostToFeed(name, handle, avatar, text, img, time, isMine = false){
     const feed = document.getElementById('forum-feed');
-    const userFeed = document.getElementById('user-post-feed');
+    const profileFeed = document.getElementById('profile-posts-feed');
     const hint = document.getElementById('empty-hint');
     if(hint) hint.remove();
     
-    const displayAvatar = avatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+    const div = document.createElement('div');
+    div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
+    
+    let imgHtml = "";
+    if(img) {
+        imgHtml = `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">`;
+    }
 
-    const createCard = () => {
-        const div = document.createElement('div');
-        div.className = "tweet-card flex gap-3 animate-in fade-in duration-500";
-        let imgHtml = img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "";
-        div.innerHTML = `
-            <img src="${displayAvatar}" class="tweet-avatar">
-            <div class="flex-1">
-                <div class="flex items-center gap-1">
-                    <span class="font-bold text-[15px]">${name}</span>
-                    <span class="text-gray-500 text-[14px]">${handle} · ${time}</span>
-                </div>
-                <div class="text-[15px] mt-1 leading-normal">${text}</div>
-                ${imgHtml}
-                <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[280px]">
-                    <span class="action-item hover:text-blue-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0</span>
-                    <span class="action-item hover:text-green-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/m1PB9gXN/IMG-3092.png" class="action-icon"> 0</span>
-                    <span class="action-item hover:text-red-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/dZhwCVHr/IMG-3091.png" class="action-icon"> 0</span>
-                    <span class="action-item hover:text-blue-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/n9XpmhRT/IMG-3093.png" class="action-icon"> 0</span>
-                </div>
+    const content = `
+        <img src="${avatar}" class="tweet-avatar">
+        <div class="flex-1">
+            <div class="flex items-center gap-1">
+                <span class="font-bold text-[15px]">${name}</span>
+                <span class="text-gray-500 text-[14px]">${handle} · ${time}</span>
             </div>
-        `;
-        return div;
-    };
-
-    feed.prepend(createCard());
-    if(isUser) {
-        userFeed.prepend(createCard());
+            <div class="text-[15px] mt-1 leading-normal">${text}</div>
+            ${imgHtml}
+            <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[280px]">
+                <span class="action-item hover:text-blue-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/Pp3dNw4Z/IMG-3090.png" class="action-icon"> 0</span>
+                <span class="action-item hover:text-green-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/m1PB9gXN/IMG-3092.png" class="action-icon"> 0</span>
+                <span class="action-item hover:text-red-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/dZhwCVHr/IMG-3091.png" class="action-icon"> 0</span>
+                <span class="action-item hover:text-blue-400 cursor-pointer flex items-center"><img src="https://i.postimg.cc/n9XpmhRT/IMG-3093.png" class="action-icon"></span>
+            </div>
+        </div>
+    `;
+    div.innerHTML = content;
+    
+    // 同步到主推文流
+    feed.prepend(div);
+    
+    // 如果是用户发的，同步到个人主页推文流
+    if(isMine) {
+        const clone = div.cloneNode(true);
+        profileFeed.prepend(clone);
     }
 }
 
@@ -511,21 +476,26 @@ async function generateAIPosts(){
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '模拟生成12条推文，JSON格式：{"posts":[{"name":"昵称","text":"内容","handle":"@unique_id"}]}.'}],
+                messages: [{role: 'system', content: '模拟生成12条推文，JSON格式：{"posts":[{"name":"昵称","handle":"@id","text":"内容"}]}.内容关于生活、技术、心情。'}],
                 response_format: { type: "json_object" }
             })
         });
         const data = await response.json();
         const posts = JSON.parse(data.choices[0].message.content).posts;
+        
         feed.innerHTML = "";
         posts.forEach(p => {
-            const h = Math.floor(Math.random()*24).toString().padStart(2,'0');
-            const m = Math.floor(Math.random()*60).toString().padStart(2,'0');
-            addPostToFeed(p.name, p.text, null, `${h}:${m}`, false, p.handle);
+            const randomHour = Math.floor(Math.random() * 24).toString().padStart(2, '0');
+            const randomMin = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+            const randomAvatar = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+            addPostToFeed(p.name || "网友", p.handle || "@user", randomAvatar, p.text, null, `${randomHour}:${randomMin}`);
         });
     } catch(e) {
+        alert("网络波动，加载本地缓存数据");
         feed.innerHTML = "";
-        for(let i=1; i<=5; i++) addPostToFeed("极客"+i, "系统运行良好。 #AI", null, "10:24", false, "@geek"+i);
+        for(let i=1; i<=10; i++) {
+            addPostToFeed("AI用户"+i, "@ai_bot"+i, "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg", "探索AI OS的第"+i+"天，系统非常流畅。", null, "10:24");
+        }
     }
 }
 </script>
