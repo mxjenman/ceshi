@@ -136,15 +136,17 @@
                 </div>
 
                 <div class="flex-1 grid grid-cols-2 gap-x-2 gap-y-4 place-items-end pt-0 pr-1">
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(1)">
-                        <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
-                        <span class="text-xs text-gray-600">占位1</span>
-                    </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openChat()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                             <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
                         <span class="text-xs text-gray-600">微信</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('世界书')">
+                        <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                            <img src="https://i.postimg.cc/xTQP438J/IMG_3162_r.png" class="w-full h-full object-cover rounded-[15px]">
+                        </div>
+                        <span class="text-xs text-gray-600">世界书</span>
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
                         <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
@@ -152,7 +154,7 @@
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
+                            <img src="https://i.postimg.cc/wTzkGQMx/IMG_3164.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
                         <span class="text-xs text-gray-600">论坛</span>
                     </div>
@@ -189,14 +191,17 @@
             </div>
 
         <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);">
+            <button onclick="openPlaceholder('短信')" class="flex flex-col items-center">
+                <img src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-[20px] h-[20px] object-contain mb-[4px] mt-[4px]">
+                <span class="text-[10px]">短信</span>
+            </button>
             <button onclick="openModal('settings')" class="flex flex-col items-center">
-                <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
+                <img src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-[20px] h-[20px] object-contain mb-[4px] mt-[4px]">
+                <span class="text-[10px]">设置</span>
             </button>
             <button onclick="openModal('beauty')" class="flex flex-col items-center">
-                <span class="text-xl">🎨</span><span class="text-[10px]">美化</span>
-            </button>
-            <button onclick="openModal('presets')" class="flex flex-col items-center">
-                <span class="text-xl">📑</span><span class="text-[10px]">预设</span>
+                <span class="text-xl h-[28px] flex items-center justify-center">🎨</span>
+                <span class="text-[10px]">美化</span>
             </button>
         </div>
     </div>
