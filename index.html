@@ -393,19 +393,20 @@
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 
-                <div id="add-image-btn" onclick="triggerPostImage()" class="w-[110px] h-[110px] bg-[#f4f5f7] rounded-xl flex items-center justify-center cursor-pointer mt-2 transition-opacity active:opacity-70">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d1d1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 5v14M5 12h14"/>
+                <div id="post-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] rounded-[16px] flex items-center justify-center cursor-pointer" onclick="triggerPostImage()">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="#d1d1d1" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
 
-                <div id="post-image-preview" class="mt-2 hidden relative w-fit">
-                    <img id="preview-img" src="" class="rounded-xl w-[110px] h-[110px] object-cover border border-gray-100">
-                    <button onclick="clearPostImage()" class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                <div id="post-image-preview" class="mt-2 hidden relative">
+                    <img id="preview-img" src="" class="rounded-2xl w-full max-h-60 object-cover border">
+                    <button onclick="clearPostImage()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center">×</button>
                 </div>
+                
+                <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
             </div>
         </div>
-        <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
     </div>
 
     <div id="placeholder-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
@@ -639,14 +640,11 @@ function openCompose(){
     document.getElementById('compose-avatar-sync').src = userProfile.avatar;
     validatePostContent(); 
 }
-
-/* 修改点：关闭弹窗时清空图片 */
 function closeCompose(){ 
     document.getElementById('compose-screen').classList.add('hidden');
     document.getElementById('post-text').value = '';
     clearPostImage();
 }
-
 function validatePostContent() {
     const text = document.getElementById('post-text').value.trim();
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
@@ -655,29 +653,26 @@ function validatePostContent() {
     btn.classList.toggle('btn-disabled', btn.disabled);
 }
 function triggerPostImage(){ document.getElementById('post-image-input').click(); }
-
-/* 修改点：加载图片后隐藏新增的大+号按钮 */
 function previewPostImage(input){
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
             document.getElementById('preview-img').src = e.target.result;
             document.getElementById('post-image-preview').classList.remove('hidden');
-            document.getElementById('add-image-btn').classList.add('hidden');
+            // 修改后新增：显示图片预览后，隐藏方形添加按钮
+            document.getElementById('post-image-add-btn').classList.add('hidden');
             validatePostContent();
         }
         reader.readAsDataURL(input.files[0]);
     }
 }
-
-/* 修改点：清除图片后恢复新增的大+号按钮 */
 function clearPostImage(){
     document.getElementById('post-image-input').value = '';
     document.getElementById('post-image-preview').classList.add('hidden');
-    document.getElementById('add-image-btn').classList.remove('hidden');
+    // 修改后新增：取消图片预览后，恢复显示方形添加按钮
+    document.getElementById('post-image-add-btn').classList.remove('hidden');
     validatePostContent();
 }
-
 function submitPost(){
     const text = document.getElementById('post-text').value.trim();
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
