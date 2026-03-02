@@ -60,7 +60,7 @@
         .nav-sync-icon { width: 24px; height: 24px; object-fit: contain; }
         .back-icon { font-size: 20px; font-weight: 400; color: #000000; line-height: 1; display: flex; align-items: center; justify-content: center; }
 
-        /* 论坛主页样式扩展 (修改了 border-radius 变成圆的) */
+        /* 论坛主页样式扩展 */
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
         .profile-avatar-main { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
         .tab-active { border-bottom: 4px solid #1d9bf0; color: #000; font-weight: bold; }
@@ -75,18 +75,13 @@
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* 微信“我”页面还原样式 - 深度定制版 */
-        /* 3. 整体下移2px (25px -> 27px) */
+        /* 微信“我”页面还原样式 */
         .wx-me-header { padding: 27px 24px 20px 24px; background: white; display: flex; flex-direction: column; align-items: flex-start; }
-        /* 1. 头像放大10px (72px -> 82px) */
         .wx-me-avatar-rect { width: 82px; height: 82px; border-radius: 50%; object-fit: cover; background: #f0f0f0; margin-bottom: 16px; cursor: pointer; }
         .wx-status-tag { display: inline-flex; align-items: center; border: 1px solid #e8e8e8; border-radius: 20px; padding: 2px 10px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s; background: #fdfdfd; }
         .wx-status-tag:active { background: #f2f2f2; }
         .wx-status-dot { width: 6px; height: 6px; background: #07c160; border-radius: 50%; margin-right: 6px; }
-        
-        /* 2. 名字样式调整 */
         #wx-me-name { font-size: 22px; font-weight: 600; color: #303030; cursor: pointer; }
-        /* 2. 账号字体粗细调整 (名字600/2=300) */
         #wx-me-id { color: #9ca3af; font-size: 15px; font-weight: 300; margin-top: 4px; cursor: pointer; }
 
         .wx-menu-item { background: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid #f2f2f2; cursor: pointer; transition: background 0.2s; }
@@ -95,8 +90,6 @@
         .wx-chevron { color: #d1d1d1; font-size: 14px; font-family: serif; display: none; } 
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
-
-        /* 细线替代宽横线 */
         .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
     </style>
 </head>
@@ -119,7 +112,6 @@
             </div>
 
             <div class="flex w-full px-1 gap-5 mt-2 justify-between items-start z-10">
-                
                 <div class="w-[160px] h-[160px] rounded-[24px] bg-white p-2.5 flex flex-col relative transition-transform active:scale-95 cursor-default">
                     <div class="flex-1 bg-[#5c5c5c] rounded-[16px] flex items-center justify-center text-black text-[28px] font-black mb-2.5 shadow-sm overflow-hidden relative cursor-pointer" onclick="changeAnyImage(this)">
                         <span class="relative z-10 tracking-widest font-sans pointer-events-none">照片</span>
@@ -142,7 +134,7 @@
                         </div>
                         <span class="text-xs text-gray-600">微信</span>
                     </div>
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('世界书')">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openLorebook()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                             <img src="https://i.postimg.cc/xTQP438J/IMG_3162_r.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
@@ -188,7 +180,7 @@
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
 
         <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4" style="transform: translateY(20px);">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('短信')">
@@ -258,7 +250,6 @@
             <div id="wechat-tab-me" class="hidden bg-white min-h-full">
                 <div class="wx-me-header">
                     <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
-                    
                     <div class="flex items-center gap-3">
                         <span id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
                         <div class="wx-status-tag" onclick="editStatus()">
@@ -266,21 +257,16 @@
                             <span id="wx-me-status">状态</span>
                         </div>
                     </div>
-                    
                     <div id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                 </div>
-                
                 <div class="wx-divider-thin"></div>
-                
                 <div class="bg-white">
                     <div class="wx-menu-item" onclick="openMePage('钱包')">
                         <span class="text-[16px]">钱包</span>
                         <span class="wx-chevron">〉</span>
                     </div>
                 </div>
-                
                 <div class="wx-divider-thin"></div>
-                
                 <div class="bg-white">
                     <div class="wx-menu-item" onclick="openMePage('个人资料')">
                         <span class="text-[16px]">个人资料</span>
@@ -296,15 +282,9 @@
         </div>
 
         <div class="h-14 bg-[#f7f7f7] border-t flex items-center justify-around text-gray-500 text-[12px]">
-            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4">
-                <span class="font-medium">微信</span>
-            </div>
-            <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4">
-                <span class="font-medium">朋友圈</span>
-            </div>
-            <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center px-4">
-                <span class="font-medium">我</span>
-            </div>
+            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4"><span class="font-medium">微信</span></div>
+            <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4"><span class="font-medium">朋友圈</span></div>
+            <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center px-4"><span class="font-medium">我</span></div>
         </div>
     </div>
 
@@ -322,7 +302,7 @@
             这里暂时空空如也...
         </div>
     </div>
-
+    
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div id="forum-content-container" class="flex-1 overflow-y-auto pb-16">
             <div id="view-square">
@@ -337,9 +317,7 @@
                         <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
                     </button>
                 </div>
-                <div id="forum-feed">
-                    <div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>
-                </div>
+                <div id="forum-feed"><div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div></div>
             </div>
 
             <div id="view-profile" class="hidden">
@@ -356,14 +334,9 @@
                         <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm" onclick="alert('编辑资料请直接点击文字或图片')">编辑资料</button>
                     </div>
                     <p id="profile-bio" class="mt-3 text-[15px]" onclick="editProfilePart('bio')">探索AI OS的无限可能。</p>
-                    
                     <div class="mt-3 flex gap-4 text-[14px] text-gray-500">
-                        <div>
-                            <span id="profile-following-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-following-count')">520</span> 正在关注
-                        </div>
-                        <div>
-                            <span id="profile-followers-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-followers-count')">1314</span> 关注者
-                        </div>
+                        <div><span id="profile-following-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-following-count')">520</span> 正在关注</div>
+                        <div><span id="profile-followers-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-followers-count')">1314</span> 关注者</div>
                     </div>
                 </div>
                 <div class="flex border-b mt-4">
@@ -375,22 +348,12 @@
                 <div id="profile-posts-feed"></div>
             </div>
         </div>
-
         <div class="h-16 border-t flex items-center justify-around bg-white absolute bottom-0 w-full z-20">
-            <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-blue-500">
-                <span class="text-xs font-bold">首页</span>
-            </button>
-            <button onclick="alert('搜索功能暂未开放')" class="flex flex-col items-center text-gray-400">
-                <span class="text-xs font-bold">搜索</span>
-            </button>
-            <button onclick="alert('通知中心为空')" class="flex flex-col items-center text-gray-400">
-                <span class="text-xs font-bold">通知</span>
-            </button>
-            <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400">
-                <span class="text-xs font-bold">我</span>
-            </button>
+            <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-blue-500"><span class="text-xs font-bold">首页</span></button>
+            <button onclick="alert('搜索功能暂未开放')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">搜索</span></button>
+            <button onclick="alert('通知中心为空')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">通知</span></button>
+            <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">我</span></button>
         </div>
-
         <div class="fab-btn" onclick="openCompose()">+</div>
     </div>
 
@@ -403,23 +366,44 @@
             <img id="compose-avatar-sync" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full object-cover">
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
-                
                 <div id="post-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] rounded-[16px] flex items-center justify-center cursor-pointer" onclick="triggerPostImage()">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 5V19M5 12H19" stroke="#d1d1d1" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
-
                 <div id="post-image-preview" class="mt-2 hidden relative">
                     <img id="preview-img" src="" class="rounded-2xl w-full max-h-60 object-cover border">
                     <button onclick="clearPostImage()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center">×</button>
                 </div>
-                
                 <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
             </div>
         </div>
     </div>
 
+    <div id="lorebook-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeLorebook()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold">世界书 (Lorebook)</div>
+            <div class="w-6"></div>
+        </div>
+        
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">新建世界设定</h3>
+                <input id="lore-key" type="text" placeholder="触发词 (多个用英文逗号分隔，如: 苹果,apple)" class="w-full bg-gray-50 border border-gray-100 p-3 mb-3 rounded-xl text-sm outline-none focus:border-blue-400 transition-colors">
+                <textarea id="lore-content" placeholder="背景设定内容，当触发词出现在聊天中时，AI会记住这些设定..." class="w-full bg-gray-50 border border-gray-100 p-3 mb-3 rounded-xl text-sm outline-none resize-none h-24 focus:border-blue-400 transition-colors"></textarea>
+                <button onclick="saveLoreEntry()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">保存至世界书</button>
+            </div>
+
+            <h3 class="font-bold mb-3 text-gray-500 text-[13px] px-1 tracking-wider">已存储词条：</h3>
+            <div id="lore-list" class="space-y-3 pb-6">
+                </div>
+        </div>
+    </div>
     <div id="placeholder-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
         <div class="h-12 bg-white flex items-center px-4 border-b">
             <button onclick="closePlaceholder()" class="back-icon">
@@ -430,9 +414,7 @@
             <div id="placeholder-title" class="flex-1 text-center font-bold">占位APP</div>
             <div class="w-6"></div>
         </div>
-        <div class="flex-1 flex items-center justify-center text-gray-400 italic">
-            暂且空白...
-        </div>
+        <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
     </div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-6">
@@ -461,6 +443,60 @@ let userProfile = {
 };
 
 let chatHistory = [];
+
+// ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
+let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
+
+// ===== 2. UI 界面：Lorebook 操作面板与逻辑 =====
+function openLorebook() {
+    document.getElementById('lorebook-screen').classList.remove('hidden');
+    renderLoreList();
+}
+
+function closeLorebook() {
+    document.getElementById('lorebook-screen').classList.add('hidden');
+}
+
+function saveLoreEntry() {
+    const keyStr = document.getElementById('lore-key').value.trim();
+    const content = document.getElementById('lore-content').value.trim();
+    if (!keyStr || !content) return alert("触发词和内容都不能为空哦！");
+    
+    lorebook.push({ key: keyStr, content: content });
+    localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+    
+    document.getElementById('lore-key').value = '';
+    document.getElementById('lore-content').value = '';
+    renderLoreList();
+}
+
+function deleteLoreEntry(index) {
+    if(confirm("确定要删除这条世界设定吗？")) {
+        lorebook.splice(index, 1);
+        localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+        renderLoreList();
+    }
+}
+
+function renderLoreList() {
+    const list = document.getElementById('lore-list');
+    list.innerHTML = '';
+    if (lorebook.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">词条空空如也，快去添加吧。</div>';
+        return;
+    }
+    
+    lorebook.forEach((entry, index) => {
+        list.innerHTML += `
+            <div class="bg-white rounded-[16px] p-4 shadow-sm relative text-sm border border-gray-50">
+                <div class="font-bold text-[#1d9bf0] mb-1 text-[13px]">🔑 触发词：${entry.key}</div>
+                <div class="text-gray-700 leading-relaxed break-words pr-12">${entry.content}</div>
+                <button onclick="deleteLoreEntry(${index})" class="absolute top-4 right-4 text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded">删除</button>
+            </div>
+        `;
+    });
+}
+// ===============================================
 
 function syncProfileToAI() {
     config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
@@ -535,11 +571,8 @@ function switchWechatTab(tab) {
     document.getElementById('wx-me-id').innerText = userProfile.handle;
 }
 
-function openChat(){
-    document.getElementById('chat-screen').classList.remove('hidden');
-    switchWechatTab('messages');
-}
-function closeChat(){document.getElementById('chat-screen').classList.add('hidden');}
+function openChat(){ document.getElementById('chat-screen').classList.remove('hidden'); switchWechatTab('messages'); }
+function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
 
 function renderMsg(text,role){
     const container=document.getElementById('chat-flow');
@@ -563,11 +596,43 @@ async function triggerAI(){
     syncProfileToAI();
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
+    
+    // ===== 3. 核心逻辑与 Prompt 注入：检索世界书 =====
+    let finalSystemMessage = config.systemPrompt;
+    
+    // 获取用户最新输入的一句话
+    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
+    let injectedLore = [];
+    
+    // 扫描现有词条
+    lorebook.forEach(entry => {
+        // 支持逗号分隔关键词解析
+        const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
+        for(let k of keywords) {
+            if(latestUserMsg.includes(k)) {
+                injectedLore.push(`[${entry.content}]`);
+                break; // 当前词条只要匹配到一个触发词，就跳出循环，避免重复添加
+            }
+        }
+    });
+
+    // 如果匹配到了词条，拼接到 System Prompt 末尾
+    if(injectedLore.length > 0) {
+        finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
+        console.log("注入了世界书数据:", injectedLore); // F12调试用，你可以查阅是否注入成功
+    }
+    // =============================================
+
     try{
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-            body:JSON.stringify({model:config.model,messages:[{role:'system',content:config.systemPrompt},...chatHistory.slice(-5)],max_tokens:100})
+            body:JSON.stringify({
+                model:config.model,
+                // 这里使用动态拼接好的 finalSystemMessage 替换原有的 config.systemPrompt
+                messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
+                max_tokens:100
+            })
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
@@ -581,10 +646,9 @@ function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
 }
-function closeMePage() {
-    document.getElementById('me-detail-page').classList.add('slide-hidden');
-}
+function closeMePage() { document.getElementById('me-detail-page').classList.add('slide-hidden'); }
 
+// ...（其余原有的通用函数、发帖函数、占位函数均保持原样）
 function switchForumTab(tab){
     const square = document.getElementById('view-square');
     const profile = document.getElementById('view-profile');
@@ -592,13 +656,11 @@ function switchForumTab(tab){
     const tabPr = document.getElementById('tab-profile');
     
     if(tab === 'square'){
-        square.classList.remove('hidden');
-        profile.classList.add('hidden');
+        square.classList.remove('hidden'); profile.classList.add('hidden');
         tabSq.classList.add('text-blue-500'); tabSq.classList.remove('text-gray-400');
         tabPr.classList.add('text-gray-400'); tabPr.classList.remove('text-blue-500');
     } else {
-        square.classList.add('hidden');
-        profile.classList.remove('hidden');
+        square.classList.add('hidden'); profile.classList.remove('hidden');
         tabPr.classList.add('text-blue-500'); tabPr.classList.remove('text-gray-400');
         tabSq.classList.add('text-gray-400'); tabSq.classList.remove('text-blue-500');
     }
@@ -670,7 +732,6 @@ function previewPostImage(input){
         reader.onload = e => {
             document.getElementById('preview-img').src = e.target.result;
             document.getElementById('post-image-preview').classList.remove('hidden');
-            // 修改后新增：显示图片预览后，隐藏方形添加按钮
             document.getElementById('post-image-add-btn').classList.add('hidden');
             validatePostContent();
         }
@@ -680,7 +741,6 @@ function previewPostImage(input){
 function clearPostImage(){
     document.getElementById('post-image-input').value = '';
     document.getElementById('post-image-preview').classList.add('hidden');
-    // 修改后新增：取消图片预览后，恢复显示方形添加按钮
     document.getElementById('post-image-add-btn').classList.remove('hidden');
     validatePostContent();
 }
@@ -705,7 +765,6 @@ function addPostToFeed(name, handle, text, img, time, isUserPost = false){
         div.className = "tweet-card flex gap-3 animate-in";
         const avatarUrl = isUserPost ? userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
         
-        // 为每一条推文的互动按钮生成唯一的随机ID，以便独立点击修改数字
         const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
         const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
         const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
@@ -800,17 +859,12 @@ function closeModal(){
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
-// 占位APP开关功能
 function openPlaceholder(id) {
     document.getElementById('placeholder-title').innerText = '占位APP ' + id;
     document.getElementById('placeholder-screen').classList.remove('hidden');
 }
+function closePlaceholder() { document.getElementById('placeholder-screen').classList.add('hidden'); }
 
-function closePlaceholder() {
-    document.getElementById('placeholder-screen').classList.add('hidden');
-}
-
-// 实时更新时间和小组件日期功能
 function updateWidgetTime() {
     const now = new Date();
     const month = now.getMonth() + 1;
@@ -820,24 +874,17 @@ function updateWidgetTime() {
     
     const dateEl = document.getElementById('widget-date-display');
     const timeEl = document.getElementById('widget-time-display');
-    
     if (dateEl) dateEl.innerText = `♥ ${month} - ${day}`;
     if (timeEl) timeEl.innerText = `★ ${hours} : ${minutes}`;
 }
 
-// --- 新增通用修改函数，不删除任何原有代码 ---
-
-// 通用修改文本
 function editAnyText(id) {
     const el = document.getElementById(id);
     if (!el) return;
     const res = prompt("修改文本内容", el.innerText);
-    if (res !== null && res.trim() !== '') {
-        el.innerText = res;
-    }
+    if (res !== null && res.trim() !== '') el.innerText = res;
 }
 
-// 通用修改图片/背景图
 function changeAnyImage(el) {
     const input = document.createElement('input');
     input.type = 'file';
@@ -849,7 +896,6 @@ function changeAnyImage(el) {
             el.style.backgroundImage = `url(${ev.target.result})`;
             el.style.backgroundSize = 'cover';
             el.style.backgroundPosition = 'center';
-            // 清除原有内部文字(如"头像"或"照片"字样)
             el.innerHTML = '';
         };
         reader.readAsDataURL(file);
@@ -857,14 +903,9 @@ function changeAnyImage(el) {
     input.click();
 }
 
-// 立即执行一次并设置定时器
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-
-window.onload = () => {
-    switchWechatTab('messages');
-    syncProfileToAI();
-};
+window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); };
 </script>
 </body>
 </html>
