@@ -205,7 +205,7 @@
     </div>
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
-        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+        <div id="wechat-top-bar" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
             <button onclick="closeChat()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -231,11 +231,14 @@
 
             <div id="wechat-tab-moments" class="hidden bg-white min-h-full">
                 <div class="moments-header">
-                    <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800" class="w-full h-full object-cover">
+                    <img id="wx-moments-bg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk8A8AAAMBA8wA/1cAAAAASUVORK5CYII=" class="w-full h-full object-cover bg-gray-300 cursor-pointer" onclick="editProfilePart('moments-bg')">
+                    
                     <span class="moments-name" id="wx-moments-name">Gemini User</span>
                     <img id="wx-moments-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="moments-avatar">
+                    
+                    <img src="https://i.postimg.cc/C1r4wqmr/IMG-3173.png" class="absolute top-4 right-4 w-7 h-7 z-10 cursor-pointer object-contain" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));" onclick="openMomentsCompose()">
                 </div>
-                <div class="mt-10 p-4 space-y-8">
+                <div id="moments-feed" class="mt-10 p-4 space-y-8">
                     <div class="flex gap-3 border-b pb-6">
                         <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded">
                         <div class="flex-1">
@@ -285,6 +288,26 @@
             <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4"><span class="font-medium">微信</span></div>
             <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4"><span class="font-medium">朋友圈</span></div>
             <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center px-4"><span class="font-medium">我</span></div>
+        </div>
+    </div>
+
+    <div id="moments-compose-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[70]">
+        <div class="h-14 bg-white flex items-center justify-between px-4 border-b">
+            <button onclick="closeMomentsCompose()" class="text-gray-700">取消</button>
+            <button id="moments-submit-btn" onclick="submitMomentsPost()" class="bg-[#07c160] text-white px-4 py-1.5 rounded font-bold btn-disabled" disabled>发表</button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto bg-white">
+            <textarea id="moments-text" class="w-full text-[16px] outline-none resize-none min-h-[100px]" placeholder="这一刻的想法..." oninput="validateMomentsContent()"></textarea>
+            
+            <div id="moments-image-preview" class="mt-2 hidden relative w-fit">
+                <img id="moments-preview-img" src="" class="w-[110px] h-[110px] object-cover bg-gray-100 rounded-sm">
+                <button onclick="clearMomentsImage()" class="absolute -top-2 -right-2 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+            </div>
+            
+            <div id="moments-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] flex items-center justify-center cursor-pointer rounded-sm" onclick="triggerMomentsImage()">
+                <span class="text-4xl text-gray-400 font-light">+</span>
+            </div>
+            <input type="file" id="moments-image-input" class="hidden" accept="image/*" onchange="previewMomentsImage(this)">
         </div>
     </div>
 
@@ -569,6 +592,16 @@ function switchWechatTab(tab) {
     document.getElementById('wx-moments-name').innerText = userProfile.name;
     document.getElementById('wx-me-name').innerText = userProfile.name;
     document.getElementById('wx-me-id').innerText = userProfile.handle;
+
+    // 修改项：控制微信顶部公共导航栏在朋友圈界面隐藏
+    const topBar = document.getElementById('wechat-top-bar');
+    if(topBar) {
+        if(tab === 'moments') {
+            topBar.style.display = 'none';
+        } else {
+            topBar.style.display = 'flex';
+        }
+    }
 }
 
 function openChat(){ document.getElementById('chat-screen').classList.remove('hidden'); switchWechatTab('messages'); }
@@ -667,7 +700,7 @@ function switchForumTab(tab){
 }
 
 function editProfilePart(part){
-    if(part === 'bg' || part === 'avatar'){
+    if(part === 'bg' || part === 'avatar' || part === 'moments-bg'){
         const input = document.createElement('input');
         input.type = 'file'; input.accept = 'image/*';
         input.onchange = e => {
@@ -676,6 +709,8 @@ function editProfilePart(part){
             reader.onload = ev => {
                 if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
                 if(part === 'avatar') updateGlobalAvatar(ev.target.result);
+                // 修改项：新增朋友圈背景图的点击修改支持
+                if(part === 'moments-bg') document.getElementById('wx-moments-bg').src = ev.target.result;
             };
             reader.readAsDataURL(file);
         };
@@ -829,6 +864,74 @@ async function generateAIPosts(){
         addPostToFeed("开发者", "@dev", "连接超时，请检查 API 设置", null, "1s");
     }
 }
+
+// ================== 新增：专属朋友圈发动态逻辑 ==================
+function openMomentsCompose() {
+    document.getElementById('moments-compose-screen').classList.remove('hidden');
+    validateMomentsContent();
+}
+
+function closeMomentsCompose() {
+    document.getElementById('moments-compose-screen').classList.add('hidden');
+    document.getElementById('moments-text').value = '';
+    clearMomentsImage();
+}
+
+function validateMomentsContent() {
+    const text = document.getElementById('moments-text').value.trim();
+    const hasImg = !document.getElementById('moments-image-preview').classList.contains('hidden');
+    const btn = document.getElementById('moments-submit-btn');
+    btn.disabled = !(text.length > 0 || hasImg);
+    btn.classList.toggle('btn-disabled', btn.disabled);
+}
+
+function triggerMomentsImage(){ document.getElementById('moments-image-input').click(); }
+
+function previewMomentsImage(input){
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('moments-preview-img').src = e.target.result;
+            document.getElementById('moments-image-preview').classList.remove('hidden');
+            document.getElementById('moments-image-add-btn').classList.add('hidden');
+            validateMomentsContent();
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function clearMomentsImage(){
+    document.getElementById('moments-image-input').value = '';
+    document.getElementById('moments-image-preview').classList.add('hidden');
+    document.getElementById('moments-image-add-btn').classList.remove('hidden');
+    validateMomentsContent();
+}
+
+function submitMomentsPost(){
+    const text = document.getElementById('moments-text').value.trim();
+    const hasImg = !document.getElementById('moments-image-preview').classList.contains('hidden');
+    const imgSrc = hasImg ? document.getElementById('moments-preview-img').src : null;
+    
+    const feed = document.getElementById('moments-feed');
+    const div = document.createElement('div');
+    div.className = "flex gap-3 border-b pb-6 animate-in";
+    
+    let imgHtml = imgSrc ? `<img src="${imgSrc}" class="mt-2 w-[180px] object-cover cursor-pointer">` : '';
+    
+    div.innerHTML = `
+        <img src="${userProfile.avatar}" class="w-10 h-10 rounded">
+        <div class="flex-1">
+            <div class="text-[#576b95] font-bold">${userProfile.name}</div>
+            ${text ? `<div class="text-black mt-1 break-words">${text}</div>` : ''}
+            ${imgHtml}
+            <div class="text-xs text-gray-400 mt-2">刚刚</div>
+        </div>
+    `;
+    
+    feed.prepend(div);
+    closeMomentsCompose();
+}
+// ==============================================================
 
 function openModal(type){
     const content=document.getElementById('modal-content');
