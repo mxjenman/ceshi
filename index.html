@@ -70,7 +70,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* 微信专有样式 */
-        .wechat-nav-active { color: #07c160 !important; }
+        .wechat-nav-active { color: #000000 !important; }
         /* 修改1：将原本的 200px 高度调整为 290px，让背景图更大 */
         .moments-header { height: 290px; background: #333; position: relative; width: 100%; }
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
@@ -212,21 +212,15 @@
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div id="wechat-title" class="flex-1 text-center font-bold text-[17px]">微信</div>
-            <div class="w-6 text-2xl flex justify-center">＋</div>
+            <div id="wechat-title" class="flex-1 text-center font-bold text-[17px]">好友</div>
+            <div class="w-6 text-2xl flex justify-center cursor-pointer" onclick="openAddFriendModal()">＋</div>
         </div>
 
         <div id="wechat-content" class="flex-1 overflow-y-auto">
-            <div id="wechat-tab-messages">
-                <div id="chat-flow" class="p-4 space-y-4 min-h-[400px]">
-                    <div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>
-                </div>
-                <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2 sticky bottom-0">
-                    <div class="flex gap-2">
-                        <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
-                        <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
-                    </div>
-                    <button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+            <div id="wechat-tab-messages" class="h-full flex flex-col bg-white">
+                <div id="friend-list-view" class="flex-1 overflow-y-auto">
+                    <div id="friend-list-container"></div>
+                    <div id="empty-friend-hint" class="text-center text-gray-400 mt-10 text-[14px]">暂无好友，点击右上角添加</div>
                 </div>
             </div>
 
@@ -278,9 +272,57 @@
         </div>
 
         <div class="h-14 bg-[#f7f7f7] border-t flex items-center justify-around text-gray-500 text-[12px]">
-            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4"><span class="font-medium">微信</span></div>
+            <div onclick="switchWechatTab('messages')" id="wx-nav-messages" class="flex flex-col items-center wechat-nav-active px-4"><span class="font-medium">好友</span></div>
             <div onclick="switchWechatTab('moments')" id="wx-nav-moments" class="flex flex-col items-center px-4"><span class="font-medium">朋友圈</span></div>
             <div onclick="switchWechatTab('me')" id="wx-nav-me" class="flex flex-col items-center px-4"><span class="font-medium">我</span></div>
+        </div>
+    </div>
+
+    <div id="chat-detail-page" class="page-layer slide-hidden flex flex-col z-[60]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b">
+            <button onclick="closeChatDetail()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div id="chat-detail-title" class="flex-1 text-center font-bold text-[17px]">好友</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto bg-[#ededed]">
+            <div id="chat-flow" class="p-4 space-y-4 min-h-full">
+                <div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>
+            </div>
+        </div>
+        <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2 sticky bottom-0">
+            <div class="flex gap-2">
+                <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
+                <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+            </div>
+            <button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+        </div>
+    </div>
+
+    <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <div class="mb-4">
+                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">备注</label>
+                <input id="friend-remark" type="text" placeholder="给TA的备注" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">真名</label>
+                <input id="friend-realname" type="text" placeholder="TA知道自己叫什么" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">人设(AI Persona)</label>
+                <textarea id="friend-persona" placeholder="输入TA的人物设定，TA会严格遵守" class="w-full border border-gray-500 rounded-[20px] px-4 py-3 text-[14px] outline-none resize-none h-28 text-gray-700"></textarea>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="closeAddFriendModal()" class="w-1/3 py-3 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
+                <button onclick="saveFriend()" class="flex-1 py-3 bg-black text-white rounded-full font-bold text-[16px]">保存联系人</button>
+            </div>
         </div>
     </div>
 
@@ -460,6 +502,8 @@ let userProfile = {
 };
 
 let chatHistory = [];
+let friendList = [];
+let currentFriendId = null;
 
 // ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
 let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
@@ -570,9 +614,76 @@ function editStatus() {
     }
 }
 
+// ===== Friend List & Chat Views Logic =====
+function openAddFriendModal() { document.getElementById('add-friend-modal').classList.remove('hidden'); }
+function closeAddFriendModal() { document.getElementById('add-friend-modal').classList.add('hidden'); }
+
+function saveFriend() {
+    const remark = document.getElementById('friend-remark').value.trim();
+    const realName = document.getElementById('friend-realname').value.trim();
+    const persona = document.getElementById('friend-persona').value.trim();
+    if(!remark || !realName || !persona) return alert("请填写完整");
+    
+    const friend = {
+        id: 'f_' + Date.now(),
+        remark: remark,
+        realName: realName,
+        persona: persona,
+        chatHistory: []
+    };
+    friendList.push(friend);
+    closeAddFriendModal();
+    renderFriendList();
+    
+    document.getElementById('friend-remark').value = '';
+    document.getElementById('friend-realname').value = '';
+    document.getElementById('friend-persona').value = '';
+}
+
+function renderFriendList() {
+    const container = document.getElementById('friend-list-container');
+    const hint = document.getElementById('empty-friend-hint');
+    container.innerHTML = '';
+    if(friendList.length === 0) {
+        hint.classList.remove('hidden');
+    } else {
+        hint.classList.add('hidden');
+        friendList.forEach(f => {
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
+            div.onclick = () => openChatDetail(f.id);
+            div.innerHTML = `
+                <div class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex items-center justify-center text-white font-bold text-lg">${f.remark.charAt(0)}</div>
+                <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+}
+
+function openChatDetail(id) {
+    currentFriendId = id;
+    const friend = friendList.find(f => f.id === id);
+    document.getElementById('chat-detail-title').innerText = friend.remark;
+    
+    chatHistory = friend.chatHistory;
+    const flow = document.getElementById('chat-flow');
+    flow.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
+    chatHistory.forEach(msg => {
+        renderMsg(msg.content, msg.role, true);
+    });
+    
+    document.getElementById('chat-detail-page').classList.remove('slide-hidden');
+}
+
+function closeChatDetail() {
+    document.getElementById('chat-detail-page').classList.add('slide-hidden');
+    currentFriendId = null;
+}
+
 function switchWechatTab(tab) {
     const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '微信', moments: '朋友圈', me: '' };
+    const titles = { messages: '好友', moments: '朋友圈', me: '' };
     
     tabs.forEach(t => {
         document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
@@ -588,17 +699,21 @@ function switchWechatTab(tab) {
     document.getElementById('wx-me-id').innerText = userProfile.handle;
 
     const wechatHeader = document.getElementById('wechat-header');
-    if(tab === 'moments') {
+    if(tab === 'moments' || tab === 'me') {
         wechatHeader.classList.add('hidden');
     } else {
         wechatHeader.classList.remove('hidden');
     }
 }
 
-function openChat(){ document.getElementById('chat-screen').classList.remove('hidden'); switchWechatTab('messages'); }
+function openChat(){ 
+    document.getElementById('chat-screen').classList.remove('hidden'); 
+    switchWechatTab('messages'); 
+    renderFriendList();
+}
 function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
 
-function renderMsg(text,role){
+function renderMsg(text,role, isInit = false){
     const container=document.getElementById('chat-flow');
     const div=document.createElement('div');
     div.className=`flex ${role==='user'?'justify-end':'justify-start'} animate-in`;
@@ -608,6 +723,7 @@ function renderMsg(text,role){
 }
 
 function sendUserMsg(){
+    if(!currentFriendId) return;
     const input=document.getElementById('chat-input');
     if(!input.value)return;
     renderMsg(input.value,'user');
@@ -617,11 +733,25 @@ function sendUserMsg(){
 
 async function triggerAI(){
     if(!config.apiKey)return alert("请先配置 API Key");
-    syncProfileToAI();
+    if(!currentFriendId) return;
+    
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
     
     let finalSystemMessage = config.systemPrompt;
+    
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(friend) {
+        finalSystemMessage = `你的真实名字是：${friend.realName}。
+你的设定是：${friend.persona}。
+请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
+    }
+
+    finalSystemMessage += `\n\n当前与你对话的用户信息：
+    昵称: ${userProfile.name}
+    账号: ${userProfile.handle}
+    个性签名: ${userProfile.bio}
+    当前状态: ${userProfile.status}`;
     
     const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
@@ -1004,7 +1134,7 @@ function submitMomentsPost(){
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); };
+window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); renderFriendList(); };
 </script>
 </body>
 </html>
