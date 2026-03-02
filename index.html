@@ -19,6 +19,10 @@
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
         .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
 
+        /* 隐藏滚动条样式，用于滑动桌面 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
         /* 小组件样式 */
         .widget-card{
             width:100%;
@@ -102,93 +106,141 @@
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
 
-    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
-        <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-            <div class="widget-card mb-12 mt-4">
-                <div class="flex items-start gap-10">
-                    <div class="flex flex-col items-center gap-1">
-                        <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
-                        <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
+    <div id="home-screen" class="flex-1 w-full relative overflow-hidden flex flex-col">
+        
+        <div class="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full h-full">
+            
+            <div class="min-w-full w-full h-full snap-center flex flex-col items-center p-6 relative">
+                <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+                    <div class="widget-card mb-12 mt-4">
+                        <div class="flex items-start gap-10">
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
+                                <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
+                                <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
+                            </div>
+                        </div>
+                        <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
                     </div>
-                    <div class="flex flex-col items-center gap-1">
-                        <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
-                        <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
+
+                    <div class="flex w-full px-1 gap-5 mt-2 justify-between items-start z-10">
+                        
+                        <div class="w-[160px] h-[160px] rounded-[24px] bg-white p-2.5 flex flex-col relative transition-transform active:scale-95 cursor-default">
+                            <div class="flex-1 bg-[#5c5c5c] rounded-[16px] flex items-center justify-center text-black text-[28px] font-black mb-2.5 shadow-sm overflow-hidden relative cursor-pointer" onclick="changeAnyImage(this)">
+                                <span class="relative z-10 tracking-widest font-sans pointer-events-none">照片</span>
+                            </div>
+                            <div class="h-[42px] flex gap-2">
+                                <div class="flex-1 border-[1px] border-[#DEDEDE] rounded-[14px] flex flex-col justify-center items-start pl-2 pr-1 text-[11px] font-bold text-[#333] leading-[1.2]">
+                                    <div id="widget-date-display" class="tracking-widest">♥ 月 - 日</div>
+                                    <div id="widget-time-display" class="tracking-widest mt-[2px]">★ 时 : 分</div>
+                                </div>
+                                <div id="widget-text-btn" class="w-[42px] border-[1px] border-[#DEDEDE] rounded-full flex items-center justify-center text-[11px] font-bold text-[#333] cursor-pointer hover:bg-gray-100 transition-colors" onclick="editAnyText('widget-text-btn')">
+                                    文本
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 grid grid-cols-2 gap-x-2 gap-y-4 place-items-end pt-0 pr-1">
+                            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(1)">
+                                <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
+                                <span class="text-xs text-gray-600">占位1</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openChat()">
+                                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                                    <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
+                                </div>
+                                <span class="text-xs text-gray-600">微信</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
+                                <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
+                                <span class="text-xs text-gray-600">占位2</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
+                                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                                    <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
+                                </div>
+                                <span class="text-xs text-gray-600">论坛</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full mt-10 relative px-2">
+                        <div class="flex justify-between px-10 mb-4">
+                            <div class="flex flex-col items-center relative translate-x-[35px] -translate-y-[3px]">
+                                <span id="badge-char" class="absolute -left-[55px] -top-[3px] text-[11px] italic text-gray-600 bg-white shadow-sm flex items-center justify-center cursor-pointer" style="border-radius: 50%; width: 37px; height: 23px;" onclick="editAnyText('badge-char')">char</span>
+                                <div class="w-[55px] h-[55px] rounded-full bg-[#5c5c5c] flex items-center justify-center text-[#111] font-bold text-[18px] tracking-widest shadow-sm cursor-pointer overflow-hidden" onclick="changeAnyImage(this)">
+                                    <span class="pointer-events-none">头像</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center relative -translate-x-[35px] -translate-y-[3px]">
+                                <span id="badge-user" class="absolute -right-[55px] -top-[3px] text-[11px] italic text-gray-600 bg-white shadow-sm flex items-center justify-center cursor-pointer" style="border-radius: 50%; width: 37px; height: 23px;" onclick="editAnyText('badge-user')">user</span>
+                                <div class="w-[55px] h-[55px] rounded-full bg-[#5c5c5c] flex items-center justify-center text-[#111] font-bold text-[18px] tracking-widest shadow-sm cursor-pointer overflow-hidden" onclick="changeAnyImage(this)">
+                                    <span class="pointer-events-none">头像</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full flex flex-col gap-3">
+                            <div class="flex items-end gap-1 ml-4">
+                                <div id="mock-msg-1" class="bg-white shadow-sm rounded-full px-4 py-0.5 text-[13px] text-[#333] tracking-wider w-fit max-w-[75%] break-words cursor-pointer" onclick="editAnyText('mock-msg-1')">文本文本文本文本文本文本</div>
+                                <span id="mock-status-1" class="text-[9px] text-gray-400 mb-0 whitespace-nowrap cursor-pointer" onclick="editAnyText('mock-status-1')">已读</span>
+                            </div>
+                            <div class="flex items-end justify-end gap-1 mr-4">
+                                <span id="mock-status-2" class="text-[9px] text-gray-400 mb-0 whitespace-nowrap cursor-pointer" onclick="editAnyText('mock-status-2')">未读</span>
+                                <div id="mock-msg-2" class="bg-black shadow-sm rounded-full px-4 py-0.5 text-[13px] text-white tracking-wider w-fit max-w-[75%] break-words cursor-pointer" onclick="editAnyText('mock-msg-2')">文本文本文本文本文本</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
             </div>
 
-            <div class="flex w-full px-1 gap-5 mt-2 justify-between items-start z-10">
-                
-                <div class="w-[160px] h-[160px] rounded-[24px] bg-white p-2.5 flex flex-col relative transition-transform active:scale-95 cursor-default">
-                    <div class="flex-1 bg-[#5c5c5c] rounded-[16px] flex items-center justify-center text-black text-[28px] font-black mb-2.5 shadow-sm overflow-hidden relative cursor-pointer" onclick="changeAnyImage(this)">
-                        <span class="relative z-10 tracking-widest font-sans pointer-events-none">照片</span>
-                    </div>
-                    <div class="h-[42px] flex gap-2">
-                        <div class="flex-1 border-[1px] border-[#DEDEDE] rounded-[14px] flex flex-col justify-center items-start pl-2 pr-1 text-[11px] font-bold text-[#333] leading-[1.2]">
-                            <div id="widget-date-display" class="tracking-widest">♥ 月 - 日</div>
-                            <div id="widget-time-display" class="tracking-widest mt-[2px]">★ 时 : 分</div>
+            <div class="min-w-full w-full h-full snap-center flex flex-col items-center p-6 relative">
+                <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+                    
+                    <div class="w-full bg-[#fdfdfd] rounded-[24px] border border-gray-200 flex flex-col mt-4 shadow-sm relative z-10" style="box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-[#fbfbfb] rounded-t-[24px]">
+                            <svg class="w-6 h-6 text-gray-400 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="alert('返回')"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"></path></svg>
+                            <span class="font-bold text-[16px] text-[#333] cursor-pointer tracking-wider" id="pg2-title" onclick="editAnyText('pg2-title')">初冬 · 日记</span>
+                            <div class="w-6"></div>
                         </div>
-                        <div id="widget-text-btn" class="w-[42px] border-[1px] border-[#DEDEDE] rounded-full flex items-center justify-center text-[11px] font-bold text-[#333] cursor-pointer hover:bg-gray-100 transition-colors" onclick="editAnyText('widget-text-btn')">
-                            文本
+                        
+                        <div class="px-5 pt-4 pb-2 flex gap-4">
+                            <div class="w-[50px] h-[50px] rounded-full bg-gray-300 flex-shrink-0 cursor-pointer bg-cover bg-center shadow-inner" onclick="changeAnyImage(this)"></div>
+                            <div class="flex flex-col justify-center flex-1">
+                                <span class="text-[15px] font-bold text-gray-500 cursor-pointer tracking-wide" id="pg2-handle" onclick="editAnyText('pg2-handle')">209@user_ai</span>
+                                <span class="text-[16px] text-[#222] mt-1.5 font-bold cursor-pointer break-words" id="pg2-content" onclick="editAnyText('pg2-content')">许愿像轻松熊一样轻松ˆ-ᆺ-ˆ</span>
+                            </div>
+                        </div>
+                        
+                        <div class="px-5 pb-4 flex items-center text-gray-400 text-[13px] ml-[66px]">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span class="cursor-pointer tracking-wide" id="pg2-time" onclick="editAnyText('pg2-time')">2026-02-28 11:56</span>
+                        </div>
+                        
+                        <div class="border-t border-gray-100 flex items-center justify-around px-2 py-3 text-gray-500 text-[14px]">
+                            <div class="flex items-center justify-center flex-1 gap-1.5 cursor-pointer hover:text-red-500 transition-colors">
+                                <svg class="w-[20px] h-[20px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> <span class="tracking-wider">喜欢</span>
+                            </div>
+                            <div class="w-[1px] h-4 bg-gray-200"></div>
+                            <div class="flex items-center justify-center flex-1 gap-1.5 cursor-pointer hover:text-yellow-500 transition-colors">
+                                <svg class="w-[20px] h-[20px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg> <span class="tracking-wider">收藏</span>
+                            </div>
+                            <div class="w-[1px] h-4 bg-gray-200"></div>
+                            <div class="flex items-center justify-center flex-1 cursor-pointer font-black text-xl tracking-widest pb-2">
+                                ...
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex-1 grid grid-cols-2 gap-x-2 gap-y-4 place-items-end pt-0 pr-1">
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(1)">
-                        <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
-                        <span class="text-xs text-gray-600">占位1</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openChat()">
-                        <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
-                        </div>
-                        <span class="text-xs text-gray-600">微信</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
-                        <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
-                        <span class="text-xs text-gray-600">占位2</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
-                        <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/ZnjMz01G/quality-restoration-20260228202408361.png" class="w-full h-full object-cover rounded-[15px]">
-                        </div>
-                        <span class="text-xs text-gray-600">论坛</span>
-                    </div>
                 </div>
             </div>
 
-            <div class="w-full mt-10 relative px-2">
-                <div class="flex justify-between px-10 mb-4">
-                    <div class="flex flex-col items-center relative translate-x-[35px] -translate-y-[3px]">
-                        <span id="badge-char" class="absolute -left-[55px] -top-[3px] text-[11px] italic text-gray-600 bg-white shadow-sm flex items-center justify-center cursor-pointer" style="border-radius: 50%; width: 37px; height: 23px;" onclick="editAnyText('badge-char')">char</span>
-                        <div class="w-[55px] h-[55px] rounded-full bg-[#5c5c5c] flex items-center justify-center text-[#111] font-bold text-[18px] tracking-widest shadow-sm cursor-pointer overflow-hidden" onclick="changeAnyImage(this)">
-                            <span class="pointer-events-none">头像</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-center relative -translate-x-[35px] -translate-y-[3px]">
-                        <span id="badge-user" class="absolute -right-[55px] -top-[3px] text-[11px] italic text-gray-600 bg-white shadow-sm flex items-center justify-center cursor-pointer" style="border-radius: 50%; width: 37px; height: 23px;" onclick="editAnyText('badge-user')">user</span>
-                        <div class="w-[55px] h-[55px] rounded-full bg-[#5c5c5c] flex items-center justify-center text-[#111] font-bold text-[18px] tracking-widest shadow-sm cursor-pointer overflow-hidden" onclick="changeAnyImage(this)">
-                            <span class="pointer-events-none">头像</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="w-full flex flex-col gap-3">
-                    <div class="flex items-end gap-1 ml-4">
-                        <div id="mock-msg-1" class="bg-white shadow-sm rounded-full px-4 py-0.5 text-[13px] text-[#333] tracking-wider w-fit max-w-[75%] break-words cursor-pointer" onclick="editAnyText('mock-msg-1')">文本文本文本文本文本文本</div>
-                        <span id="mock-status-1" class="text-[9px] text-gray-400 mb-0 whitespace-nowrap cursor-pointer" onclick="editAnyText('mock-status-1')">已读</span>
-                    </div>
-                    <div class="flex items-end justify-end gap-1 mr-4">
-                        <span id="mock-status-2" class="text-[9px] text-gray-400 mb-0 whitespace-nowrap cursor-pointer" onclick="editAnyText('mock-status-2')">未读</span>
-                        <div id="mock-msg-2" class="bg-black shadow-sm rounded-full px-4 py-0.5 text-[13px] text-white tracking-wider w-fit max-w-[75%] break-words cursor-pointer" onclick="editAnyText('mock-msg-2')">文本文本文本文本文本</div>
-                    </div>
-                </div>
-            </div>
-            </div>
+        </div>
 
-        <div class="mt-auto glass-card w-full py-4 px-8 flex justify-between items-center mb-4" style="transform: translateY(20px);">
+        <div class="absolute bottom-6 left-6 right-6 glass-card py-4 px-8 flex justify-between items-center z-20" style="transform: translateY(20px);">
             <button onclick="openModal('settings')" class="flex flex-col items-center">
                 <span class="text-xl">⚙️</span><span class="text-[10px]">设置</span>
             </button>
@@ -199,6 +251,7 @@
                 <span class="text-xl">📑</span><span class="text-[10px]">预设</span>
             </button>
         </div>
+
     </div>
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
