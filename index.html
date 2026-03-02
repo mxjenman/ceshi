@@ -189,12 +189,12 @@
                     <img src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openModal('settings')">
+            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSettingsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openModal('beauty')">
+            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openAppearanceApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
@@ -204,6 +204,66 @@
             </div>
         </div>
     </div>
+
+    <div id="app-settings-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeSettingsApp()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold">设置</div>
+            <div class="w-6"></div>
+        </div>
+        
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">API 基础配置</h3>
+                <p class="text-xs mb-1 font-bold text-gray-600">Base URL</p>
+                <input id="app-cfg-url" class="w-full bg-gray-50 border border-gray-100 p-3 mb-3 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="https://api.openai.com/v1">
+                
+                <p class="text-xs mb-1 font-bold text-gray-600">API Key</p>
+                <input id="app-cfg-key" type="password" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="sk-...">
+                
+                <button id="btn-fetch-models" onclick="fetchModelsList()" class="w-full bg-blue-500 text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform mb-4">拉取模型</button>
+                
+                <p class="text-xs mb-1 font-bold text-gray-600">选择模型</p>
+                <select id="app-cfg-model" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm outline-none focus:border-blue-400">
+                    <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+
+                <div class="flex justify-between items-center mb-2 mt-2">
+                    <p class="text-xs font-bold text-gray-600">温度 (Temperature)</p>
+                    <span id="app-cfg-temp-val" class="text-sm font-bold text-blue-500">0.7</span>
+                </div>
+                <input id="app-cfg-temp" type="range" min="0" max="2" step="0.1" class="w-full mb-2 accent-black" oninput="document.getElementById('app-cfg-temp-val').innerText = this.value">
+                <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">用来控制AI输出随机性的参数。较高温度值会产生更多样化和创造性的回答，较低的温度值则产生更确定和一致的回答。</p>
+                
+                <button onclick="saveSettingsApp()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-appearance-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeAppearanceApp()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold">外观设置</div>
+            <div class="w-6"></div>
+        </div>
+        
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">自定义 CSS</h3>
+                <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-48 focus:border-blue-400 transition-colors" placeholder="在此输入CSS代码进行全局美化..."></textarea>
+                <button onclick="saveAppearanceApp()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">应用并保存外观</button>
+            </div>
+        </div>
+    </div>
+
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
@@ -489,6 +549,7 @@ let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4o-mini',
+    temperature: 0.7, // 新增温度配置
     systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
     customCss: ''
 };
@@ -777,6 +838,7 @@ async function triggerAI(){
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
             body:JSON.stringify({
                 model:config.model,
+                temperature: config.temperature !== undefined ? config.temperature : 0.7,
                 messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
                 max_tokens:100
             })
@@ -963,6 +1025,7 @@ async function generateAIPosts(){
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
+                temperature: config.temperature !== undefined ? config.temperature : 0.7,
                 messages: [{role: 'system', content: '生成10条社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
                 response_format: { type: "json_object" }
             })
@@ -977,6 +1040,7 @@ async function generateAIPosts(){
     }
 }
 
+/* 保留原本旧的 openModal 逻辑 */
 function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -1005,6 +1069,113 @@ function closeModal(){
     }
     document.getElementById('modal-overlay').classList.add('hidden');
 }
+
+
+/* ===== 新增的全屏 APP 控制函数 ===== */
+
+function openSettingsApp() {
+    document.getElementById('app-settings-screen').classList.remove('hidden');
+    document.getElementById('app-cfg-url').value = config.baseUrl;
+    document.getElementById('app-cfg-key').value = config.apiKey;
+    
+    // 如果下拉框没有当前选择的模型，临时加上去
+    const select = document.getElementById('app-cfg-model');
+    let exists = false;
+    for(let i=0; i<select.options.length; i++) {
+        if(select.options[i].value === config.model) {
+            exists = true; break;
+        }
+    }
+    if(!exists) {
+        const opt = document.createElement('option');
+        opt.value = config.model;
+        opt.text = config.model;
+        select.appendChild(opt);
+    }
+    select.value = config.model;
+
+    document.getElementById('app-cfg-temp').value = config.temperature !== undefined ? config.temperature : 0.7;
+    document.getElementById('app-cfg-temp-val').innerText = config.temperature !== undefined ? config.temperature : 0.7;
+}
+
+function closeSettingsApp() {
+    document.getElementById('app-settings-screen').classList.add('hidden');
+}
+
+function saveSettingsApp() {
+    config.baseUrl = document.getElementById('app-cfg-url').value;
+    config.apiKey = document.getElementById('app-cfg-key').value;
+    config.model = document.getElementById('app-cfg-model').value;
+    config.temperature = parseFloat(document.getElementById('app-cfg-temp').value);
+    closeSettingsApp();
+}
+
+async function fetchModelsList() {
+    const url = document.getElementById('app-cfg-url').value;
+    const key = document.getElementById('app-cfg-key').value;
+    if(!url || !key) return alert("请先填写 Base URL 和 API Key！");
+    
+    const btn = document.getElementById('btn-fetch-models');
+    const oldText = btn.innerText;
+    btn.innerText = "正在拉取中...";
+    btn.disabled = true;
+
+    try {
+        let endpoint = url.replace(/\/$/, '');
+        if (!endpoint.endsWith('/models')) {
+            endpoint += '/models';
+        }
+        
+        const response = await fetch(endpoint, {
+            headers: { 'Authorization': `Bearer ${key}` }
+        });
+        const data = await response.json();
+        
+        const select = document.getElementById('app-cfg-model');
+        select.innerHTML = '';
+        
+        if(data && data.data && Array.isArray(data.data)) {
+            data.data.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.text = m.id;
+                select.appendChild(opt);
+            });
+            // 默认选回之前的如果还存在
+            let exists = false;
+            for(let i=0; i<select.options.length; i++) {
+                if(select.options[i].value === config.model) { exists = true; break; }
+            }
+            if(exists) select.value = config.model;
+            
+            alert(`成功拉取到 ${data.data.length} 个模型可用`);
+        } else {
+            alert("未获取到模型列表，请检查接口和密钥。");
+        }
+    } catch(e) {
+        alert("网络请求失败: " + e.message);
+    } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
+    }
+}
+
+function openAppearanceApp() {
+    document.getElementById('app-appearance-screen').classList.remove('hidden');
+    document.getElementById('app-cfg-css').value = config.customCss;
+}
+
+function closeAppearanceApp() {
+    document.getElementById('app-appearance-screen').classList.add('hidden');
+}
+
+function saveAppearanceApp() {
+    const css = document.getElementById('app-cfg-css').value;
+    config.customCss = css;
+    document.getElementById('custom-style').innerHTML += css;
+    closeAppearanceApp();
+}
+
 
 function openPlaceholder(id) {
     document.getElementById('placeholder-title').innerText = '占位APP ' + id;
