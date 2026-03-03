@@ -848,18 +848,18 @@ function renderMsg(text, role, isInit = false) {
 
     // 判断是用户发的消息还是AI发的消息
     if (role === 'user') {
-        // 用户的消息：头像在右边，气泡 #3C3C3C，文字纯白
-        div.className = "flex justify-end items-start gap-2 mb-4 animate-in w-full";
+        // 用户的消息：头像在右边，气泡 #3C3C3C，文字纯白 (改成 items-center 居中，去掉右上的小尖角)
+        div.className = "flex justify-end items-center gap-2 mb-4 animate-in w-full";
         div.innerHTML = `
-            <div class="chat-msg-user max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] rounded-tr-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+            <div class="chat-msg-user max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
             <img src="${userProfile.avatar}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-sm border border-gray-200">
         `;
     } else {
-        // AI的消息：头像在左边，气泡纯白，文字黑色
-        div.className = "flex justify-start items-start gap-2 mb-4 animate-in w-full";
+        // AI的消息：头像在左边，气泡纯白，文字黑色 (改成 items-center 居中，去掉左上的小尖角)
+        div.className = "flex justify-start items-center gap-2 mb-4 animate-in w-full";
         div.innerHTML = `
             <div class="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
-            <div class="chat-msg-ai max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] rounded-tl-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+            <div class="chat-msg-ai max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
         `;
     }
     
