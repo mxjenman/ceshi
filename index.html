@@ -13,18 +13,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
         body { 
+
             background: #f0f0f0; 
+
             background-size: cover;
+
             background-position: center;
+
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+
             -webkit-tap-highlight-color: transparent; 
+
         }
+
         #home-screen {
+
             background-size: cover;
+
             background-position: center;
+
             transition: background-image 0.5s ease;
+
         }
-       .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
@@ -267,33 +278,53 @@
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div class="flex-1 text-center font-bold">外观设置</div>
-            <div class="w-6"></div>
+            <div class="flex-1 text-center font-bold">外观与定制</div>
+
+            <button onclick="saveAppearanceApp()" class="text-blue-500 font-bold text-sm">保存</button>
         </div>
         
         <div class="flex-1 p-4 overflow-y-auto">
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
                 <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面图标与名称管理</h3>
+
                 <div class="grid grid-cols-4 gap-3" id="icon-edit-grid">
+
                     </div>
+
             </div>
 
+
+
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+
                 <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面壁纸</h3>
+
                 <div class="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-3 relative group">
+
                     <img id="wallpaper-preview" class="w-full h-full object-cover">
+
                     <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+
                         <span class="text-white text-xs">点击下方更换</span>
+
                     </div>
+
                 </div>
+
                 <button onclick="triggerWallpaperUpload()" class="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium">更换主屏幕壁纸</button>
+
                 <input type="file" id="wallpaper-input" class="hidden" accept="image/*" onchange="previewWallpaper(this)">
+
             </div>
 
+
+
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+
                 <h3 class="font-bold text-[15px] mb-3 text-gray-800">高级 CSS 自定义</h3>
+
                 <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-32 focus:border-blue-400" placeholder="CSS 代码..."></textarea>
-           </div>
+            </div>
         </div>
     </div>
 
