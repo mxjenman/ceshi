@@ -1126,7 +1126,6 @@ function sendUserMsg(){
     chatHistory.push({role:'user',content:input.value});
     input.value='';
 }
-
 async function triggerAI(){
     if(!currentFriendId) return;
     if(!config.apiKey) {
@@ -1221,7 +1220,7 @@ async function triggerAI(){
         if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
     }
 }
-    
+
 function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
