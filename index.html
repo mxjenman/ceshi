@@ -855,13 +855,10 @@ async function triggerAI(){
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-            body:JSON.stringify({
-                model:config.model,
-                messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
+                        body:JSON.stringify({
                 model:config.model,
                 messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
                 temperature: parseFloat(config.temperature),
-                max_tokens:100
                 max_tokens:100
             })
         });
