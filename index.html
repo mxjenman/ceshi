@@ -12,7 +12,18 @@
     <title>AI Mobile OS - Plus Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #f0f0f0; 
+            background-size: cover;
+            background-position: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        #home-screen {
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease;
+        }
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
@@ -71,7 +82,6 @@
 
         /* 微信专有样式 */
         .wechat-nav-active { color: #000000 !important; }
-        /* 修改1：将原本的 200px 高度调整为 290px，让背景图更大 */
         .moments-header { height: 290px; background: #333; position: relative; width: 100%; }
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
@@ -92,6 +102,11 @@
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
         .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
+
+        /* 外观设置列表 */
+        .icon-edit-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: #f9f9f9; border-radius: 12px; }
+        .icon-edit-preview { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; border: 1px solid #eee; cursor: pointer; }
+        .icon-edit-name { font-size: 11px; color: #333; text-align: center; width: 100%; border: none; background: transparent; outline: none; border-bottom: 1px dashed #ccc; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -131,25 +146,27 @@
                 <div class="flex-1 grid grid-cols-2 gap-x-2 gap-y-4 place-items-end pt-0 pr-1">
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openChat()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
+                            <img id="main-icon-wechat" src="https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
-                        <span class="text-xs text-gray-600">微信</span>
+                        <span id="main-name-wechat" class="text-xs text-gray-600">微信</span>
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openLorebook()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/xTQP438J/IMG_3162_r.png" class="w-full h-full object-cover rounded-[15px]">
+                            <img id="main-icon-lorebook" src="https://i.postimg.cc/xTQP438J/IMG_3162_r.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
-                        <span class="text-xs text-gray-600">世界书</span>
+                        <span id="main-name-lorebook" class="text-xs text-gray-600">世界书</span>
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
-                        <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
-                        <span class="text-xs text-gray-600">占位2</span>
+                        <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                            <img id="main-icon-place2" src="" class="hidden w-full h-full object-cover rounded-[15px]">
+                        </div>
+                        <span id="main-name-place2" class="text-xs text-gray-600">占位2</span>
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                            <img src="https://i.postimg.cc/wTzkGQMx/IMG_3164.png" class="w-full h-full object-cover rounded-[15px]">
+                            <img id="main-icon-forum" src="https://i.postimg.cc/wTzkGQMx/IMG_3164.png" class="w-full h-full object-cover rounded-[15px]">
                         </div>
-                        <span class="text-xs text-gray-600">论坛</span>
+                        <span id="main-name-forum" class="text-xs text-gray-600">论坛</span>
                     </div>
                 </div>
             </div>
@@ -186,21 +203,23 @@
         <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4" style="transform: translateY(20px);">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('短信')">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
+                    <img id="main-icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSettingsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-full h-full object-cover rounded-[15px]">
+                    <img id="main-icon-settings" src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openAppearanceApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
+                    <img id="main-icon-appearance" src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('查手机')">
-                <div class="app-icon bg-[#5c5c5c] overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm"></div>
+                <div class="app-icon bg-[#5c5c5c] overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                    <img id="main-icon-check" src="" class="hidden w-full h-full object-cover rounded-[15px]">
+                </div>
             </div>
         </div>
     </div>
@@ -237,7 +256,7 @@
                     <span id="app-cfg-temp-val" class="text-sm font-bold text-blue-500">0.7</span>
                 </div>
                 <input id="app-cfg-temp" type="range" min="0" max="2" step="0.1" class="w-full mb-2 accent-black" oninput="document.getElementById('app-cfg-temp-val').innerText = this.value">
-                <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">用来控制AI输出随机性的参数。较高温度值会产生更多样化和创造性的回答，较低的温度值则产生更确定和一致的回答。</p>
+                <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">用来控制AI输出随机性的参数。</p>
                 
                 <button onclick="saveSettingsApp()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">保存设置</button>
             </div>
@@ -251,19 +270,35 @@
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div class="flex-1 text-center font-bold">外观设置</div>
-            <div class="w-6"></div>
+            <div class="flex-1 text-center font-bold">外观与定制</div>
+            <button onclick="saveAppearanceApp()" class="text-blue-500 font-bold text-sm">保存</button>
         </div>
         
         <div class="flex-1 p-4 overflow-y-auto">
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
-                <h3 class="font-bold text-[15px] mb-3 text-gray-800">自定义 CSS</h3>
-                <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-48 focus:border-blue-400 transition-colors" placeholder="在此输入CSS代码进行全局美化..."></textarea>
-                <button onclick="saveAppearanceApp()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">应用并保存外观</button>
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面图标与名称管理</h3>
+                <div class="grid grid-cols-4 gap-3" id="icon-edit-grid">
+                    </div>
+            </div>
+
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面壁纸</h3>
+                <div class="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-3 relative group">
+                    <img id="wallpaper-preview" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <span class="text-white text-xs">点击下方更换</span>
+                    </div>
+                </div>
+                <button onclick="triggerWallpaperUpload()" class="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium">更换主屏幕壁纸</button>
+                <input type="file" id="wallpaper-input" class="hidden" accept="image/*" onchange="previewWallpaper(this)">
+            </div>
+
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">高级 CSS 自定义</h3>
+                <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-32 focus:border-blue-400" placeholder="CSS 代码..."></textarea>
             </div>
         </div>
     </div>
-
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
@@ -288,7 +323,6 @@
                 <div class="moments-header">
                     <img src="https://i.postimg.cc/XvxCSB82/IMG-3174.png" class="absolute top-4 right-4 w-7 h-7 z-20 cursor-pointer object-contain" onclick="openMomentsCompose()">
                     <img id="moments-bg-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="background-color: #a3a3a3;" class="w-full h-full object-cover cursor-pointer" onclick="editProfilePart('moments-bg')">
-                    
                     <span class="moments-name" id="wx-moments-name">Gemini User</span>
                     <img id="wx-moments-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="moments-avatar">
                 </div>
@@ -310,24 +344,12 @@
                     <div id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                 </div>
                 <div class="wx-divider-thin"></div>
-                <div class="bg-white">
-                    <div class="wx-menu-item" onclick="openMePage('钱包')">
-                        <span class="text-[16px]">钱包</span>
-                        <span class="wx-chevron">〉</span>
-                    </div>
-                </div>
+                <div class="bg-white"><div class="wx-menu-item" onclick="openMePage('钱包')"><span class="text-[16px]">钱包</span></div></div>
                 <div class="wx-divider-thin"></div>
                 <div class="bg-white">
-                    <div class="wx-menu-item" onclick="openMePage('个人资料')">
-                        <span class="text-[16px]">个人资料</span>
-                        <span class="wx-chevron">〉</span>
-                    </div>
-                    <div class="wx-menu-item" onclick="openMePage('设置')">
-                        <span class="text-[16px]">设置</span>
-                        <span class="wx-chevron">〉</span>
-                    </div>
+                    <div class="wx-menu-item" onclick="openMePage('个人资料')"><span class="text-[16px]">个人资料</span></div>
+                    <div class="wx-menu-item" onclick="openMePage('设置')"><span class="text-[16px]">设置</span></div>
                 </div>
-                <div class="flex-1 bg-white min-h-[200px]"></div>
             </div>
         </div>
 
@@ -349,9 +371,7 @@
             <div class="w-6"></div>
         </div>
         <div class="flex-1 overflow-y-auto bg-[#ededed]">
-            <div id="chat-flow" class="p-4 space-y-4 min-h-full">
-                <div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>
-            </div>
+            <div id="chat-flow" class="p-4 space-y-4 min-h-full"></div>
         </div>
         <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2 sticky bottom-0">
             <div class="flex gap-2">
@@ -362,66 +382,6 @@
         </div>
     </div>
 
-    <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
-            <div class="mb-4">
-                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">备注</label>
-                <input id="friend-remark" type="text" placeholder="给TA的备注" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700">
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">真名</label>
-                <input id="friend-realname" type="text" placeholder="TA知道自己叫什么" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700">
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-[#333] font-bold mb-1.5 text-[15px]">人设(AI Persona)</label>
-                <textarea id="friend-persona" placeholder="输入TA的人物设定，TA会严格遵守" class="w-full border border-gray-500 rounded-[20px] px-4 py-3 text-[14px] outline-none resize-none h-28 text-gray-700"></textarea>
-            </div>
-            
-            <div class="flex gap-3">
-                <button onclick="closeAddFriendModal()" class="w-1/3 py-3 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
-                <button onclick="saveFriend()" class="flex-1 py-3 bg-black text-white rounded-full font-bold text-[16px]">保存联系人</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="moments-compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
-        <div class="h-14 flex items-center justify-between px-4">
-            <button onclick="closeMomentsCompose()" class="text-gray-700 text-[16px]">取消</button>
-            <button id="moments-submit-btn" onclick="submitMomentsPost()" class="bg-[#07c160] text-white px-4 py-1.5 rounded text-[15px] font-bold btn-disabled" disabled>发表</button>
-        </div>
-        <div class="p-5 flex flex-col gap-3">
-            <textarea id="moments-post-text" class="w-full text-[16px] outline-none resize-none min-h-[100px]" placeholder="这一刻的想法..." oninput="validateMomentsContent()"></textarea>
-            
-            <div id="moments-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] flex items-center justify-center cursor-pointer" onclick="triggerMomentsImage()">
-                <span class="text-4xl text-gray-400 font-light mb-2">+</span>
-            </div>
-
-            <div id="moments-image-preview" class="mt-2 hidden relative w-[110px] h-[110px]">
-                <img id="moments-preview-img" src="" class="w-full h-full object-cover">
-                <button onclick="clearMomentsImage()" class="absolute -top-2 -right-2 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
-            </div>
-            
-            <input type="file" id="moments-image-input" class="hidden" accept="image/*" onchange="previewMomentsImage(this)">
-        </div>
-    </div>
-
-    <div id="me-detail-page" class="page-layer slide-hidden flex flex-col">
-        <div class="h-12 bg-white flex items-center px-4 border-b">
-            <button onclick="closeMePage()" class="back-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <div id="me-detail-title" class="flex-1 text-center font-bold"></div>
-            <div class="w-6"></div>
-        </div>
-        <div class="flex-1 flex flex-center justify-center items-center text-gray-400 italic">
-            这里暂时空空如也...
-        </div>
-    </div>
-    
     <div id="forum-screen" class="fixed inset-0 bg-white hidden flex flex-col z-50 overflow-hidden">
         <div id="forum-content-container" class="flex-1 overflow-y-auto pb-16">
             <div id="view-square">
@@ -431,72 +391,27 @@
                             <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
-                    <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
-                    <button onclick="generateAIPosts()" class="flex items-center justify-center">
-                        <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
-                    </button>
+                    <div class="flex-1 text-center font-bold text-[16px]">广场</div>
+                    <button onclick="generateAIPosts()"><img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon"></button>
                 </div>
-                <div id="forum-feed"><div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div></div>
+                <div id="forum-feed"></div>
             </div>
-
             <div id="view-profile" class="hidden">
-                <div class="relative">
-                    <img id="profile-bg" class="profile-banner" src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800" onclick="editProfilePart('bg')">
-                    <img id="profile-avatar" class="profile-avatar-main" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="editProfilePart('avatar')">
-                </div>
+                <img id="profile-bg" class="profile-banner" src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800" onclick="editProfilePart('bg')">
+                <img id="profile-avatar" class="profile-avatar-main" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg">
                 <div class="px-4 mt-2">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h2 id="profile-name" class="text-xl font-black" onclick="editProfilePart('name')">{{user}}</h2>
-                            <p id="profile-handle" class="text-gray-500 text-sm" onclick="editProfilePart('handle')">@user_ai</p>
-                        </div>
-                        <button class="border border-gray-300 px-4 py-1.5 rounded-full font-bold text-sm" onclick="alert('编辑资料请直接点击文字或图片')">编辑资料</button>
-                    </div>
-                    <p id="profile-bio" class="mt-3 text-[15px]" onclick="editProfilePart('bio')">探索AI OS的无限可能。</p>
-                    <div class="mt-3 flex gap-4 text-[14px] text-gray-500">
-                        <div><span id="profile-following-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-following-count')">520</span> 正在关注</div>
-                        <div><span id="profile-followers-count" class="font-bold text-black cursor-pointer" onclick="editAnyText('profile-followers-count')">1314</span> 关注者</div>
-                    </div>
-                </div>
-                <div class="flex border-b mt-4">
-                    <div class="flex-1 text-center py-3 tab-active text-sm">推文</div>
-                    <div class="flex-1 text-center py-3 text-gray-500 text-sm">回复</div>
-                    <div class="flex-1 text-center py-3 text-gray-500 text-sm">媒体</div>
-                    <div class="flex-1 text-center py-3 text-gray-500 text-sm">喜欢</div>
+                    <h2 id="profile-name" class="text-xl font-black">{{user}}</h2>
+                    <p id="profile-handle" class="text-gray-500 text-sm">@user_ai</p>
+                    <p id="profile-bio" class="mt-3 text-[15px]">探索AI OS的无限可能。</p>
                 </div>
                 <div id="profile-posts-feed"></div>
             </div>
         </div>
         <div class="h-16 border-t flex items-center justify-around bg-white absolute bottom-0 w-full z-20">
             <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-blue-500"><span class="text-xs font-bold">首页</span></button>
-            <button onclick="alert('搜索功能暂未开放')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">搜索</span></button>
-            <button onclick="alert('通知中心为空')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">通知</span></button>
             <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">我</span></button>
         </div>
         <div class="fab-btn" onclick="openCompose()">+</div>
-    </div>
-
-    <div id="compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
-        <div class="h-14 flex items-center justify-between px-4">
-            <button onclick="closeCompose()" class="text-gray-700">取消</button>
-            <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
-        </div>
-        <div class="p-4 flex gap-3">
-            <img id="compose-avatar-sync" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full object-cover">
-            <div class="flex-1">
-                <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
-                <div id="post-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] rounded-[16px] flex items-center justify-center cursor-pointer" onclick="triggerPostImage()">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5V19M5 12H19" stroke="#d1d1d1" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div id="post-image-preview" class="mt-2 hidden relative">
-                    <img id="preview-img" src="" class="rounded-2xl w-full max-h-60 object-cover border">
-                    <button onclick="clearPostImage()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center">×</button>
-                </div>
-                <input type="file" id="post-image-input" class="hidden" accept="image/*" onchange="previewPostImage(this)">
-            </div>
-        </div>
     </div>
 
     <div id="lorebook-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
@@ -507,51 +422,70 @@
                 </svg>
             </button>
             <div class="flex-1 text-center font-bold">世界书 (Lorebook)</div>
-            <div class="w-6"></div>
         </div>
-        
         <div class="flex-1 p-4 overflow-y-auto">
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
-                <h3 class="font-bold text-[15px] mb-3 text-gray-800">新建世界设定</h3>
-                <input id="lore-key" type="text" placeholder="触发词 (多个用英文逗号分隔，如: 苹果,apple)" class="w-full bg-gray-50 border border-gray-100 p-3 mb-3 rounded-xl text-sm outline-none focus:border-blue-400 transition-colors">
-                <textarea id="lore-content" placeholder="背景设定内容，当触发词出现在聊天中时，AI会记住这些设定..." class="w-full bg-gray-50 border border-gray-100 p-3 mb-3 rounded-xl text-sm outline-none resize-none h-24 focus:border-blue-400 transition-colors"></textarea>
-                <button onclick="saveLoreEntry()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">保存至世界书</button>
+                <input id="lore-key" type="text" placeholder="触发词" class="w-full bg-gray-50 border p-3 mb-3 rounded-xl text-sm outline-none">
+                <textarea id="lore-content" placeholder="设定内容..." class="w-full bg-gray-50 border p-3 mb-3 rounded-xl text-sm h-24 outline-none"></textarea>
+                <button onclick="saveLoreEntry()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold">保存词条</button>
             </div>
-
-            <h3 class="font-bold mb-3 text-gray-500 text-[13px] px-1 tracking-wider">已存储词条：</h3>
-            <div id="lore-list" class="space-y-3 pb-6">
-                </div>
+            <div id="lore-list" class="space-y-3"></div>
         </div>
     </div>
+
+    <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6">
+            <input id="friend-remark" type="text" placeholder="备注" class="w-full border rounded-full px-4 py-2 mb-4">
+            <input id="friend-realname" type="text" placeholder="真名" class="w-full border rounded-full px-4 py-2 mb-4">
+            <textarea id="friend-persona" placeholder="人设" class="w-full border rounded-[20px] px-4 py-3 mb-4 h-24 outline-none"></textarea>
+            <div class="flex gap-3">
+                <button onclick="closeAddFriendModal()" class="w-1/3 py-3 border rounded-full">取消</button>
+                <button onclick="saveFriend()" class="flex-1 py-3 bg-black text-white rounded-full">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="moments-compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
+        <div class="h-14 flex items-center justify-between px-4">
+            <button onclick="closeMomentsCompose()">取消</button>
+            <button id="moments-submit-btn" onclick="submitMomentsPost()" class="bg-[#07c160] text-white px-4 py-1.5 rounded font-bold">发表</button>
+        </div>
+        <div class="p-5">
+            <textarea id="moments-post-text" class="w-full h-32 outline-none" placeholder="这一刻的想法..."></textarea>
+            <div id="moments-image-preview" class="hidden w-24 h-24 relative mt-2">
+                <img id="moments-preview-img" class="w-full h-full object-cover rounded">
+            </div>
+            <button onclick="document.getElementById('moments-image-input').click()" class="w-24 h-24 bg-gray-100 flex items-center justify-center text-3xl text-gray-400">+</button>
+            <input type="file" id="moments-image-input" class="hidden" accept="image/*" onchange="previewMomentsImage(this)">
+        </div>
+    </div>
+
     <div id="placeholder-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
         <div class="h-12 bg-white flex items-center px-4 border-b">
-            <button onclick="closePlaceholder()" class="back-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <div id="placeholder-title" class="flex-1 text-center font-bold">占位APP</div>
-            <div class="w-6"></div>
+            <button onclick="closePlaceholder()" class="back-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div id="placeholder-title" class="flex-1 text-center font-bold">占位</div>
         </div>
-        <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
+        <div class="flex-1 flex items-center justify-center text-gray-400">暂无内容</div>
     </div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-6">
-        <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
-            <div id="modal-content"></div>
-            <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
+    <div id="compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
+        <div class="h-14 flex items-center justify-between px-4">
+            <button onclick="closeCompose()">取消</button>
+            <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold">发布</button>
         </div>
+        <div class="p-4"><textarea id="post-text" class="w-full h-40 outline-none text-lg" placeholder="有什么新鲜事？"></textarea></div>
     </div>
 
 <script>
-/* 核心配置与状态 */
+/* 核心数据 */
 let config = {
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4o-mini',
-    temperature: 0.7, // 新增温度配置
-    systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
-    customCss: ''
+    temperature: 0.7,
+    systemPrompt: '你是一个真实的微信好友，回复极简。',
+    customCss: '',
+    wallpaper: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800' // 初始壁纸
 };
 
 let userProfile = {
@@ -562,546 +496,117 @@ let userProfile = {
     status: "状态"
 };
 
-let chatHistory = [];
+// 桌面 APP 数据定义
+let appManifest = {
+    wechat: { name: "微信", icon: "https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" },
+    lorebook: { name: "世界书", icon: "https://i.postimg.cc/xTQP438J/IMG_3162_r.png" },
+    place2: { name: "占位2", icon: "" },
+    forum: { name: "论坛", icon: "https://i.postimg.cc/wTzkGQMx/IMG_3164.png" },
+    sms: { name: "短信", icon: "https://i.postimg.cc/28YxK7yk/IMG_3166.png" },
+    settings: { name: "设置", icon: "https://i.postimg.cc/4NG1SQyx/IMG_3167.png" },
+    appearance: { name: "外观", icon: "https://i.postimg.cc/NftxzkF0/IMG_3165.png" },
+    check: { name: "查手机", icon: "" }
+};
+
+let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
 let friendList = [];
 let currentFriendId = null;
+let chatHistory = [];
 
-// ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
-let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
+/* --- 外观与桌面定制核心逻辑 --- */
 
-// ===== 2. UI 界面：Lorebook 操作面板与逻辑 =====
-function openLorebook() {
-    document.getElementById('lorebook-screen').classList.remove('hidden');
-    renderLoreList();
-}
+function initAppearance() {
+    // 应用壁纸
+    document.getElementById('home-screen').style.backgroundImage = `url(${config.wallpaper})`;
+    document.getElementById('wallpaper-preview').src = config.wallpaper;
 
-function closeLorebook() {
-    document.getElementById('lorebook-screen').classList.add('hidden');
-}
-
-function saveLoreEntry() {
-    const keyStr = document.getElementById('lore-key').value.trim();
-    const content = document.getElementById('lore-content').value.trim();
-    if (!keyStr || !content) return alert("触发词和内容都不能为空哦！");
-    
-    lorebook.push({ key: keyStr, content: content });
-    localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
-    
-    document.getElementById('lore-key').value = '';
-    document.getElementById('lore-content').value = '';
-    renderLoreList();
-}
-
-function deleteLoreEntry(index) {
-    if(confirm("确定要删除这条世界设定吗？")) {
-        lorebook.splice(index, 1);
-        localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
-        renderLoreList();
-    }
-}
-
-function renderLoreList() {
-    const list = document.getElementById('lore-list');
-    list.innerHTML = '';
-    if (lorebook.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">词条空空如也，快去添加吧。</div>';
-        return;
-    }
-    
-    lorebook.forEach((entry, index) => {
-        list.innerHTML += `
-            <div class="bg-white rounded-[16px] p-4 shadow-sm relative text-sm border border-gray-50">
-                <div class="font-bold text-[#1d9bf0] mb-1 text-[13px]">🔑 触发词：${entry.key}</div>
-                <div class="text-gray-700 leading-relaxed break-words pr-12">${entry.content}</div>
-                <button onclick="deleteLoreEntry(${index})" class="absolute top-4 right-4 text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded">删除</button>
-            </div>
+    // 渲染外观设置中的图标列表
+    const grid = document.getElementById('icon-edit-grid');
+    grid.innerHTML = '';
+    Object.keys(appManifest).forEach(key => {
+        const app = appManifest[key];
+        const item = document.createElement('div');
+        item.className = 'icon-edit-item';
+        item.innerHTML = `
+            <img src="${app.icon || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%235c5c5c%22/></svg>'}" 
+                 class="icon-edit-preview" id="preview-ico-${key}" onclick="triggerIconUpload('${key}')">
+            <input type="text" class="icon-edit-name" value="${app.name}" id="edit-name-${key}">
         `;
+        grid.appendChild(item);
     });
 }
-// ===============================================
 
-function syncProfileToAI() {
-    config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
-    当前对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
-}
-
-function changeAvatar(side){
-    const input=document.createElement('input');
-    input.type='file'; input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=ev=>{ 
-            const newSrc = ev.target.result;
-            document.getElementById(`avatar-${side}`).src=newSrc; 
-            updateGlobalAvatar(newSrc);
+function triggerIconUpload(key) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const data = ev.target.result;
+            document.getElementById(`preview-ico-${key}`).src = data;
+            // 缓存到 manifest
+            appManifest[key].icon = data;
         };
         reader.readAsDataURL(file);
     };
     input.click();
 }
 
-function updateGlobalAvatar(src) {
-    userProfile.avatar = src;
-    const ids = ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync', 'avatar-left', 'avatar-right'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.src = src;
-    });
+function triggerWallpaperUpload() {
+    document.getElementById('wallpaper-input').click();
 }
 
-function editEmoji(side){
-    const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
-    const result=prompt("修改颜文字",el.innerText);
-    if(result) el.innerText=result;
-}
-
-function editWidgetText(){
-    const el=document.getElementById('widget-text');
-    const result=prompt("修改文案",el.innerText);
-    if(result) el.innerText=result;
-}
-
-function editStatus() {
-    const res = prompt("设置我的状态", userProfile.status);
-    if(res !== null) {
-        userProfile.status = res;
-        document.getElementById('wx-me-status').innerText = res;
-        syncProfileToAI();
-    }
-}
-
-// ===== Friend List & Chat Views Logic =====
-function openAddFriendModal() { document.getElementById('add-friend-modal').classList.remove('hidden'); }
-function closeAddFriendModal() { document.getElementById('add-friend-modal').classList.add('hidden'); }
-
-function saveFriend() {
-    const remark = document.getElementById('friend-remark').value.trim();
-    const realName = document.getElementById('friend-realname').value.trim();
-    const persona = document.getElementById('friend-persona').value.trim();
-    if(!remark || !realName || !persona) return alert("请填写完整");
-    
-    const friend = {
-        id: 'f_' + Date.now(),
-        remark: remark,
-        realName: realName,
-        persona: persona,
-        chatHistory: []
-    };
-    friendList.push(friend);
-    closeAddFriendModal();
-    renderFriendList();
-    
-    document.getElementById('friend-remark').value = '';
-    document.getElementById('friend-realname').value = '';
-    document.getElementById('friend-persona').value = '';
-}
-
-function renderFriendList() {
-    const container = document.getElementById('friend-list-container');
-    const hint = document.getElementById('empty-friend-hint');
-    container.innerHTML = '';
-    if(friendList.length === 0) {
-        hint.classList.remove('hidden');
-    } else {
-        hint.classList.add('hidden');
-        friendList.forEach(f => {
-            const div = document.createElement('div');
-            div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
-            div.onclick = () => openChatDetail(f.id);
-            div.innerHTML = `
-                <div class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex items-center justify-center text-white font-bold text-lg">${f.remark.charAt(0)}</div>
-                <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
-            `;
-            container.appendChild(div);
-        });
-    }
-}
-
-function openChatDetail(id) {
-    currentFriendId = id;
-    const friend = friendList.find(f => f.id === id);
-    document.getElementById('chat-detail-title').innerText = friend.remark;
-    
-    chatHistory = friend.chatHistory;
-    const flow = document.getElementById('chat-flow');
-    flow.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
-    chatHistory.forEach(msg => {
-        renderMsg(msg.content, msg.role, true);
-    });
-    
-    document.getElementById('chat-detail-page').classList.remove('slide-hidden');
-}
-
-function closeChatDetail() {
-    document.getElementById('chat-detail-page').classList.add('slide-hidden');
-    currentFriendId = null;
-}
-
-function switchWechatTab(tab) {
-    const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '好友', moments: '朋友圈', me: '' };
-    
-    tabs.forEach(t => {
-        document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
-        document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
-    });
-    
-    document.getElementById(`wechat-tab-${tab}`).classList.remove('hidden');
-    document.getElementById(`wx-nav-${tab}`).classList.add('wechat-nav-active');
-    document.getElementById('wechat-title').innerText = titles[tab];
-
-    document.getElementById('wx-moments-name').innerText = userProfile.name;
-    document.getElementById('wx-me-name').innerText = userProfile.name;
-    document.getElementById('wx-me-id').innerText = userProfile.handle;
-
-    const wechatHeader = document.getElementById('wechat-header');
-    if(tab === 'moments' || tab === 'me') {
-        wechatHeader.classList.add('hidden');
-    } else {
-        wechatHeader.classList.remove('hidden');
-    }
-}
-
-function openChat(){ 
-    document.getElementById('chat-screen').classList.remove('hidden'); 
-    switchWechatTab('messages'); 
-    renderFriendList();
-}
-function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
-
-function renderMsg(text,role, isInit = false){
-    const container=document.getElementById('chat-flow');
-    const div=document.createElement('div');
-    div.className=`flex ${role==='user'?'justify-end':'justify-start'} animate-in`;
-    div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
-    container.appendChild(div);
-    container.scrollTop=container.scrollHeight;
-}
-
-function sendUserMsg(){
-    if(!currentFriendId) return;
-    const input=document.getElementById('chat-input');
-    if(!input.value)return;
-    renderMsg(input.value,'user');
-    chatHistory.push({role:'user',content:input.value});
-    input.value='';
-}
-
-async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key");
-    if(!currentFriendId) return;
-    
-    const btn=document.getElementById('gen-btn');
-    btn.innerText="对方正在输入..."; btn.disabled=true;
-    
-    let finalSystemMessage = config.systemPrompt;
-    
-    const friend = friendList.find(f => f.id === currentFriendId);
-    if(friend) {
-        finalSystemMessage = `你的真实名字是：${friend.realName}。
-你的设定是：${friend.persona}。
-请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
-    }
-
-    finalSystemMessage += `\n\n当前与你对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
-    
-    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
-    let injectedLore = [];
-    
-    lorebook.forEach(entry => {
-        const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
-        for(let k of keywords) {
-            if(latestUserMsg.includes(k)) {
-                injectedLore.push(`[${entry.content}]`);
-                break; 
-            }
-        }
-    });
-
-    if(injectedLore.length > 0) {
-        finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
-        console.log("注入了世界书数据:", injectedLore); 
-    }
-
-    try{
-        const response=await fetch(`${config.baseUrl}/chat/completions`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-            body:JSON.stringify({
-                model:config.model,
-                temperature: config.temperature !== undefined ? config.temperature : 0.7,
-                messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
-                max_tokens:100
-            })
-        });
-        const data=await response.json();
-        const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,50),'assistant');
-        chatHistory.push({role:'assistant',content:reply});
-    }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
-    finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
-}
-
-function openMePage(title) {
-    document.getElementById('me-detail-title').innerText = title;
-    document.getElementById('me-detail-page').classList.remove('slide-hidden');
-}
-function closeMePage() { document.getElementById('me-detail-page').classList.add('slide-hidden'); }
-
-function switchForumTab(tab){
-    const square = document.getElementById('view-square');
-    const profile = document.getElementById('view-profile');
-    const tabSq = document.getElementById('tab-square');
-    const tabPr = document.getElementById('tab-profile');
-    
-    if(tab === 'square'){
-        square.classList.remove('hidden'); profile.classList.add('hidden');
-        tabSq.classList.add('text-blue-500'); tabSq.classList.remove('text-gray-400');
-        tabPr.classList.add('text-gray-400'); tabPr.classList.remove('text-blue-500');
-    } else {
-        square.classList.add('hidden'); profile.classList.remove('hidden');
-        tabPr.classList.add('text-blue-500'); tabPr.classList.remove('text-gray-400');
-        tabSq.classList.add('text-gray-400'); tabSq.classList.remove('text-blue-500');
-    }
-}
-
-function editProfilePart(part){
-    if(part === 'bg' || part === 'avatar' || part === 'moments-bg'){
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = 'image/*';
-        input.onchange = e => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = ev => {
-                if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
-                if(part === 'moments-bg') document.getElementById('moments-bg-img').src = ev.target.result;
-                if(part === 'avatar') updateGlobalAvatar(ev.target.result);
-            };
-            reader.readAsDataURL(file);
-        };
-        input.click();
-    } else {
-        const map = {
-            'name': ['wx-me-name', '修改昵称', 'name'],
-            'handle': ['wx-me-id', '修改账号', 'handle'],
-            'bio': ['profile-bio', '修改简介', 'bio']
-        };
-        const cfg = map[part];
-        const el = document.getElementById(cfg[0]);
-        const res = prompt(cfg[1], el.innerText);
-        if(res !== null){
-            userProfile[cfg[2]] = res;
-            if(cfg[2] === 'name') {
-                document.getElementById('wx-me-name').innerText = res;
-                document.getElementById('profile-name').innerText = res;
-                document.getElementById('wx-moments-name').innerText = res;
-            } else if(cfg[2] === 'handle') {
-                document.getElementById('wx-me-id').innerText = res;
-                document.getElementById('profile-handle').innerText = res;
-            } else {
-                document.getElementById('profile-bio').innerText = res;
-            }
-            syncProfileToAI();
-        }
-    }
-}
-
-function openForum(){ document.getElementById('forum-screen').classList.remove('hidden'); }
-function closeForum(){ document.getElementById('forum-screen').classList.add('hidden'); }
-function openCompose(){ 
-    document.getElementById('compose-screen').classList.remove('hidden'); 
-    document.getElementById('compose-avatar-sync').src = userProfile.avatar;
-    validatePostContent(); 
-}
-function closeCompose(){ 
-    document.getElementById('compose-screen').classList.add('hidden');
-    document.getElementById('post-text').value = '';
-    clearPostImage();
-}
-function validatePostContent() {
-    const text = document.getElementById('post-text').value.trim();
-    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
-    const btn = document.getElementById('post-submit-btn');
-    btn.disabled = !(text.length > 0 || hasImg);
-    btn.classList.toggle('btn-disabled', btn.disabled);
-}
-function triggerPostImage(){ document.getElementById('post-image-input').click(); }
-function previewPostImage(input){
+function previewWallpaper(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
-            document.getElementById('preview-img').src = e.target.result;
-            document.getElementById('post-image-preview').classList.remove('hidden');
-            document.getElementById('post-image-add-btn').classList.add('hidden');
-            validatePostContent();
-        }
+            document.getElementById('wallpaper-preview').src = e.target.result;
+            config.wallpaper = e.target.result;
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
-function clearPostImage(){
-    document.getElementById('post-image-input').value = '';
-    document.getElementById('post-image-preview').classList.add('hidden');
-    document.getElementById('post-image-add-btn').classList.remove('hidden');
-    validatePostContent();
-}
-function submitPost(){
-    const text = document.getElementById('post-text').value.trim();
-    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
-    const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    addPostToFeed(userProfile.name, userProfile.handle, text, imgSrc, timeStr, true);
-    closeCompose();
-}
 
-function addPostToFeed(name, handle, text, img, time, isUserPost = false){
-    const squareFeed = document.getElementById('forum-feed');
-    const profileFeed = document.getElementById('profile-posts-feed');
-    const hint = document.getElementById('empty-hint');
-    if(hint) hint.remove();
-    
-    const createNode = () => {
-        const div = document.createElement('div');
-        div.className = "tweet-card flex gap-3 animate-in";
-        const avatarUrl = isUserPost ? userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+function saveAppearanceApp() {
+    // 1. 保存名称修改
+    Object.keys(appManifest).forEach(key => {
+        const newName = document.getElementById(`edit-name-${key}`).value;
+        appManifest[key].name = newName;
         
-        const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        // 2. 同步到主屏
+        const mainIcon = document.getElementById(`main-icon-${key}`);
+        const mainName = document.getElementById(`main-name-${key}`);
+        
+        if (mainIcon) {
+            if (appManifest[key].icon) {
+                mainIcon.src = appManifest[key].icon;
+                mainIcon.classList.remove('hidden');
+            }
+        }
+        if (mainName) mainName.innerText = newName;
+    });
 
-        div.innerHTML = `
-            <img src="${avatarUrl}" class="tweet-avatar">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1">
-                    <span class="font-bold text-[15px] truncate">${name}</span>
-                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span>
-                </div>
-                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div>
-                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
-                
-                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4">
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')">
-                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id1}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')">
-                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id2}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')">
-                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id3}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')">
-                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id4}">0</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        return div;
-    };
-    squareFeed.prepend(createNode());
-    if(isUserPost) profileFeed.prepend(createNode());
+    // 3. 应用壁纸
+    document.getElementById('home-screen').style.backgroundImage = `url(${config.wallpaper})`;
+
+    // 4. 应用 CSS
+    config.customCss = document.getElementById('app-cfg-css').value;
+    document.getElementById('custom-style').innerHTML += config.customCss;
+
+    closeAppearanceApp();
 }
 
-async function generateAIPosts(){
-    if(!config.apiKey) return alert("同步广场需要配置 API Key");
-    const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在同步广场...</div>';
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                temperature: config.temperature !== undefined ? config.temperature : 0.7,
-                messages: [{role: 'system', content: '生成10条社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
-                response_format: { type: "json_object" }
-            })
-        });
-        const data = await response.json();
-        const posts = JSON.parse(data.choices[0].message.content).posts;
-        feed.innerHTML = "";
-        posts.forEach(p => addPostToFeed(p.name, p.handle, p.text, null, "刚刚"));
-    } catch(e) {
-        feed.innerHTML = "";
-        addPostToFeed("开发者", "@dev", "连接超时，请检查 API 设置", null, "1s");
-    }
-}
-
-/* 保留原本旧的 openModal 逻辑 */
-function openModal(type){
-    const content=document.getElementById('modal-content');
-    document.getElementById('modal-overlay').classList.remove('hidden');
-    if(type==='settings'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">API 设置</h2><p class="text-xs mb-1">Base URL</p><input id="cfg-url" class="w-full border p-2 mb-3 rounded" value="${config.baseUrl}"><p class="text-xs mb-1">API Key</p><input id="cfg-key" type="password" class="w-full border p-2 mb-3 rounded" value="${config.apiKey}"><p class="text-xs mb-1">模型</p><input id="cfg-model" class="w-full border p-2 mb-3 rounded" value="${config.model}">`;
-    }else if(type==='beauty'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">CSS 美化</h2><textarea id="cfg-css" class="w-full border p-2 h-40 font-mono text-sm">${config.customCss}</textarea>`;
-    }else if(type==='presets'){
-        content.innerHTML=`<h2 class="text-xl font-bold mb-4">AI 预设</h2><textarea id="cfg-prompt" class="w-full border p-2 h-40 text-sm">${config.systemPrompt}</textarea>`;
-    }
-}
-
-function closeModal(){
-    if(document.getElementById('cfg-url')){
-        config.baseUrl=document.getElementById('cfg-url').value;
-        config.apiKey=document.getElementById('cfg-key').value;
-        config.model=document.getElementById('cfg-model').value;
-    }
-    if(document.getElementById('cfg-css')){
-        const css = document.getElementById('cfg-css').value;
-        config.customCss = css;
-        document.getElementById('custom-style').innerHTML += css;
-    }
-    if(document.getElementById('cfg-prompt')){
-        config.systemPrompt=document.getElementById('cfg-prompt').value;
-    }
-    document.getElementById('modal-overlay').classList.add('hidden');
-}
-
-
-/* ===== 新增的全屏 APP 控制函数 ===== */
+/* --- 原有逻辑保留 --- */
 
 function openSettingsApp() {
     document.getElementById('app-settings-screen').classList.remove('hidden');
     document.getElementById('app-cfg-url').value = config.baseUrl;
     document.getElementById('app-cfg-key').value = config.apiKey;
-    
-    // 如果下拉框没有当前选择的模型，临时加上去
-    const select = document.getElementById('app-cfg-model');
-    let exists = false;
-    for(let i=0; i<select.options.length; i++) {
-        if(select.options[i].value === config.model) {
-            exists = true; break;
-        }
-    }
-    if(!exists) {
-        const opt = document.createElement('option');
-        opt.value = config.model;
-        opt.text = config.model;
-        select.appendChild(opt);
-    }
-    select.value = config.model;
-
-    document.getElementById('app-cfg-temp').value = config.temperature !== undefined ? config.temperature : 0.7;
-    document.getElementById('app-cfg-temp-val').innerText = config.temperature !== undefined ? config.temperature : 0.7;
+    document.getElementById('app-cfg-model').value = config.model;
+    document.getElementById('app-cfg-temp').value = config.temperature;
 }
-
-function closeSettingsApp() {
-    document.getElementById('app-settings-screen').classList.add('hidden');
-}
-
+function closeSettingsApp() { document.getElementById('app-settings-screen').classList.add('hidden'); }
 function saveSettingsApp() {
     config.baseUrl = document.getElementById('app-cfg-url').value;
     config.apiKey = document.getElementById('app-cfg-key').value;
@@ -1110,202 +615,209 @@ function saveSettingsApp() {
     closeSettingsApp();
 }
 
-async function fetchModelsList() {
-    const url = document.getElementById('app-cfg-url').value;
-    const key = document.getElementById('app-cfg-key').value;
-    if(!url || !key) return alert("请先填写 Base URL 和 API Key！");
+function openAppearanceApp() { 
+    initAppearance();
+    document.getElementById('app-appearance-screen').classList.remove('hidden'); 
+}
+function closeAppearanceApp() { document.getElementById('app-appearance-screen').classList.add('hidden'); }
+
+// 微信逻辑
+function openChat() { document.getElementById('chat-screen').classList.remove('hidden'); switchWechatTab('messages'); }
+function closeChat() { document.getElementById('chat-screen').classList.add('hidden'); }
+function switchWechatTab(tab) {
+    ['messages', 'moments', 'me'].forEach(t => {
+        document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
+        document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
+    });
+    document.getElementById(`wechat-tab-${tab}`).classList.remove('hidden');
+    document.getElementById(`wx-nav-${tab}`).classList.add('wechat-nav-active');
+    document.getElementById('wechat-header').classList.toggle('hidden', tab !== 'messages');
+}
+
+// 好友逻辑
+function openAddFriendModal() { document.getElementById('add-friend-modal').classList.remove('hidden'); }
+function closeAddFriendModal() { document.getElementById('add-friend-modal').classList.add('hidden'); }
+function saveFriend() {
+    const friend = {
+        id: 'f_' + Date.now(),
+        remark: document.getElementById('friend-remark').value,
+        realName: document.getElementById('friend-realname').value,
+        persona: document.getElementById('friend-persona').value,
+        chatHistory: []
+    };
+    friendList.push(friend);
+    closeAddFriendModal();
+    renderFriendList();
+}
+function renderFriendList() {
+    const container = document.getElementById('friend-list-container');
+    container.innerHTML = '';
+    friendList.forEach(f => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-3 p-3 border-b cursor-pointer";
+        div.onclick = () => openChatDetail(f.id);
+        div.innerHTML = `<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center font-bold">${f.remark[0]}</div><div class="font-medium">${f.remark}</div>`;
+        container.appendChild(div);
+    });
+}
+function openChatDetail(id) {
+    currentFriendId = id;
+    const friend = friendList.find(f => f.id === id);
+    document.getElementById('chat-detail-title').innerText = friend.remark;
+    chatHistory = friend.chatHistory;
+    document.getElementById('chat-flow').innerHTML = '';
+    chatHistory.forEach(m => renderMsg(m.content, m.role));
+    document.getElementById('chat-detail-page').classList.remove('slide-hidden');
+}
+function closeChatDetail() { document.getElementById('chat-detail-page').classList.add('slide-hidden'); }
+
+// 聊天发送
+function renderMsg(text, role) {
+    const flow = document.getElementById('chat-flow');
+    const div = document.createElement('div');
+    div.className = `flex ${role==='user'?'justify-end':'justify-start'} animate-in mb-4`;
+    div.innerHTML = `<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
+    flow.appendChild(div);
+    flow.scrollTop = flow.scrollHeight;
+}
+function sendUserMsg() {
+    const input = document.getElementById('chat-input');
+    if(!input.value) return;
+    renderMsg(input.value, 'user');
+    chatHistory.push({role:'user', content: input.value});
+    input.value = '';
+}
+async function triggerAI() {
+    if(!config.apiKey) return alert("配置 API Key");
+    const btn = document.getElementById('gen-btn');
+    btn.innerText = "正在输入..."; btn.disabled = true;
+    const friend = friendList.find(f => f.id === currentFriendId);
     
-    const btn = document.getElementById('btn-fetch-models');
-    const oldText = btn.innerText;
-    btn.innerText = "正在拉取中...";
-    btn.disabled = true;
+    // 注入世界书
+    let context = `扮演${friend.realName}, 设定是:${friend.persona}。`;
+    const lastMsg = chatHistory[chatHistory.length-1].content;
+    lorebook.forEach(entry => {
+        if(lastMsg.includes(entry.key)) context += `背景补充:${entry.content};`;
+    });
 
     try {
-        let endpoint = url.replace(/\/$/, '');
-        if (!endpoint.endsWith('/models')) {
-            endpoint += '/models';
-        }
-        
-        const response = await fetch(endpoint, {
-            headers: { 'Authorization': `Bearer ${key}` }
+        const res = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                temperature: config.temperature,
+                messages: [{role: 'system', content: context}, ...chatHistory.slice(-5)]
+            })
         });
-        const data = await response.json();
-        
-        const select = document.getElementById('app-cfg-model');
-        select.innerHTML = '';
-        
-        if(data && data.data && Array.isArray(data.data)) {
-            data.data.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.text = m.id;
-                select.appendChild(opt);
-            });
-            // 默认选回之前的如果还存在
-            let exists = false;
-            for(let i=0; i<select.options.length; i++) {
-                if(select.options[i].value === config.model) { exists = true; break; }
-            }
-            if(exists) select.value = config.model;
-            
-            alert(`成功拉取到 ${data.data.length} 个模型可用`);
-        } else {
-            alert("未获取到模型列表，请检查接口和密钥。");
-        }
-    } catch(e) {
-        alert("网络请求失败: " + e.message);
-    } finally {
-        btn.innerText = oldText;
-        btn.disabled = false;
+        const data = await res.json();
+        const reply = data.choices[0].message.content;
+        renderMsg(reply, 'assistant');
+        chatHistory.push({role:'assistant', content: reply});
+    } catch(e) { renderMsg("（失败）", 'assistant'); }
+    finally { btn.innerText = "生成对方回复"; btn.disabled = false; }
+}
+
+// 朋友圈
+function openMomentsCompose() { document.getElementById('moments-compose-screen').classList.remove('hidden'); }
+function closeMomentsCompose() { document.getElementById('moments-compose-screen').classList.add('hidden'); }
+function previewMomentsImage(input) {
+    if(input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            document.getElementById('moments-preview-img').src = e.target.result;
+            document.getElementById('moments-image-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 }
-
-function openAppearanceApp() {
-    document.getElementById('app-appearance-screen').classList.remove('hidden');
-    document.getElementById('app-cfg-css').value = config.customCss;
+function submitMomentsPost() {
+    const text = document.getElementById('moments-post-text').value;
+    const img = document.getElementById('moments-preview-img').src;
+    const feed = document.getElementById('moments-feed');
+    const div = document.createElement('div');
+    div.className = "flex gap-3 border-b pb-4";
+    div.innerHTML = `<img src="${userProfile.avatar}" class="w-10 h-10 rounded"><div><div class="text-blue-900 font-bold">${userProfile.name}</div><div class="text-sm mt-1">${text}</div>${img.startsWith('data') ? `<img src="${img}" class="mt-2 max-h-40 rounded">`:''}</div>`;
+    feed.prepend(div);
+    closeMomentsCompose();
 }
 
-function closeAppearanceApp() {
-    document.getElementById('app-appearance-screen').classList.add('hidden');
+// 世界书
+function openLorebook() { document.getElementById('lorebook-screen').classList.remove('hidden'); renderLoreList(); }
+function closeLorebook() { document.getElementById('lorebook-screen').classList.add('hidden'); }
+function saveLoreEntry() {
+    const k = document.getElementById('lore-key').value;
+    const c = document.getElementById('lore-content').value;
+    if(!k || !c) return;
+    lorebook.push({key: k, content: c});
+    localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+    renderLoreList();
+}
+function renderLoreList() {
+    const list = document.getElementById('lore-list');
+    list.innerHTML = '';
+    lorebook.forEach((e, i) => {
+        list.innerHTML += `<div class="bg-white p-3 rounded-xl border"><b>${e.key}</b>: ${e.content}</div>`;
+    });
 }
 
-function saveAppearanceApp() {
-    const css = document.getElementById('app-cfg-css').value;
-    config.customCss = css;
-    document.getElementById('custom-style').innerHTML += css;
-    closeAppearanceApp();
-}
-
-
-function openPlaceholder(id) {
-    document.getElementById('placeholder-title').innerText = '占位APP ' + id;
-    document.getElementById('placeholder-screen').classList.remove('hidden');
-}
-function closePlaceholder() { document.getElementById('placeholder-screen').classList.add('hidden'); }
-
+// 通用/小组件
 function updateWidgetTime() {
     const now = new Date();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    
-    const dateEl = document.getElementById('widget-date-display');
-    const timeEl = document.getElementById('widget-time-display');
-    if (dateEl) dateEl.innerText = `♥ ${month} - ${day}`;
-    if (timeEl) timeEl.innerText = `★ ${hours} : ${minutes}`;
+    document.getElementById('widget-date-display').innerText = `♥ ${now.getMonth()+1} - ${now.getDate()}`;
+    document.getElementById('widget-time-display').innerText = `★ ${now.getHours().toString().padStart(2,'0')} : ${now.getMinutes().toString().padStart(2,'0')}`;
 }
-
-function editAnyText(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const res = prompt("修改文本内容", el.innerText);
-    if (res !== null && res.trim() !== '') el.innerText = res;
-}
-
+function openPlaceholder(id) { document.getElementById('placeholder-title').innerText = id; document.getElementById('placeholder-screen').classList.remove('hidden'); }
+function closePlaceholder() { document.getElementById('placeholder-screen').classList.add('hidden'); }
+function editAnyText(id) { const el = document.getElementById(id); const res = prompt("修改内容", el.innerText); if(res) el.innerText = res; }
 function changeAnyImage(el) {
     const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    input.type = 'file'; input.accept = 'image/*';
     input.onchange = e => {
         const file = e.target.files[0];
         const reader = new FileReader();
-        reader.onload = ev => {
-            el.style.backgroundImage = `url(${ev.target.result})`;
-            el.style.backgroundSize = 'cover';
-            el.style.backgroundPosition = 'center';
-            el.innerHTML = '';
-        };
+        reader.onload = ev => { el.style.backgroundImage = `url(${ev.target.result})`; el.style.backgroundSize='cover'; el.innerHTML=''; };
         reader.readAsDataURL(file);
     };
     input.click();
 }
 
-// ===== 新增：朋友圈发布逻辑 =====
-function openMomentsCompose() {
-    document.getElementById('moments-compose-screen').classList.remove('hidden');
-    validateMomentsContent();
+// 广场同步
+async function generateAIPosts() {
+    if(!config.apiKey) return alert("请设置 API Key");
+    const feed = document.getElementById('forum-feed');
+    feed.innerHTML = '<div class="p-10 text-center animate-pulse">正在同步...</div>';
+    try {
+        const res = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'system', content: '生成3条社交动态JSON格式:{"posts":[{"name":"A","text":"B"}]}'}],
+                response_format: { type: "json_object" }
+            })
+        });
+        const data = await res.json();
+        const posts = JSON.parse(data.choices[0].message.content).posts;
+        feed.innerHTML = '';
+        posts.forEach(p => {
+            feed.innerHTML += `<div class="tweet-card"><b>${p.name}</b>: ${p.text}</div>`;
+        });
+    } catch(e) { feed.innerHTML = "同步失败"; }
 }
 
-function closeMomentsCompose() {
-    document.getElementById('moments-compose-screen').classList.add('hidden');
-    document.getElementById('moments-post-text').value = '';
-    clearMomentsImage();
+function openForum() { document.getElementById('forum-screen').classList.remove('hidden'); }
+function closeForum() { document.getElementById('forum-screen').classList.add('hidden'); }
+function switchForumTab(t) { 
+    document.getElementById('view-square').classList.toggle('hidden', t!=='square'); 
+    document.getElementById('view-profile').classList.toggle('hidden', t!=='profile'); 
 }
 
-function validateMomentsContent() {
-    const text = document.getElementById('moments-post-text').value.trim();
-    const hasImg = !document.getElementById('moments-image-preview').classList.contains('hidden');
-    const btn = document.getElementById('moments-submit-btn');
-    btn.disabled = !(text.length > 0 || hasImg);
-    btn.classList.toggle('btn-disabled', btn.disabled);
-}
-
-function triggerMomentsImage(){ 
-    document.getElementById('moments-image-input').click(); 
-}
-
-function previewMomentsImage(input){
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById('moments-preview-img').src = e.target.result;
-            document.getElementById('moments-image-preview').classList.remove('hidden');
-            document.getElementById('moments-image-add-btn').classList.add('hidden');
-            validateMomentsContent();
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function clearMomentsImage(){
-    document.getElementById('moments-image-input').value = '';
-    document.getElementById('moments-image-preview').classList.add('hidden');
-    document.getElementById('moments-image-add-btn').classList.remove('hidden');
-    validateMomentsContent();
-}
-
-function submitMomentsPost(){
-    const text = document.getElementById('moments-post-text').value.trim();
-    const hasImg = !document.getElementById('moments-image-preview').classList.contains('hidden');
-    const imgSrc = hasImg ? document.getElementById('moments-preview-img').src : null;
-    
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    
-    const feed = document.getElementById('moments-feed');
-    
-    // 修改：如果有“暂时没有动态”的提示，就把它删掉
-    const emptyHint = document.getElementById('moments-empty-hint');
-    if (emptyHint) emptyHint.remove();
-
-    const div = document.createElement('div');
-    div.className = "flex gap-3 border-b pb-6 animate-in";
-    
-    let imgHtml = imgSrc ? `<img src="${imgSrc}" class="mt-2 max-w-[80%] max-h-48 object-cover cursor-pointer">` : '';
-    let textHtml = text ? `<div class="text-black mt-1 text-[15px]">${text}</div>` : '';
-    
-    div.innerHTML = `
-        <img src="${userProfile.avatar}" class="w-10 h-10 rounded">
-        <div class="flex-1">
-            <div class="text-[#576b95] font-bold text-[15px]">${userProfile.name}</div>
-            ${textHtml}
-            ${imgHtml}
-            <div class="flex justify-between items-center mt-2">
-                <span class="text-xs text-gray-400">${timeStr}</span>
-                <span class="bg-[#f7f7f7] px-2 py-0.5 rounded text-[#576b95] text-xs font-bold tracking-widest cursor-pointer">..</span>
-            </div>
-        </div>
-    `;
-    
-    feed.prepend(div);
-    closeMomentsCompose();
-}
-// ===============================
-
-updateWidgetTime();
-setInterval(updateWidgetTime, 1000);
-window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); renderFriendList(); };
+window.onload = () => {
+    updateWidgetTime();
+    setInterval(updateWidgetTime, 1000);
+    initAppearance();
+};
 </script>
 </body>
 </html>
