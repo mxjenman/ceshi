@@ -851,7 +851,7 @@ function renderMsg(text, role, isInit = false) {
         // 用户的消息：头像在右边，气泡 #3C3C3C，文字纯白
         div.className = "flex justify-end items-start gap-2 mb-4 animate-in w-full";
         div.innerHTML = `
-            <div class="chat-msg-user max-w-[72%] bg-[#3C3C3C] text-white px-4 py-2.5 rounded-2xl rounded-tr-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+            <div class="chat-msg-user max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] rounded-tr-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
             <img src="${userProfile.avatar}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-sm border border-gray-200">
         `;
     } else {
@@ -859,7 +859,7 @@ function renderMsg(text, role, isInit = false) {
         div.className = "flex justify-start items-start gap-2 mb-4 animate-in w-full";
         div.innerHTML = `
             <div class="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
-            <div class="chat-msg-ai max-w-[72%] bg-white text-black px-4 py-2.5 rounded-2xl rounded-tl-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+            <div class="chat-msg-ai max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] rounded-tl-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
         `;
     }
     
