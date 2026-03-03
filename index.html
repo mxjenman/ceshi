@@ -878,8 +878,14 @@ function sendUserMsg(){
 }
 
 async function triggerAI(){
-    if(!config.apiKey)return alert("请先配置 API Key");
     if(!currentFriendId) return;
+    
+    // 如果没有配置API，取消弹窗，直接让AI在聊天界面回复“api错误”
+    if(!config.apiKey) {
+        renderMsg("api错误", 'assistant');
+        chatHistory.push({role: 'assistant', content: 'api错误'});
+        return;
+    }
     
     const btn=document.getElementById('gen-btn');
     btn.innerText="对方正在输入..."; btn.disabled=true;
