@@ -92,7 +92,44 @@
         .wx-chevron { color: #d1d1d1; font-size: 14px; font-family: serif; display: none; } 
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
-        .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
+                .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%;
+        }
+        
+        /* 新增：酷炫黑色长按气泡弹窗 */
+        .context-menu {
+            position: fixed; background: #4c4c4c; color: white; border-radius: 12px;
+            display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .context-menu.show { opacity: 1; pointer-events: auto; }
+        .context-menu-item {
+            padding: 12px 20px; font-size: 15px; white-space: nowrap; cursor: pointer;
+            position: relative;
+        }
+        .context-menu-item:not(:last-child)::after {
+            content: ''; position: absolute; right: 0; top: 14px; bottom: 14px;
+            width: 1px; background: rgba(255,255,255,0.2);
+        }
+        .context-menu-item:active { background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .context-arrow {
+            position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #4c4c4c;
+        }
+
+        /* 新增：多选勾选框和引用样式 */
+        .msg-checkbox {
+            width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #ccc;
+            margin: 0 10px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0; cursor: pointer;
+        }
+        .msg-checkbox.checked { background: #07c160; border-color: #07c160; }
+        .msg-checkbox.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+        
+        .quote-block {
+            background: rgba(0,0,0,0.05); border-left: 3px solid #ccc; padding: 4px 8px;
+            font-size: 12px; color: #666; margin-bottom: 6px; border-radius: 4px;
+        }
+        .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd; }
     </style>
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
@@ -660,9 +697,19 @@
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-6">
         <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
-            <div id="modal-content"></div>
+                    <div id="modal-content"></div>
             <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
         </div>
+    </div>
+
+    <div id="global-context-menu" class="context-menu">
+        <div id="cm-items-container" class="flex items-center"></div>
+        <div class="context-arrow"></div>
+    </div>
+
+    <div id="multi-select-bar" class="fixed inset-x-0 bottom-0 h-16 bg-[#f7f7f7] border-t z-[150] hidden items-center justify-between px-6 transform translate-y-full transition-transform duration-300">
+        <button onclick="cancelMultiSelect()" class="text-gray-600 font-bold text-[16px] active:scale-95">取消</button>
+        <button onclick="deleteSelectedMessages()" class="text-red-500 font-bold text-[16px] active:scale-95">删除选中</button>
     </div>
 
 <script>
@@ -699,6 +746,39 @@ let userProfile = {
 let chatHistory = [];
 let friendList = [];
 let currentFriendId = null;
+let isMultiSelecting = false;  // 记住是否正在多选
+let selectedMsgIndices = new Set(); // 记住多选了哪些消息
+let currentQuoteMsg = null; // 记住正在引用哪句话
+
+// 弹窗魔法工具：负责在手指按下的地方显示黑色弹窗
+function showContextMenu(e, items, x, y) {
+    if(e && e.preventDefault) e.preventDefault(); // 防止弹出手机系统自带的菜单
+    const menu = document.getElementById('global-context-menu');
+    const container = document.getElementById('cm-items-container');
+    container.innerHTML = '';
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.innerText = item.label;
+        div.onclick = (event) => {
+            event.stopPropagation();
+            hideContextMenu();
+            item.action();
+        };
+        container.appendChild(div);
+    });
+    menu.classList.add('show');
+    // 让弹窗出现在你手指按的地方的上方
+    menu.style.left = Math.max(10, Math.min(x - menu.offsetWidth / 2, window.innerWidth - menu.offsetWidth - 10)) + 'px';
+    menu.style.top = Math.max(10, y - 60) + 'px';
+}
+
+function hideContextMenu() { 
+    document.getElementById('global-context-menu').classList.remove('show'); 
+}
+// 点击屏幕其他地方自动关掉弹窗
+document.addEventListener('touchstart', (e) => { if(!e.target.closest('.context-menu')) hideContextMenu(); });
+document.addEventListener('mousedown', (e) => { if(!e.target.closest('.context-menu')) hideContextMenu(); });
 // ================= 表情包系统功能 =================
 let emojiData = JSON.parse(localStorage.getItem('emoji_data')) || { "默认": [] };
 let currentEmojiCategory = "默认";
@@ -774,6 +854,8 @@ function renderEmojiTabs() {
     }
 }
 
+// --- 替换部分开始 ---
+
 function renderEmojis() {
     const container = document.getElementById('emoji-list-container');
     container.innerHTML = '';
@@ -788,40 +870,39 @@ function renderEmojis() {
         const div = document.createElement('div');
         div.className = 'flex flex-col items-center cursor-pointer active:scale-95 transition-transform select-none relative';
         
-        // 短按：发表情包给AI，并且把意思告诉它
+        // 短按发表情
         div.onclick = () => {
+            if(isMultiSelecting) return;
             const imgHtml = `<img src="${item.url}" class="w-32 h-32 object-contain rounded-lg">`;
-            // 在屏幕上画出图片
-            renderMsg(imgHtml, 'user', false);
-            
-            // 【核心魔法】把这条记录塞进历史对话里，AI就能同时看到“意思”和“图片代码”
             chatHistory.push({
                 role: 'user', 
                 content: `[我发送了一个表情包，它的意思是：${item.meaning}]\n${imgHtml}`
             });
-        
+            renderAllMessages(); // 重新刷新聊天屏幕
             closeEmojiPanel();
-            setTimeout(() => {
-                const flow = document.getElementById('chat-flow');
-                flow.parentElement.scrollTop = flow.parentElement.scrollHeight;
-            }, 100);
         };
 
-        // 长按：修改意思或删除单个表情包
+        // 长按呼出我们的黑色气泡菜单！
         let pressTimer;
-        const startPress = () => {
+        const startPress = (e) => {
+            const touch = e.touches ? e.touches[0] : e;
             pressTimer = setTimeout(() => {
-                const action = prompt(`对表情包【${item.meaning}】操作：\n1. 输入新意思来修改\n2. 输入“删除”来删掉它`, "");
-                if (action === "删除") {
-                    emojiData[currentEmojiCategory].splice(index, 1);
-                    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-                    renderEmojis();
-                } else if (action && action.trim() !== "") {
-                    emojiData[currentEmojiCategory][index].meaning = action.trim();
-                    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-                    renderEmojis();
-                }
-            }, 600);
+                showContextMenu(e, [
+                    { label: '删除', action: () => {
+                        emojiData[currentEmojiCategory].splice(index, 1);
+                        localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+                        renderEmojis();
+                    }},
+                    { label: '更改意思', action: () => {
+                        const newMeaning = prompt("输入新的表情包意思：", item.meaning);
+                        if (newMeaning && newMeaning.trim() !== "") {
+                            emojiData[currentEmojiCategory][index].meaning = newMeaning.trim();
+                            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+                            renderEmojis();
+                        }
+                    }}
+                ], touch.clientX, touch.clientY);
+            }, 500);
         };
         const cancelPress = () => { clearTimeout(pressTimer); };
         
@@ -833,269 +914,26 @@ function renderEmojis() {
         div.addEventListener('mouseleave', cancelPress);
 
         div.innerHTML = `
-            <img src="${item.url}" onerror="this.src='https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg'; this.onerror=null; console.log('该链接图片已失效');" class="w-[65px] h-[65px] object-cover bg-white rounded-xl shadow-sm border border-gray-100 mb-1">
-            <span class="text-[10px] text-gray-500 w-full text-center overflow-hidden whitespace-nowrap">${item.meaning}</span>
+            <img src="${item.url}" onerror="this.src='https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';" class="w-[65px] h-[65px] object-cover bg-white rounded-xl shadow-sm border border-gray-100 mb-1 pointer-events-none">
+            <span class="text-[10px] text-gray-500 w-full text-center overflow-hidden whitespace-nowrap pointer-events-none">${item.meaning}</span>
         `;
         container.appendChild(div);
     });
-}
-
-function openAddEmojiCategory() {
-    document.getElementById('add-emoji-category-modal').classList.remove('hidden');
-    document.getElementById('new-emoji-category-name').value = '';
-    
-    // 显示现在有哪些分类
-    const existingContainer = document.getElementById('existing-categories');
-    existingContainer.innerHTML = '';
-    for (const cat in emojiData) {
-        existingContainer.innerHTML += `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[12px]">${cat}</span>`;
-    }
-}
-function closeAddEmojiCategory() {
-    document.getElementById('add-emoji-category-modal').classList.add('hidden');
-}
-function saveEmojiCategory() {
-    const name = document.getElementById('new-emoji-category-name').value.trim();
-    if (!name) return alert('你还没输入名字呢！');
-    if (emojiData[name]) return alert('这个分类已经存在啦！');
-    
-    emojiData[name] = [];
-    currentEmojiCategory = name; // 自动跳转到新加的分类
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    
-    closeAddEmojiCategory();
-    renderEmojiTabs();
-    renderEmojis();
-}
-
-function openBatchEmojiModal() {
-    document.getElementById('batch-emoji-modal').classList.remove('hidden');
-    document.getElementById('batch-emoji-text').value = '';
-}
-function closeBatchEmojiModal() {
-    document.getElementById('batch-emoji-modal').classList.add('hidden');
-}
-function saveBatchEmoji() {
-    const text = document.getElementById('batch-emoji-text').value.trim();
-    if (!text) return alert('请先填点内容哦！');
-    const lines = text.split('\n');
-    let count = 0;
-    
-    lines.forEach(line => {
-        // 通过空格拆分：前面是意思，后面是链接
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 2) {
-            const meaning = parts[0];
-            const url = parts.slice(1).join('');
-            if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
-            emojiData[currentEmojiCategory].push({ meaning, url });
-            count++;
-        }
-    });
-    
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    alert(`成功识别并添加了 ${count} 个表情包到【${currentEmojiCategory}】分类里！`);
-    closeBatchEmojiModal();
-    renderEmojis();
-}
-
-function handleSingleEmojiUpload(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            tempSingleEmojiSrc = e.target.result;
-            document.getElementById('single-emoji-preview').src = tempSingleEmojiSrc;
-            document.getElementById('single-emoji-meaning').value = '';
-            document.getElementById('single-emoji-modal').classList.remove('hidden');
-            input.value = ''; // 清空，允许重复传同一张图
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-function closeSingleEmojiModal() {
-    document.getElementById('single-emoji-modal').classList.add('hidden');
-}
-function saveSingleEmoji() {
-    const meaning = document.getElementById('single-emoji-meaning').value.trim();
-    if (!meaning) return alert('还没告诉我是什么意思呢！');
-    
-    if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
-    emojiData[currentEmojiCategory].push({ meaning: meaning, url: tempSingleEmojiSrc });
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    
-    closeSingleEmojiModal();
-    renderEmojis();
-}
-// ==============================================
-
-// ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
-let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
-
-// ===== 2. UI 界面：Lorebook 操作面板与逻辑 =====
-function openLorebook() {
-    document.getElementById('lorebook-screen').classList.remove('hidden');
-    renderLoreList();
-}
-
-function closeLorebook() {
-    document.getElementById('lorebook-screen').classList.add('hidden');
-}
-
-function saveLoreEntry() {
-    const keyStr = document.getElementById('lore-key').value.trim();
-    const content = document.getElementById('lore-content').value.trim();
-    if (!keyStr || !content) return alert("触发词和内容都不能为空哦！");
-    
-    lorebook.push({ key: keyStr, content: content });
-    localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
-    
-    document.getElementById('lore-key').value = '';
-    document.getElementById('lore-content').value = '';
-    renderLoreList();
-}
-
-function deleteLoreEntry(index) {
-    if(confirm("确定要删除这条世界设定吗？")) {
-        lorebook.splice(index, 1);
-        localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
-        renderLoreList();
-    }
-}
-
-function renderLoreList() {
-    const list = document.getElementById('lore-list');
-    list.innerHTML = '';
-    if (lorebook.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">词条空空如也，快去添加吧。</div>';
-        return;
-    }
-    
-    lorebook.forEach((entry, index) => {
-        list.innerHTML += `
-            <div class="bg-white rounded-[16px] p-4 shadow-sm relative text-sm border border-gray-50">
-                <div class="font-bold text-[#1d9bf0] mb-1 text-[13px]">🔑 触发词：${entry.key}</div>
-                <div class="text-gray-700 leading-relaxed break-words pr-12">${entry.content}</div>
-                <button onclick="deleteLoreEntry(${index})" class="absolute top-4 right-4 text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded">删除</button>
-            </div>
-        `;
-    });
-}
-// ===============================================
-
-function syncProfileToAI() {
-    config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
-    当前对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
-}
-
-function changeAvatar(side){
-    const input=document.createElement('input');
-    input.type='file'; input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=ev=>{ 
-            const newSrc = ev.target.result;
-            document.getElementById(`avatar-${side}`).src=newSrc; 
-            updateGlobalAvatar(newSrc);
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-}
-
-function updateGlobalAvatar(src) {
-    userProfile.avatar = src;
-    const ids = ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync', 'avatar-left', 'avatar-right'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.src = src;
-    });
-}
-
-function editEmoji(side){
-    const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
-    const result=prompt("修改颜文字",el.innerText);
-    if(result) el.innerText=result;
-}
-
-function editWidgetText(){
-    const el=document.getElementById('widget-text');
-    const result=prompt("修改文案",el.innerText);
-    if(result) el.innerText=result;
-}
-
-function editStatus() {
-    const res = prompt("设置我的状态", userProfile.status);
-    if(res !== null) {
-        userProfile.status = res;
-        document.getElementById('wx-me-status').innerText = res;
-        syncProfileToAI();
-    }
-}
-
-// ===== Friend List & Chat Views Logic =====
-function openAddFriendModal() { document.getElementById('add-friend-modal').classList.remove('hidden'); }
-function closeAddFriendModal() { document.getElementById('add-friend-modal').classList.add('hidden'); }
-
-function saveFriend() {
-    const remark = document.getElementById('friend-remark').value.trim();
-    const realName = document.getElementById('friend-realname').value.trim();
-    const persona = document.getElementById('friend-persona').value.trim();
-    if(!remark || !realName || !persona) return alert("请填写完整");
-    
-    const friend = {
-        id: 'f_' + Date.now(),
-        remark: remark,
-        realName: realName,
-        persona: persona,
-        chatHistory: []
-    };
-    friendList.push(friend);
-    closeAddFriendModal();
-    renderFriendList();
-    
-    document.getElementById('friend-remark').value = '';
-    document.getElementById('friend-realname').value = '';
-    document.getElementById('friend-persona').value = '';
-}
-
-function renderFriendList() {
-    const container = document.getElementById('friend-list-container');
-    const hint = document.getElementById('empty-friend-hint');
-    container.innerHTML = '';
-    if(friendList.length === 0) {
-        hint.classList.remove('hidden');
-    } else {
-        hint.classList.add('hidden');
-        friendList.forEach(f => {
-            const div = document.createElement('div');
-            div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
-            div.onclick = () => openChatDetail(f.id);
-            div.innerHTML = `
-                <div class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex items-center justify-center text-white font-bold text-lg">${f.remark.charAt(0)}</div>
-                <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
-            `;
-            container.appendChild(div);
-        });
-    }
 }
 
 function openChatDetail(id) {
     currentFriendId = id;
     const friend = friendList.find(f => f.id === id);
     document.getElementById('chat-detail-title').innerText = friend.remark;
-    
     chatHistory = friend.chatHistory;
-    const flow = document.getElementById('chat-flow');
-    flow.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
-    chatHistory.forEach(msg => {
-        renderMsg(msg.content, msg.role, true);
-    });
     
+    // 每次打开聊天重置状态
+    isMultiSelecting = false; 
+    currentQuoteMsg = null; 
+    document.getElementById('chat-input').placeholder = "输入消息...";
+    document.getElementById('multi-select-bar').classList.add('hidden', 'translate-y-full');
+    
+    renderAllMessages(); // 用全新渲染代替以前的 renderMsg
     document.getElementById('chat-detail-page').classList.remove('slide-hidden');
 }
 
@@ -1104,112 +942,176 @@ function closeChatDetail() {
     currentFriendId = null;
 }
 
-function switchWechatTab(tab) {
-    const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '好友', moments: '朋友圈', me: '' };
-    
-    tabs.forEach(t => {
-        document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
-        document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
-    });
-    
-    document.getElementById(`wechat-tab-${tab}`).classList.remove('hidden');
-    document.getElementById(`wx-nav-${tab}`).classList.add('wechat-nav-active');
-    document.getElementById('wechat-title').innerText = titles[tab];
-
-    document.getElementById('wx-moments-name').innerText = userProfile.name;
-    document.getElementById('wx-me-name').innerText = userProfile.name;
-    document.getElementById('wx-me-id').innerText = userProfile.handle;
-
-    const wechatHeader = document.getElementById('wechat-header');
-    if(tab === 'moments' || tab === 'me') {
-        wechatHeader.classList.add('hidden');
-    } else {
-        wechatHeader.classList.remove('hidden');
-    }
-}
-
-function openChat(){ 
-    document.getElementById('chat-screen').classList.remove('hidden'); 
-    switchWechatTab('messages'); 
-    renderFriendList();
-}
-function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
-
-function renderMsg(text, role, isInit = false) {
+// 核心重制：全局渲染消息！有了它，删除和编辑才会立刻生效！
+function renderAllMessages() {
     const container = document.getElementById('chat-flow');
-    const div = document.createElement('div');
+    container.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
     
-    // 自动抓取当前聊天AI的备注第一个字，当作它的临时头像
     let aiAvatarText = "A";
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
         if (friend) aiAvatarText = friend.remark.charAt(0);
     }
 
-    // 判断是用户发的消息还是AI发的消息
-    if (role === 'user') {
-        // 用户的消息：头像在右边，气泡带右下角小尾巴
-        div.className = "flex justify-end items-center gap-2 mb-4 animate-in w-full";
-        div.innerHTML = `
-            <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
-                ${text}
-               <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
-            </div>
-            <img src="${userProfile.avatar}" class="w-[45px] h-[45px] rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
-        `;
-    } else {
-        // AI的消息：头像在左边，气泡带左下角小尾巴
-        div.className = "flex justify-start items-center gap-2 mb-4 animate-in w-full";
-        div.innerHTML = `
-            <div class="w-[45px] h-[45px] bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
-            <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
-                ${text}
-               <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
-            </div>
-        `;
-    }
+    chatHistory.forEach((msg, index) => {
+        const div = document.createElement('div');
+        div.className = "flex w-full " + (msg.role === 'user' ? "justify-end" : "justify-start") + " items-center mb-4 animate-in relative select-none";
+        
+        // 多选框
+        let checkboxHtml = '';
+        if (isMultiSelecting) {
+            const isChecked = selectedMsgIndices.has(index) ? 'checked' : '';
+            checkboxHtml = `<div class="msg-checkbox ${isChecked}"></div>`;
+        }
+
+        // 拆解引用和正文
+        let displayContent = msg.content;
+        let quoteHtml = '';
+        if (displayContent.startsWith('[引用:')) {
+            const endIdx = displayContent.indexOf(']\n');
+            if (endIdx !== -1) {
+                const quoteText = displayContent.substring(4, endIdx);
+                quoteHtml = `<div class="quote-block">${quoteText}</div>`;
+                displayContent = displayContent.substring(endIdx + 2);
+            }
+        }
+        
+        // 隐藏发给AI的表情包专属密码
+        if (displayContent.includes('[我发送了一个表情包，它的意思是：')) {
+            displayContent = displayContent.replace(/\[我发送了一个表情包，它的意思是：.*?\]\n/, '');
+        }
+
+        let bubbleHtml = '';
+        if (msg.role === 'user') {
+            bubbleHtml = `
+                ${checkboxHtml}
+                <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    ${quoteHtml}${displayContent}
+                    <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                </div>
+                <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+            `;
+        } else {
+            bubbleHtml = `
+                ${checkboxHtml}
+                <div class="w-[45px] h-[45px] mr-2 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
+                <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    ${quoteHtml}${displayContent}
+                    <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                </div>
+            `;
+        }
+        
+        div.innerHTML = bubbleHtml;
+
+        // 【重头戏】长按单条消息的操作
+        let pressTimer;
+        const startMsgPress = (e) => {
+            if (isMultiSelecting) return; // 多选时不准长按
+            const touch = e.touches ? e.touches[0] : e;
+            pressTimer = setTimeout(() => {
+                showContextMenu(e, [
+                    { label: '删除', action: () => { 
+                        chatHistory.splice(index, 1); // 彻底从大脑抹除
+                        renderAllMessages();
+                    }},
+                    { label: '编辑', action: () => { 
+                        let rawText = chatHistory[index].content;
+                        if (rawText.startsWith('[引用:')) rawText = rawText.substring(rawText.indexOf(']\n') + 2);
+                        const res = prompt("编辑消息（AI不会知道）：", rawText);
+                        if (res !== null && res.trim() !== "") {
+                            const prefix = chatHistory[index].content.startsWith('[引用:') ? chatHistory[index].content.substring(0, chatHistory[index].content.indexOf(']\n') + 2) : '';
+                            chatHistory[index].content = prefix + res;
+                            renderAllMessages();
+                        }
+                    }},
+                    { label: '引用', action: () => { 
+                        let quoteContent = displayContent.replace(/<img[^>]*>/g, '[图片]'); 
+                        currentQuoteMsg = quoteContent;
+                        document.getElementById('chat-input').placeholder = `引用: ${quoteContent.substring(0,8)}...`;
+                        document.getElementById('chat-input').focus();
+                    }},
+                    { label: '多选', action: () => { 
+                        isMultiSelecting = true;
+                        selectedMsgIndices.clear();
+                        selectedMsgIndices.add(index); // 默认选中你长按的这条
+                        document.getElementById('multi-select-bar').classList.remove('hidden', 'translate-y-full');
+                        document.getElementById('multi-select-bar').style.display = 'flex';
+                        renderAllMessages();
+                    }}
+                ], touch.clientX, touch.clientY);
+            }, 500);
+        };
+        const cancelMsgPress = () => clearTimeout(pressTimer);
+        
+        // 绑定事件
+        div.addEventListener('touchstart', startMsgPress);
+        div.addEventListener('touchend', cancelMsgPress);
+        div.addEventListener('touchmove', cancelMsgPress);
+        div.addEventListener('mousedown', startMsgPress);
+        div.addEventListener('mouseup', cancelMsgPress);
+        div.addEventListener('mouseleave', cancelMsgPress);
+        
+        // 点击选择(仅在多选模式下生效)
+        div.onclick = (e) => {
+            if (isMultiSelecting) toggleSelectMsg(index, e);
+        };
+
+        container.appendChild(div);
+    });
     
-    container.appendChild(div);
-    // 自动滚动到最新的一条消息
-    container.scrollTop = container.scrollHeight;
-}
-function toggleInventory() {
-    const menu = document.getElementById('inventory-menu');
-    const btn = document.getElementById('inventory-btn');
-    if (menu.classList.contains('hidden')) {
-        menu.classList.remove('hidden');
-        btn.style.transform = 'rotate(90deg)';
-    } else {
-        menu.classList.add('hidden');
-        btn.style.transform = 'rotate(0deg)';
-    }
+    // 渲染完自动滚到底部
+    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
 }
 
-function togglePlaceholderMenu() {
-    const menu = document.getElementById('placeholder-menu');
-    menu.classList.toggle('hidden');
+// 多选小工具
+function toggleSelectMsg(index, event) {
+    if(event) event.stopPropagation();
+    if (selectedMsgIndices.has(index)) selectedMsgIndices.delete(index);
+    else selectedMsgIndices.add(index);
+    renderAllMessages();
 }
+function cancelMultiSelect() {
+    isMultiSelecting = false;
+    selectedMsgIndices.clear();
+    document.getElementById('multi-select-bar').classList.add('hidden', 'translate-y-full');
+    renderAllMessages();
+}
+function deleteSelectedMessages() {
+    if (selectedMsgIndices.size === 0) return alert("你还没勾选消息呢！");
+    // 把序号从大到小排列，倒着删，防止列表乱套
+    const indices = Array.from(selectedMsgIndices).sort((a,b) => b - a);
+    indices.forEach(idx => { chatHistory.splice(idx, 1); }); // 从历史记录连根拔起
+    cancelMultiSelect();
+}
+
 function sendUserMsg(){
     if(!currentFriendId) return;
     const input=document.getElementById('chat-input');
     if(!input.value)return;
-    renderMsg(input.value,'user');
-    chatHistory.push({role:'user',content:input.value});
+    
+    let finalContent = input.value;
+    // 如果带着引用，就把引用拼在前面
+    if (currentQuoteMsg) {
+        finalContent = `[引用:${currentQuoteMsg}]\n${input.value}`;
+        currentQuoteMsg = null;
+        input.placeholder = "输入消息...";
+    }
+    
+    chatHistory.push({role:'user',content:finalContent});
     input.value='';
+    renderAllMessages(); // 刷新屏幕显示新消息
 }
 
 async function triggerAI(){
     if(!currentFriendId) return;
-    
-    // 如果没有配置API，取消弹窗，直接让AI在聊天界面回复“api错误”
     if(!config.apiKey) {
-        renderMsg("api错误", 'assistant');
         chatHistory.push({role: 'assistant', content: 'api错误'});
+        renderAllMessages();
         return;
     }
     
-        const btn=document.getElementById('gen-btn-icon');
+    const btn=document.getElementById('gen-btn-icon');
     if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
     
     let finalSystemMessage = config.systemPrompt;
@@ -1227,7 +1129,6 @@ async function triggerAI(){
     个性签名: ${userProfile.bio}
     当前状态: ${userProfile.status}`;
 
-       // 【新功能】把用户的表情包库全部同步给AI，并教它怎么发
     let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你在回复时觉得适合使用表情包，请直接在你的回复文字末尾，原样输出该表情包对应的【代码】即可发送表情包给用户（不要改动代码里的任何字符）：\n";
     let hasEmoji = false;
     for(let cat in emojiData) {
@@ -1236,13 +1137,10 @@ async function triggerAI(){
             hasEmoji = true;
         });
     }
-    if (hasEmoji) {
-        finalSystemMessage += aiEmojiLib;
-    }
+    if (hasEmoji) { finalSystemMessage += aiEmojiLib; }
 
     const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
-    
     lorebook.forEach(entry => {
         const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
         for(let k of keywords) {
@@ -1252,17 +1150,16 @@ async function triggerAI(){
             }
         }
     });
-
     if(injectedLore.length > 0) {
         finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
-        console.log("注入了世界书数据:", injectedLore); 
+        console.log("注入了世界书数据:", injectedLore);
     }
 
     try{
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-                        body:JSON.stringify({
+            body:JSON.stringify({
                 model:config.model,
                 messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
                 temperature: parseFloat(config.temperature),
@@ -1271,12 +1168,18 @@ async function triggerAI(){
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,50),'assistant');
+        
         chatHistory.push({role:'assistant',content:reply});
-    }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
-        finally{ if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+        renderAllMessages(); // AI回话了，刷新屏幕
+    }catch(e){ 
+        chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
+        renderAllMessages();
+    } finally{ 
+        if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+    }
 }
-}
+// --- 替换部分结束 ---
+
 function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
