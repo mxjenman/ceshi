@@ -920,7 +920,253 @@ function renderEmojis() {
         container.appendChild(div);
     });
 }
+function openAddEmojiCategory() {
+    document.getElementById('add-emoji-category-modal').classList.remove('hidden');
+    document.getElementById('new-emoji-category-name').value = '';
+    const existingContainer = document.getElementById('existing-categories');
+    existingContainer.innerHTML = '';
+    for (const cat in emojiData) {
+        existingContainer.innerHTML += `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[12px]">${cat}</span>`;
+    }
+}
+function closeAddEmojiCategory() { document.getElementById('add-emoji-category-modal').classList.add('hidden'); }
+function saveEmojiCategory() {
+    const name = document.getElementById('new-emoji-category-name').value.trim();
+    if (!name) return alert('你还没输入名字呢！');
+    if (emojiData[name]) return alert('这个分类已经存在啦！');
+    emojiData[name] = [];
+    currentEmojiCategory = name;
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    closeAddEmojiCategory();
+    renderEmojiTabs();
+    renderEmojis();
+}
+function openBatchEmojiModal() {
+    document.getElementById('batch-emoji-modal').classList.remove('hidden');
+    document.getElementById('batch-emoji-text').value = '';
+}
+function closeBatchEmojiModal() { document.getElementById('batch-emoji-modal').classList.add('hidden'); }
+function saveBatchEmoji() {
+    const text = document.getElementById('batch-emoji-text').value.trim();
+    if (!text) return alert('请先填点内容哦！');
+    const lines = text.split('\n');
+    let count = 0;
+    lines.forEach(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const meaning = parts[0];
+            const url = parts.slice(1).join('');
+            if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
+            emojiData[currentEmojiCategory].push({ meaning, url });
+            count++;
+        }
+    });
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    alert(`成功识别并添加了 ${count} 个表情包到【${currentEmojiCategory}】分类里！`);
+    closeBatchEmojiModal();
+    renderEmojis();
+}
+function handleSingleEmojiUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            tempSingleEmojiSrc = e.target.result;
+            document.getElementById('single-emoji-preview').src = tempSingleEmojiSrc;
+            document.getElementById('single-emoji-meaning').value = '';
+            document.getElementById('single-emoji-modal').classList.remove('hidden');
+            input.value = '';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+function closeSingleEmojiModal() { document.getElementById('single-emoji-modal').classList.add('hidden'); }
+function saveSingleEmoji() {
+    const meaning = document.getElementById('single-emoji-meaning').value.trim();
+    if (!meaning) return alert('还没告诉我是什么意思呢！');
+    if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
+    emojiData[currentEmojiCategory].push({ meaning: meaning, url: tempSingleEmojiSrc });
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    closeSingleEmojiModal();
+    renderEmojis();
+}
 
+let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
+function openLorebook() { document.getElementById('lorebook-screen').classList.remove('hidden'); renderLoreList(); }
+function closeLorebook() { document.getElementById('lorebook-screen').classList.add('hidden'); }
+function saveLoreEntry() {
+    const keyStr = document.getElementById('lore-key').value.trim();
+    const content = document.getElementById('lore-content').value.trim();
+    if (!keyStr || !content) return alert("触发词和内容都不能为空哦！");
+    lorebook.push({ key: keyStr, content: content });
+    localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+    document.getElementById('lore-key').value = '';
+    document.getElementById('lore-content').value = '';
+    renderLoreList();
+}
+function deleteLoreEntry(index) {
+    if(confirm("确定要删除这条世界设定吗？")) {
+        lorebook.splice(index, 1);
+        localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+        renderLoreList();
+    }
+}
+function renderLoreList() {
+    const list = document.getElementById('lore-list');
+    list.innerHTML = '';
+    if (lorebook.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">词条空空如也，快去添加吧。</div>';
+        return;
+    }
+    lorebook.forEach((entry, index) => {
+        list.innerHTML += `
+            <div class="bg-white rounded-[16px] p-4 shadow-sm relative text-sm border border-gray-50">
+                <div class="font-bold text-[#1d9bf0] mb-1 text-[13px]">🔑 触发词：${entry.key}</div>
+                <div class="text-gray-700 leading-relaxed break-words pr-12">${entry.content}</div>
+                <button onclick="deleteLoreEntry(${index})" class="absolute top-4 right-4 text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded">删除</button>
+            </div>
+        `;
+    });
+}
+
+function syncProfileToAI() {
+    config.systemPrompt = `你是一个真实的微信好友，回复极简，控制在20字内。
+    当前对话的用户信息：
+    昵称: ${userProfile.name}
+    账号: ${userProfile.handle}
+    个性签名: ${userProfile.bio}
+    当前状态: ${userProfile.status}`;
+}
+function changeAvatar(side){
+    const input=document.createElement('input');
+    input.type='file'; input.accept='image/*';
+    input.onchange=e=>{
+        const file=e.target.files[0];
+        const reader=new FileReader();
+        reader.onload=ev=>{ 
+            const newSrc = ev.target.result;
+            document.getElementById(`avatar-${side}`).src=newSrc; 
+            updateGlobalAvatar(newSrc);
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+function updateGlobalAvatar(src) {
+    userProfile.avatar = src;
+    const ids = ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync', 'avatar-left', 'avatar-right'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.src = src;
+    });
+}
+function editEmoji(side){
+    const el=document.querySelectorAll('.widget-emoji')[side==='left'?0:1];
+    const result=prompt("修改颜文字",el.innerText);
+    if(result) el.innerText=result;
+}
+function editWidgetText(){
+    const el=document.getElementById('widget-text');
+    const result=prompt("修改文案",el.innerText);
+    if(result) el.innerText=result;
+}
+function editStatus() {
+    const res = prompt("设置我的状态", userProfile.status);
+    if(res !== null) {
+        userProfile.status = res;
+        document.getElementById('wx-me-status').innerText = res;
+        syncProfileToAI();
+    }
+}
+
+function openAddFriendModal() { document.getElementById('add-friend-modal').classList.remove('hidden'); }
+function closeAddFriendModal() { document.getElementById('add-friend-modal').classList.add('hidden'); }
+function saveFriend() {
+    const remark = document.getElementById('friend-remark').value.trim();
+    const realName = document.getElementById('friend-realname').value.trim();
+    const persona = document.getElementById('friend-persona').value.trim();
+    if(!remark || !realName || !persona) return alert("请填写完整");
+    
+    const friend = {
+        id: 'f_' + Date.now(),
+        remark: remark,
+        realName: realName,
+        persona: persona,
+        chatHistory: []
+    };
+    friendList.push(friend);
+    closeAddFriendModal();
+    renderFriendList();
+    document.getElementById('friend-remark').value = '';
+    document.getElementById('friend-realname').value = '';
+    document.getElementById('friend-persona').value = '';
+}
+function renderFriendList() {
+    const container = document.getElementById('friend-list-container');
+    const hint = document.getElementById('empty-friend-hint');
+    container.innerHTML = '';
+    if(friendList.length === 0) {
+        hint.classList.remove('hidden');
+    } else {
+        hint.classList.add('hidden');
+        friendList.forEach(f => {
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
+            div.onclick = () => openChatDetail(f.id);
+            div.innerHTML = `
+                <div class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex items-center justify-center text-white font-bold text-lg">${f.remark.charAt(0)}</div>
+                <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+}
+
+function switchWechatTab(tab) {
+    const tabs = ['messages', 'moments', 'me'];
+    const titles = { messages: '好友', moments: '朋友圈', me: '' };
+    tabs.forEach(t => {
+        document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
+        document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
+    });
+    document.getElementById(`wechat-tab-${tab}`).classList.remove('hidden');
+    document.getElementById(`wx-nav-${tab}`).classList.add('wechat-nav-active');
+    document.getElementById('wechat-title').innerText = titles[tab];
+
+    document.getElementById('wx-moments-name').innerText = userProfile.name;
+    document.getElementById('wx-me-name').innerText = userProfile.name;
+    document.getElementById('wx-me-id').innerText = userProfile.handle;
+
+    const wechatHeader = document.getElementById('wechat-header');
+    if(tab === 'moments' || tab === 'me') {
+        wechatHeader.classList.add('hidden');
+    } else {
+        wechatHeader.classList.remove('hidden');
+    }
+}
+
+function openChat(){ 
+    document.getElementById('chat-screen').classList.remove('hidden'); 
+    switchWechatTab('messages'); 
+    renderFriendList();
+}
+function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
+
+function toggleInventory() {
+    const menu = document.getElementById('inventory-menu');
+    const btn = document.getElementById('inventory-btn');
+    if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+        btn.style.transform = 'rotate(90deg)';
+    } else {
+        menu.classList.add('hidden');
+        btn.style.transform = 'rotate(0deg)';
+    }
+}
+
+function togglePlaceholderMenu() {
+    const menu = document.getElementById('placeholder-menu');
+    menu.classList.toggle('hidden');
+}
 function openChatDetail(id) {
     currentFriendId = id;
     const friend = friendList.find(f => f.id === id);
