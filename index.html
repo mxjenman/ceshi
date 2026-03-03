@@ -515,9 +515,45 @@
                 <div class="flex justify-between items-center mb-1">
                     <label class="text-sm text-gray-500">随机性 (Temperature): <span id="temp-display" class="text-black font-bold">1.0</span></label>
                 </div>
-                <p class="text-[11px] text-gray-400 mb-3 leading-tight">数值越高(如1.5)回答越发散和有创造性；数值越低(如0.2)回答越确定、严谨。范围 0 ~ 2。</p>
+                                <p class="text-[11px] text-gray-400 mb-3 leading-tight">数值越高(如1.5)回答越发散和有创造性；数值越低(如0.2)回答越确定、严谨。范围 0 ~ 2。</p>
                 <input id="app-cfg-temp" type="range" min="0" max="2" step="0.1" value="1.0" class="w-full accent-blue-500" oninput="document.getElementById('temp-display').innerText=this.value">
             </div>
+
+            <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">字体设置</h3>
+                
+                <div class="flex gap-2 mb-3">
+                    <input id="app-font-url" type="text" class="flex-1 border border-gray-200 rounded py-1 px-2 text-sm outline-none" placeholder="输入字体链接 (.ttf/.woff)">
+                    <button onclick="applyFontUrl()" class="bg-gray-100 px-3 rounded text-sm font-bold text-blue-500">应用</button>
+                </div>
+                <div class="mb-4">
+                    <button onclick="document.getElementById('font-upload-input').click()" class="w-full bg-gray-100 text-black py-2 rounded text-sm font-bold">📂 从手机文件选择字体</button>
+                    <input type="file" id="font-upload-input" class="hidden" accept=".ttf,.otf,.woff,.woff2" onchange="handleLocalFont(this)">
+                </div>
+
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-sm text-gray-500">字体大小: <span id="font-size-display" class="text-black font-bold">14</span> px</label>
+                </div>
+                <input id="app-font-size" type="range" min="12" max="30" step="1" value="14" class="w-full accent-blue-500 mb-4" oninput="changePreviewFontSize(this.value)">
+
+                <div class="bg-gray-50 p-3 rounded-lg mb-4 text-center border border-gray-200 overflow-hidden">
+                    <div id="font-preview-box" style="font-size: 14px; color: #333;">
+                        <div>关于落日的一百零一种想象</div>
+                        <div>Suhset Dreams.</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-2">
+                    <select id="font-preset-select" class="flex-1 border border-gray-200 rounded p-1 text-sm outline-none bg-white" onchange="loadFontPreset()">
+                        <option value="">选择预设</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveFontPreset()" class="flex-1 bg-blue-50 text-blue-500 py-1.5 rounded text-sm font-bold">保存预设</button>
+                    <button onclick="deleteFontPreset()" class="flex-1 bg-red-50 text-red-500 py-1.5 rounded text-sm font-bold">删除预设</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -563,8 +599,13 @@ let config = {
     model: 'gpt-4o-mini',
     systemPrompt: '你是一个真实的微信好友，回复极简，控制在20字内。',
     customCss: '',
-    temperature: 1.0  // 新增：AI回复的随机性参数
+    temperature: 1.0,  // 新增：AI回复的随机性参数
+    fontSize: 14,      // 新增：默认字体大小
+    fontFamily: '',    // 新增：字体名称
+    fontSrc: ''        // 新增：字体的链接或文件数据
 };
+// 新增：用来存储保存过的字体预设
+let fontPresets = JSON.parse(localStorage.getItem('fontPresets_data')) || {};
 
 // 新增：用于暂存外观设置的变量
 let tempAppearance = {
@@ -1212,17 +1253,24 @@ function submitMomentsPost(){
     closeMomentsCompose();
 }
 // ===== 新增：全屏设置功能 =====
+
+// ===== 新增：全屏设置功能（带字体管理） =====
 function openSettingsApp() {
     document.getElementById('settings-app-screen').classList.remove('slide-hidden');
-    // 把当前保存的配置填进输入框
     document.getElementById('app-cfg-url').value = config.baseUrl;
     document.getElementById('app-cfg-key').value = config.apiKey;
     document.getElementById('app-cfg-temp').value = config.temperature;
     document.getElementById('temp-display').innerText = config.temperature;
     
-    // 初始化模型下拉框
     const modelSelect = document.getElementById('app-cfg-model');
     modelSelect.innerHTML = `<option value="${config.model}">${config.model}</option>`;
+
+    // 初始化字体界面
+    document.getElementById('app-font-size').value = config.fontSize;
+    document.getElementById('font-size-display').innerText = config.fontSize;
+    document.getElementById('font-preview-box').style.fontSize = config.fontSize + 'px';
+    if(config.fontFamily) document.getElementById('font-preview-box').style.fontFamily = config.fontFamily;
+    renderFontPresets();
 }
 
 function closeSettingsApp() {
@@ -1263,9 +1311,135 @@ function saveSettingsApp() {
     config.apiKey = document.getElementById('app-cfg-key').value.trim();
     config.model = document.getElementById('app-cfg-model').value.trim() || config.model;
     config.temperature = document.getElementById('app-cfg-temp').value;
+    
+    // 保存并应用字体
+    applySystemFontAndSize();
+
     alert("✅ 设置已保存！");
     closeSettingsApp();
 }
+
+// ==== 字体魔法功能 ====
+function applyFontUrl() {
+    const url = document.getElementById('app-font-url').value.trim();
+    if(!url) return alert("请输入字体链接");
+    loadCustomFont('MyCustomFont', url);
+}
+
+function handleLocalFont(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            loadCustomFont('MyCustomFont', e.target.result);
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = ''; // 清空方便重新选择
+    }
+}
+
+function loadCustomFont(fontName, fontSrc) {
+    config.fontFamily = fontName;
+    config.fontSrc = fontSrc;
+    
+    // 给预览框创建字体包
+    let style = document.getElementById('preview-font-style');
+    if(!style) {
+        style = document.createElement('style');
+        style.id = 'preview-font-style';
+        document.head.appendChild(style);
+    }
+    style.innerHTML = `@font-face { font-family: '${fontName}'; src: url('${fontSrc}'); }`;
+    document.getElementById('font-preview-box').style.fontFamily = fontName;
+}
+
+function changePreviewFontSize(size) {
+    document.getElementById('font-size-display').innerText = size;
+    document.getElementById('font-preview-box').style.fontSize = size + 'px';
+    config.fontSize = size;
+}
+
+function saveFontPreset() {
+    const presetName = prompt("请输入要保存的预设名称 (例如: 少女字体)：", "预设1");
+    if (!presetName) return;
+    
+    fontPresets[presetName] = {
+        fontFamily: config.fontFamily,
+        fontSize: config.fontSize,
+        fontSrc: config.fontSrc
+    };
+    localStorage.setItem('fontPresets_data', JSON.stringify(fontPresets));
+    renderFontPresets();
+    alert("✅ 预设保存成功！");
+}
+
+function deleteFontPreset() {
+    const select = document.getElementById('font-preset-select');
+    const presetName = select.value;
+    if (!presetName) return alert("请先在下拉框选择一个要删除的预设！");
+    
+    if (confirm(`确定要删除预设 "${presetName}" 吗？`)) {
+        delete fontPresets[presetName];
+        localStorage.setItem('fontPresets_data', JSON.stringify(fontPresets));
+        renderFontPresets();
+        select.value = "";
+    }
+}
+
+function loadFontPreset() {
+    const select = document.getElementById('font-preset-select');
+    const presetName = select.value;
+    if (!presetName) return;
+    
+    const preset = fontPresets[presetName];
+    config.fontSize = preset.fontSize || 14;
+    document.getElementById('app-font-size').value = config.fontSize;
+    changePreviewFontSize(config.fontSize);
+
+    if (preset.fontSrc) {
+        loadCustomFont(preset.fontFamily, preset.fontSrc);
+    } else {
+        config.fontFamily = '';
+        config.fontSrc = '';
+        document.getElementById('font-preview-box').style.fontFamily = '';
+    }
+}
+
+function renderFontPresets() {
+    const select = document.getElementById('font-preset-select');
+    select.innerHTML = '<option value="">选择预设</option>';
+    for (const name in fontPresets) {
+        select.innerHTML += `<option value="${name}">${name}</option>`;
+    }
+}
+
+// 真正将字体应用到全局页面的魔法
+function applySystemFontAndSize() {
+    let style = document.getElementById('global-font-style');
+    if(!style) {
+        style = document.createElement('style');
+        style.id = 'global-font-style';
+        document.head.appendChild(style);
+    }
+    
+    let fontFaceCss = '';
+    let fontFamilyCss = '';
+    if (config.fontSrc) {
+        fontFaceCss = `@font-face { font-family: '${config.fontFamily}'; src: url('${config.fontSrc}'); }`;
+        // 强制所有文字变成这个字体
+        fontFamilyCss = `* { font-family: '${config.fontFamily}', sans-serif !important; }`;
+    }
+
+    // 只让聊天气泡、推文等主要内容变大，避免破坏小图标和按钮的排版
+    let fontSizeCss = `
+        .chat-msg-user, .chat-msg-ai, .tweet-card .text-[15px], #moments-feed .text-[15px] {
+            font-size: ${config.fontSize}px !important;
+            line-height: 1.5 !important;
+        }
+    `;
+
+    style.innerHTML = fontFaceCss + fontFamilyCss + fontSizeCss;
+}
+
 // ===== 新增：全屏外观设置功能 =====
 function openAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.remove('slide-hidden');
