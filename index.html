@@ -853,7 +853,7 @@ function renderMsg(text, role, isInit = false) {
         div.innerHTML = `
             <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                 ${text}
-                <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[0px] w-[18px] h-[18px] pointer-events-none">
+               <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
             </div>
             <img src="${userProfile.avatar}" class="w-[45px] h-[45px] rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
         `;
@@ -864,7 +864,7 @@ function renderMsg(text, role, isInit = false) {
             <div class="w-[45px] h-[45px] bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
             <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                 ${text}
-                <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[0px] w-[18px] h-[18px] pointer-events-none">
+               <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
             </div>
         `;
     }
