@@ -626,7 +626,403 @@ let userProfile = {
     status: "状态"
 };
 
+// 桌面 APP 数据定义
+
+
+let appManifest = {
+
+
+    wechat: { name: "微信", icon: "https://i.postimg.cc/fycLsZLY/quality-restoration-20260228193355205.png" },
+
+
+    lorebook: { name: "世界书", icon: "https://i.postimg.cc/xTQP438J/IMG_3162_r.png" },
+
+
+    place2: { name: "占位2", icon: "" },
+
+
+    forum: { name: "论坛", icon: "https://i.postimg.cc/wTzkGQMx/IMG_3164.png" },
+
+
+    sms: { name: "短信", icon: "https://i.postimg.cc/28YxK7yk/IMG_3166.png" },
+
+
+    settings: { name: "设置", icon: "https://i.postimg.cc/4NG1SQyx/IMG_3167.png" },
+
+
+    appearance: { name: "外观", icon: "https://i.postimg.cc/NftxzkF0/IMG_3165.png" },
+
+
+    check: { name: "查手机", icon: "" }
+
+
+};
+
+
+
+
+
+let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
+
+
+let friendList = [];
+
+
+let currentFriendId = null;
+Copy
+Copy
+
+
 let chatHistory = [];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Copy
+Copy
+
+
+/* --- 外观与桌面定制核心逻辑 --- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Copy
+Copy
+
+
+function initAppearance() {
+
+
+    // 应用壁纸
+
+
+    document.getElementById('home-screen').style.backgroundImage = `url(${config.wallpaper})`;
+
+
+    document.getElementById('wallpaper-preview').src = config.wallpaper;
+
+
+
+
+
+
+
+
+
+Copy
+Copy
+
+
+    // 渲染外观设置中的图标列表
+
+
+    const grid = document.getElementById('icon-edit-grid');
+
+
+    grid.innerHTML = '';
+
+
+    Object.keys(appManifest).forEach(key => {
+
+
+        const app = appManifest[key];
+
+
+        const item = document.createElement('div');
+
+
+        item.className = 'icon-edit-item';
+
+
+        item.innerHTML = `
+
+
+            <img src="${app.icon || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%235c5c5c%22/></svg>'}" 
+
+
+                 class="icon-edit-preview" id="preview-ico-${key}" onclick="triggerIconUpload('${key}')">
+
+
+            <input type="text" class="icon-edit-name" value="${app.name}" id="edit-name-${key}">
+
+
+
+
+
+
+
+
+
+
+        `;
+Copy
+Copy
+
+
+        grid.appendChild(item);
+
+
+    });
+
+
+}
+Copy
+Copy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Copy
+Copy
+
+
+function triggerIconUpload(key) {
+
+
+    const input = document.createElement('input');
+
+
+    input.type = 'file'; input.accept = 'image/*';
+
+
+    input.onchange = e => {
+
+
+        const file = e.target.files[0];
+
+
+        const reader = new FileReader();
+
+
+        reader.onload = ev => {
+
+
+            const data = ev.target.result;
+
+
+            document.getElementById(`preview-ico-${key}`).src = data;
+
+
+            // 缓存到 manifest
+
+
+            appManifest[key].icon = data;
+
+
+        };
+
+
+        reader.readAsDataURL(file);
+
+
+    };
+
+
+    input.click();
+
+
+}
+
+
+
+Copy
+Copy
+
+
+function triggerWallpaperUpload() {
+
+
+    document.getElementById('wallpaper-input').click();
+
+
+}
+
+
+
+
+
+function previewWallpaper(input) {
+
+
+    if (input.files && input.files[0]) {
+
+
+        const reader = new FileReader();
+
+
+        reader.onload = e => {
+
+
+            document.getElementById('wallpaper-preview').src = e.target.result;
+
+
+            config.wallpaper = e.target.result;
+
+
+        };
+
+
+        reader.readAsDataURL(input.files[0]);
+
+
+    }
+
+
+}
+
+
+
+
+
+function saveAppearanceApp() {
+
+
+    // 1. 保存名称修改
+
+
+    Object.keys(appManifest).forEach(key => {
+
+
+        const newName = document.getElementById(`edit-name-${key}`).value;
+
+
+        appManifest[key].name = newName;
+
+
+        
+
+
+        // 2. 同步到主屏
+
+
+        const mainIcon = document.getElementById(`main-icon-${key}`);
+
+
+        const mainName = document.getElementById(`main-name-${key}`);
+
+
+        
+
+
+        if (mainIcon) {
+
+
+            if (appManifest[key].icon) {
+
+
+                mainIcon.src = appManifest[key].icon;
+
+
+                mainIcon.classList.remove('hidden');
+
+
+            }
+
+
+        }
+
+
+        if (mainName) mainName.innerText = newName;
+
+
+    });
+Copy
+Copy
+
+
+
+
+
+    // 3. 应用壁纸
+
+
+    document.getElementById('home-screen').style.backgroundImage = `url(${config.wallpaper})`;
+
+
+
+
+
+    // 4. 应用 CSS
+
+
+    config.customCss = document.getElementById('app-cfg-css').value;
+
+
+    document.getElementById('custom-style').innerHTML += config.customCss;
+
+
+
+
+
+    closeAppearanceApp();
+
+
+}
+
 let friendList = [];
 let currentFriendId = null;
 
