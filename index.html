@@ -1574,9 +1574,11 @@ async function triggerAI(){
 你的设定是：${friend.persona}。
 你不知道自己被用户设置了什么备注。
 
-【核心回复字数与条数规则】
-强制要求：每次对用户的回复通常需要拆分成三到四句话（生成三到四条消息）。
-！！但是！！必须严格按照你（${friend.realName}）的人设性格来进行具体的回复条数调整：高冷、寡言、疲惫的人设只回1-2句即可，话痨、开朗的人设可以回5句以上。绝对不要像死板的机器人，请完全沉浸入你的性格来决定话量！
+【核心回复气泡（条数）规则 - 极其重要】
+强制要求：你每次的回复必须拆分成多条独立的消息！请务必使用换行符（回车）来分隔你的每条消息。
+- 通常情况：每次回复分为 5 到 6 条独立的消息（即写 5 到 6 行）。
+- ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
+- 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
 
 【活人感引擎：注意，当前真实世界时间是 ${timeString}】
 ============================================
@@ -1586,7 +1588,7 @@ FORBIDDEN:
   - "状态与时间严重不符（深夜不应精力充沛，清晨不应话多活跃）"
   - "孤立的时间问候（时间必须融入对话，不能单独存在后就没了）"
   - "每次回复都强调时间（适度，不要变成时间播报员）"
-  - "因时间状态而完全抑制角色核心特质（疲劳时角色仍保留其核心性格，只是带着疲惫的底色）"
+  - "因时间状态而完全抑制角色核心特质"
 
 Priority:
   1: "SpecialDates - 特殊日期（覆盖一切）"
@@ -1645,9 +1647,9 @@ TimeExpressions:
 TimeChecklist:
   must_pass:
     - "没有机械报时"
-    - "状态符合当前时间段（深夜不精力充沛，清晨可以迷糊）"
+    - "状态符合当前时间段"
     - "时间是自然融入对话，不是生硬附加"
-    - "角色核心性格没有被时间状态完全压制"
+    - "务必用换行符拆分成了多条消息！"
 ============================================`;
     }
 
@@ -1657,7 +1659,7 @@ TimeChecklist:
     个性签名: ${userProfile.bio}
     当前状态: ${userProfile.status}`;
 
-    let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中原样输出对应的【代码】即可。\n";
+    let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中单独占一行，原样输出对应的【代码】即可。\n";
     let hasEmoji = false;
     for(let cat in emojiData) {
         emojiData[cat].forEach(e => {
@@ -1697,24 +1699,27 @@ TimeChecklist:
         const data=await response.json();
         const reply=data.choices[0].message.content;
         
-        // --- 新增：智能拆分文字和表情包，让表情包永远单独一条 ---
+        // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
         const images = reply.match(imgRegex);
         const textOnly = reply.replace(imgRegex, '').trim();
 
-        // 如果有文字，先单独发一条文字气泡
+        // 1. 把文字按换行符拆开，每一行变成一个独立的聊天气泡！
         if (textOnly) {
-            chatHistory.push({role:'assistant', content: textOnly});
+            const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            textLines.forEach(line => {
+                chatHistory.push({role:'assistant', content: line});
+            });
         }
         
-        // 如果有表情包，把每一个表情包都当成单独一条发出来
+        // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
             images.forEach(img => {
                 chatHistory.push({role:'assistant', content: img});
             });
         }
         
-        // 万一什么都没有（极少见），原样兜底
+        // 3. 兜底
         if (!textOnly && (!images || images.length === 0)) {
             chatHistory.push({role:'assistant', content: reply});
         }
@@ -1727,6 +1732,7 @@ TimeChecklist:
         if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
     }
 }
+
 // --- 替换部分结束 ---
 
 function openMePage(title) {
