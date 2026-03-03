@@ -102,18 +102,23 @@
             z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
         .context-menu.show { opacity: 1; pointer-events: auto; }
-        .context-menu-item {
-            padding: 12px 20px; font-size: 15px; white-space: nowrap; cursor: pointer;
+               .context-menu-item {
+            padding: 8px 14px; /* 缩小了内边距 */
+            font-size: 13px; white-space: nowrap; cursor: pointer; /* 缩小了字体 */
             position: relative;
         }
         .context-menu-item:not(:last-child)::after {
-            content: ''; position: absolute; right: 0; top: 14px; bottom: 14px;
+            content: '';
+            position: absolute; right: 0; top: 10px; bottom: 10px; /* 缩小了分隔线 */
             width: 1px; background: rgba(255,255,255,0.2);
         }
-        .context-menu-item:active { background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .context-menu-item:active { background: rgba(0,0,0,0.2); border-radius: 12px;
+        }
         .context-arrow {
-            position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #4c4c4c;
+            position: absolute;
+            bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+            border-top: 5px solid #4c4c4c; /* 缩小了尖尖 */
         }
 
         /* 新增：多选勾选框和引用样式 */
@@ -751,8 +756,8 @@ let selectedMsgIndices = new Set(); // 记住多选了哪些消息
 let currentQuoteMsg = null; // 记住正在引用哪句话
 
 // 弹窗魔法工具：负责在手指按下的地方显示黑色弹窗
-function showContextMenu(e, items, x, y) {
-    if(e && e.preventDefault) e.preventDefault(); // 防止弹出手机系统自带的菜单
+function showContextMenu(e, items, targetElement) {
+    if(e && e.preventDefault) e.preventDefault();
     const menu = document.getElementById('global-context-menu');
     const container = document.getElementById('cm-items-container');
     container.innerHTML = '';
@@ -768,9 +773,20 @@ function showContextMenu(e, items, x, y) {
         container.appendChild(div);
     });
     menu.classList.add('show');
-    // 让弹窗出现在你手指按的地方的上方
-    menu.style.left = Math.max(10, Math.min(x - menu.offsetWidth / 2, window.innerWidth - menu.offsetWidth - 10)) + 'px';
-    menu.style.top = Math.max(10, y - 60) + 'px';
+    
+    // 获取被长按的元素在屏幕上的精准位置和大小
+    const rect = targetElement.getBoundingClientRect();
+    
+    // 计算水平居中：元素的中心点 - 菜单宽度的一半
+    let leftPos = rect.left + (rect.width / 2) - (menu.offsetWidth / 2);
+    // 防止太靠边导致弹窗飞出屏幕
+    leftPos = Math.max(10, Math.min(leftPos, window.innerWidth - menu.offsetWidth - 10));
+    
+    // 计算垂直位置：在元素的正上方，减去8像素给“尖尖”留点位置
+    let topPos = rect.top - menu.offsetHeight - 8;
+    
+    menu.style.left = leftPos + 'px';
+    menu.style.top = topPos + 'px';
 }
 
 function hideContextMenu() { 
@@ -815,31 +831,34 @@ function renderEmojiTabs() {
             renderEmojis();
         };
         
-        // 长按：修改或删除分类
+               // 长按：修改或删除分类
         let pressTimer;
-        const startPress = () => {
+        const startPress = (e) => {
             pressTimer = setTimeout(() => {
-                const action = prompt(`对分类【${cat}】操作：\n1. 输入新名称来重命名\n2. 输入“删除”来直接删掉此分类`, "");
-                if (action === "删除") {
-                    delete emojiData[cat];
-                    // 如果删的是当前选中的，跳回默认
-                    if (currentEmojiCategory === cat) currentEmojiCategory = Object.keys(emojiData)[0] || "默认";
-                    if (!emojiData["默认"]) emojiData["默认"] = [];
-                    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-                    renderEmojiTabs();
-                    renderEmojis();
-                    alert(`已删除分类【${cat}】和它里面的所有表情包！`);
-                } else if (action && action.trim() !== "") {
-                    if (emojiData[action]) return alert("这个分类名称已经存在啦！");
-                    // 把老分类的数据搬给新分类
-                    emojiData[action] = emojiData[cat];
-                    delete emojiData[cat];
-                    if (currentEmojiCategory === cat) currentEmojiCategory = action;
-                    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-                    renderEmojiTabs();
-                    renderEmojis();
-                }
-            }, 600); // 按住0.6秒就算长按
+                showContextMenu(e, [
+                    { label: '删除分类', action: () => {
+                        delete emojiData[cat];
+                        if (currentEmojiCategory === cat) currentEmojiCategory = Object.keys(emojiData)[0] || "默认";
+                        if (!emojiData["默认"]) emojiData["默认"] = [];
+                        localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+                        renderEmojiTabs();
+                        renderEmojis();
+                        alert(`已删除分类【${cat}】！`);
+                    }},
+                    { label: '重命名', action: () => {
+                        const newName = prompt(`请输入【${cat}】的新名称：`, cat);
+                        if (newName && newName.trim() !== "" && newName !== cat) {
+                            if (emojiData[newName]) return alert("这个分类名称已经存在啦！");
+                            emojiData[newName] = emojiData[cat];
+                            delete emojiData[cat];
+                            if (currentEmojiCategory === cat) currentEmojiCategory = newName;
+                            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+                            renderEmojiTabs();
+                            renderEmojis();
+                        }
+                    }}
+                ], btn); // 把当前的按钮传进去用来定位
+            }, 500);
         };
         const cancelPress = () => { clearTimeout(pressTimer); };
         
@@ -882,10 +901,9 @@ function renderEmojis() {
             closeEmojiPanel();
         };
 
-        // 长按呼出我们的黑色气泡菜单！
+                // 长按呼出我们的黑色气泡菜单！
         let pressTimer;
         const startPress = (e) => {
-            const touch = e.touches ? e.touches[0] : e;
             pressTimer = setTimeout(() => {
                 showContextMenu(e, [
                     { label: '删除', action: () => {
@@ -901,7 +919,7 @@ function renderEmojis() {
                             renderEmojis();
                         }
                     }}
-                ], touch.clientX, touch.clientY);
+                ], div); // 这里传进去表情包本身，让弹窗在它正上方
             }, 500);
         };
         const cancelPress = () => { clearTimeout(pressTimer); };
@@ -1250,11 +1268,13 @@ function renderAllMessages() {
         
         div.innerHTML = bubbleHtml;
 
+        // 获取里面的真实气泡（而不是整行），让弹窗精准对齐气泡
+        const bubble = div.querySelector('.chat-msg-user, .chat-msg-ai') || div;
+
         // 【重头戏】长按单条消息的操作
         let pressTimer;
         const startMsgPress = (e) => {
-            if (isMultiSelecting) return; // 多选时不准长按
-            const touch = e.touches ? e.touches[0] : e;
+            if (isMultiSelecting) return;
             pressTimer = setTimeout(() => {
                 showContextMenu(e, [
                     { label: '删除', action: () => { 
@@ -1285,7 +1305,7 @@ function renderAllMessages() {
                         document.getElementById('multi-select-bar').style.display = 'flex';
                         renderAllMessages();
                     }}
-                ], touch.clientX, touch.clientY);
+                ], bubble); // 传入气泡元素，让尖尖指在正中间
             }, 500);
         };
         const cancelMsgPress = () => clearTimeout(pressTimer);
