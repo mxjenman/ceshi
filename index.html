@@ -390,11 +390,14 @@
                     <img id="fi-avatar" src="" class="w-[90px] h-[90px] rounded-full object-cover shadow-sm cursor-pointer" onclick="document.getElementById('fi-avatar-input').click()">
                     <input type="file" id="fi-avatar-input" class="hidden" accept="image/*" onchange="changeFriendAvatar(this)">
                 </div>
-                <div id="fi-name" class="font-bold text-[22px] cursor-pointer mb-1 text-black tracking-wide" onclick="editFriendName()">{{char}}</div>
-                <div id="fi-desc" class="text-[13px] text-gray-400 cursor-pointer text-center px-6 leading-relaxed" onclick="editFriendDesc()">亲爱的雪人先生…</div>
+                
+                <div class="flex flex-col items-center" style="transform: translate(-15px, -50px);">
+                    <div id="fi-name" class="font-bold text-[22px] cursor-pointer mb-1 text-black tracking-wide" onclick="editFriendName()">{{char}}</div>
+                    <div id="fi-desc" class="text-[13px] text-gray-400 cursor-pointer text-center px-6 leading-relaxed" onclick="editFriendDesc()">亲爱的雪人先生…</div>
+                </div>
             </div>
             
-            <div class="mt-2 bg-white flex flex-col">
+            <div class="bg-white flex flex-col" style="transform: translateY(-55px);">
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('设定')">
                     <span class="text-[16px] text-black">设定</span>
                 </div>
