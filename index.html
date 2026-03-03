@@ -365,13 +365,13 @@
             <img id="inventory-btn" src="https://i.postimg.cc/7hx0JsFP/IMG_3064.png" class="w-7 h-7 object-contain cursor-pointer transition-transform duration-300" onclick="toggleInventory()">
 
             <div class="flex-1 relative flex items-center">
-                <input id="chat-input" type="text" class="w-full border-none rounded-full bg-white pl-3 pr-10 py-2 outline-none text-[15px]" placeholder="输入消息...">
+                <input id="chat-input" type="text" class="w-full border-none rounded-full bg-white pl-3 pr-10 py-2 outline-none text-[15px]" placeholder="输入消息..." onkeydown="if(event.key === 'Enter') sendUserMsg()">
                 <img src="https://i.postimg.cc/y8pZRN6H/IMG_3205.png" class="w-6 h-6 absolute right-2 cursor-pointer active:scale-90 transition-transform" onclick="openEmojiPanel()">
             </div>
 
             <img id="gen-btn-icon" src="https://i.postimg.cc/zvJKHtsG/IMG_3063.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="triggerAI()">
 
-            <img src="https://i.postimg.cc/2yzhLcs5/IMG_3062.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="sendUserMsg()">
+            <img src="https://i.postimg.cc/2yzhLcs5/IMG_3062.png" class="w-[30px] h-[30px] -translate-y-[3px] object-contain cursor-pointer active:scale-90 transition-transform" onclick="sendUserMsg()">
         </div>
     </div>
     <div id="friend-info-page" class="page-layer slide-hidden flex flex-col z-[70] bg-white">
@@ -1551,7 +1551,6 @@ function sendUserMsg(){
     input.value='';
     renderAllMessages(); // 刷新屏幕显示新消息
 }
-
 async function triggerAI(){
     if(!currentFriendId) return;
     if(!config.apiKey) {
@@ -1569,11 +1568,7 @@ async function triggerAI(){
     if(friend) {
         finalSystemMessage = `你的真实名字是：${friend.realName}。
 你的设定是：${friend.persona}。
-请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
-        
-        if (friend.userPersona && friend.userPersona.trim() !== '') {
-            finalSystemMessage += `\n用户当前的人设是：${friend.userPersona}。请配合用户的这个人设进行互动。`;
-        }
+请严格扮演此设定与用户聊天。通常每次回复三到四句话，但必须根据你的性格设定灵活调整（例如：冷酷人设可以少说点，话痨可以多说点）。你不知道自己被设置了什么备注。`;
     }
 
     finalSystemMessage += `\n\n当前与你对话的用户信息：
@@ -1582,7 +1577,7 @@ async function triggerAI(){
     个性签名: ${userProfile.bio}
     当前状态: ${userProfile.status}`;
 
-    let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你在回复时觉得适合使用表情包，请直接在你的回复文字末尾，原样输出该表情包对应的【代码】即可发送表情包给用户（不要改动代码里的任何字符）：\n";
+    let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中原样输出对应的【代码】即可。\n";
     let hasEmoji = false;
     for(let cat in emojiData) {
         emojiData[cat].forEach(e => {
@@ -1616,13 +1611,34 @@ async function triggerAI(){
                 model:config.model,
                 messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
                 temperature: parseFloat(config.temperature),
-                max_tokens:100
+                max_tokens:800
             })
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
         
-        chatHistory.push({role:'assistant',content:reply});
+        // --- 新增：智能拆分文字和表情包，让表情包永远单独一条 ---
+        const imgRegex = /<img[^>]*>/g;
+        const images = reply.match(imgRegex);
+        const textOnly = reply.replace(imgRegex, '').trim();
+
+        // 如果有文字，先单独发一条文字气泡
+        if (textOnly) {
+            chatHistory.push({role:'assistant', content: textOnly});
+        }
+        
+        // 如果有表情包，把每一个表情包都当成单独一条发出来
+        if (images && images.length > 0) {
+            images.forEach(img => {
+                chatHistory.push({role:'assistant', content: img});
+            });
+        }
+        
+        // 万一什么都没有（极少见），原样兜底
+        if (!textOnly && (!images || images.length === 0)) {
+            chatHistory.push({role:'assistant', content: reply});
+        }
+        
         renderAllMessages(); // AI回话了，刷新屏幕
     }catch(e){ 
         chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
