@@ -398,7 +398,7 @@
             </div>
             
             <div class="bg-white flex flex-col" style="transform: translateY(-55px);">
-                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('设定')">
+                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openCharacterSettings()">
                     <span class="text-[16px] text-black">设定</span>
                 </div>
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('世界书')">
@@ -414,6 +414,37 @@
                     <span class="text-[16px] text-black">其他</span>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="character-settings-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+            <button onclick="closeCharacterSettings()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">角色设定</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的备注</label>
+                <input id="cs-remark" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4">
+                
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的真名</label>
+                <input id="cs-realname" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4">
+                
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的设定 (AI Persona)</label>
+                <textarea id="cs-persona" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 bg-gray-50"></textarea>
+            </div>
+            
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">我的人设 (User Persona)</label>
+                <p class="text-[11px] text-gray-400 mb-2">告诉AI你是谁，留空则默认不加干涉。</p>
+                <textarea id="cs-user-persona" placeholder="例如：我是他从小一起长大的青梅竹马，性格傲娇..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-24 text-gray-700 bg-gray-50"></textarea>
+            </div>
+            
+            <button onclick="saveCharacterSettings()" class="w-full py-3 bg-black text-white rounded-[16px] font-bold text-[16px] mt-2 mb-6 shadow-md active:scale-95 transition-transform">保存更改</button>
         </div>
     </div>
     <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
@@ -1234,6 +1265,52 @@ function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
     menu.classList.toggle('hidden');
 }
+// ================= 新增：角色设定页面逻辑 =================
+function openCharacterSettings() {
+    if(!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    // 把当前记住的信息填入输入框
+    document.getElementById('cs-remark').value = friend.remark || '';
+    document.getElementById('cs-realname').value = friend.realName || '';
+    document.getElementById('cs-persona').value = friend.persona || '';
+    document.getElementById('cs-user-persona').value = friend.userPersona || '';
+    
+    document.getElementById('character-settings-page').classList.remove('slide-hidden');
+}
+
+function closeCharacterSettings() {
+    document.getElementById('character-settings-page').classList.add('slide-hidden');
+}
+
+function saveCharacterSettings() {
+    if(!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    const newRemark = document.getElementById('cs-remark').value.trim();
+    const newRealName = document.getElementById('cs-realname').value.trim();
+    const newPersona = document.getElementById('cs-persona').value.trim();
+    
+    if(!newRemark || !newRealName || !newPersona) {
+        return alert("备注、真名和TA的设定不能为空哦！");
+    }
+    
+    // 更新记忆
+    friend.remark = newRemark;
+    friend.realName = newRealName;
+    friend.persona = newPersona;
+    friend.userPersona = document.getElementById('cs-user-persona').value.trim();
+    
+    // 同步更新外面看到的备注名字
+    document.getElementById('fi-name').innerText = friend.remark;
+    document.getElementById('chat-detail-title').innerText = friend.remark;
+    renderFriendList(); // 刷新微信好友列表界面
+    
+    closeCharacterSettings();
+    alert("✅ 设定保存成功！AI已经接收到了新的记忆。");
+}
 // ================= 新增：聊天详情(好友信息)专属功能 =================
 function openFriendInfo() {
     if(!currentFriendId) return;
@@ -1493,6 +1570,10 @@ async function triggerAI(){
         finalSystemMessage = `你的真实名字是：${friend.realName}。
 你的设定是：${friend.persona}。
 请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
+        
+        if (friend.userPersona && friend.userPersona.trim() !== '') {
+            finalSystemMessage += `\n用户当前的人设是：${friend.userPersona}。请配合用户的这个人设进行互动。`;
+        }
     }
 
     finalSystemMessage += `\n\n当前与你对话的用户信息：
