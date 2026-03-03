@@ -16,8 +16,9 @@
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
-        .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
-        .chat-msg-ai { background: white; border-radius: 0 6px 6px 6px; }
+                /* 气泡样式保留名字，颜色和外观用后面的新代码控制 */
+        .chat-msg-user { }
+        .chat-msg-ai { }
 
         /* 小组件样式 */
         .widget-card{
@@ -834,13 +835,37 @@ function openChat(){
 }
 function closeChat(){ document.getElementById('chat-screen').classList.add('hidden'); }
 
-function renderMsg(text,role, isInit = false){
-    const container=document.getElementById('chat-flow');
-    const div=document.createElement('div');
-    div.className=`flex ${role==='user'?'justify-end':'justify-start'} animate-in`;
-    div.innerHTML=`<div class="max-w-[80%] px-3 py-2 shadow-sm text-sm ${role==='user'?'chat-msg-user':'chat-msg-ai'}">${text}</div>`;
+function renderMsg(text, role, isInit = false) {
+    const container = document.getElementById('chat-flow');
+    const div = document.createElement('div');
+    
+    // 自动抓取当前聊天AI的备注第一个字，当作它的临时头像
+    let aiAvatarText = "A";
+    if (currentFriendId) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        if (friend) aiAvatarText = friend.remark.charAt(0);
+    }
+
+    // 判断是用户发的消息还是AI发的消息
+    if (role === 'user') {
+        // 用户的消息：头像在右边，气泡 #3C3C3C，文字纯白
+        div.className = "flex justify-end items-start gap-2 mb-4 animate-in w-full";
+        div.innerHTML = `
+            <div class="chat-msg-user max-w-[72%] bg-[#3C3C3C] text-white px-4 py-2.5 rounded-2xl rounded-tr-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+            <img src="${userProfile.avatar}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-sm border border-gray-200">
+        `;
+    } else {
+        // AI的消息：头像在左边，气泡纯白，文字黑色
+        div.className = "flex justify-start items-start gap-2 mb-4 animate-in w-full";
+        div.innerHTML = `
+            <div class="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
+            <div class="chat-msg-ai max-w-[72%] bg-white text-black px-4 py-2.5 rounded-2xl rounded-tl-[4px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">${text}</div>
+        `;
+    }
+    
     container.appendChild(div);
-    container.scrollTop=container.scrollHeight;
+    // 自动滚动到最新的一条消息
+    container.scrollTop = container.scrollHeight;
 }
 
 function sendUserMsg(){
