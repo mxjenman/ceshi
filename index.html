@@ -1309,7 +1309,7 @@ function saveCharacterSettings() {
     renderFriendList(); // 刷新微信好友列表界面
     
     closeCharacterSettings();
-    alert("✅ 设定保存成功！AI已经接收到了新的记忆。");
+    alert("设定保存成功↖(^ω^)↗");
 }
 // ================= 新增：聊天详情(好友信息)专属功能 =================
 function openFriendInfo() {
@@ -1360,7 +1360,7 @@ function editFriendName() {
 function editFriendDesc() {
     const friend = friendList.find(f => f.id === currentFriendId);
     if(!friend) return;
-    const currentDesc = friend.desc || '亲爱的雪人先生…';
+    const currentDesc = friend.desc || '亲爱的雪人先生 为什么天一亮你就会不见呢？';
     const res = prompt("修改个性文案：", currentDesc);
     if(res !== null && res.trim() !== "") {
         friend.desc = res.trim();
