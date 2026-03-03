@@ -1222,61 +1222,6 @@ async function triggerAI(){
     }
 }
     
-        const btn=document.getElementById('gen-btn-icon');
-    if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
-    
-    let finalSystemMessage = config.systemPrompt;
-    
-    const friend = friendList.find(f => f.id === currentFriendId);
-    if(friend) {
-        finalSystemMessage = `你的真实名字是：${friend.realName}。
-你的设定是：${friend.persona}。
-请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
-    }
-
-    finalSystemMessage += `\n\n当前与你对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
-    
-    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
-    let injectedLore = [];
-    
-    lorebook.forEach(entry => {
-        const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
-        for(let k of keywords) {
-            if(latestUserMsg.includes(k)) {
-                injectedLore.push(`[${entry.content}]`);
-                break; 
-            }
-        }
-    });
-
-    if(injectedLore.length > 0) {
-        finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
-        console.log("注入了世界书数据:", injectedLore); 
-    }
-
-    try{
-        const response=await fetch(`${config.baseUrl}/chat/completions`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
-                        body:JSON.stringify({
-                model:config.model,
-                messages:[{role:'system',content:finalSystemMessage}, ...chatHistory.slice(-5)],
-                temperature: parseFloat(config.temperature),
-                max_tokens:100
-            })
-        });
-        const data=await response.json();
-        const reply=data.choices[0].message.content;
-        renderMsg(reply.substring(0,50),'assistant');
-        chatHistory.push({role:'assistant',content:reply});
-    }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
-        finally{ if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
-}
-}
 function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
