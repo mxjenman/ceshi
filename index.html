@@ -1328,12 +1328,14 @@ function applyFontUrl() {
 
 function handleLocalFont(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            loadCustomFont('MyCustomFont', e.target.result);
-        };
-        reader.readAsDataURL(input.files[0]);
+        const file = input.files[0];
+        
+        // 使用生成临时本地链接的方式，彻底解决手机内存撑爆导致刷新的问题
+        const fontUrl = URL.createObjectURL(file);
+        loadCustomFont('MyCustomFont', fontUrl);
         input.value = ''; // 清空方便重新选择
+        
+        alert("✅ 本地字体加载成功！\n\n【温馨提示】中文字体文件太大（几十MB），网页的微小存储空间存不下。因此使用“手机文件”上传的字体，在彻底刷新网页后会恢复默认。\n👉 如果希望永久保存进预设中，请使用填写【字体链接】的方式！");
     }
 }
 
