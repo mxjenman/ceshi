@@ -301,7 +301,7 @@
             </div>
         </div>
                 <div class="p-3 bg-[#f7f7f7] border-t flex items-center gap-2 sticky bottom-0 relative">
-            <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-3 gap-3 w-[240px] z-50">
+                       <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-2 gap-3 w-[160px] z-50">
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相册</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相机</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
@@ -317,8 +317,8 @@
             <img id="inventory-btn" src="https://i.postimg.cc/7hx0JsFP/IMG_3064.png" class="w-7 h-7 object-contain cursor-pointer transition-transform duration-300" onclick="toggleInventory()">
 
             <div class="flex-1 relative flex items-center">
-                <input id="chat-input" type="text" class="w-full border-none rounded-lg bg-white pl-3 pr-10 py-2 outline-none text-[15px]" placeholder="输入消息...">
-                <svg onclick="togglePlaceholderMenu()" class="w-6 h-6 absolute right-2 text-gray-400 cursor-pointer active:scale-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <input id="chat-input" type="text" class="w-full border-none rounded-full bg-white pl-3 pr-10 py-2 outline-none text-[15px]" placeholder="输入消息...">
+                <img src="https://i.postimg.cc/y8pZRN6H/IMG_3205.png" class="w-6 h-6 absolute right-2 cursor-pointer active:scale-90 transition-transform" onclick="openEmojiPanel()">
             </div>
 
             <img id="gen-btn-icon" src="https://i.postimg.cc/zvJKHtsG/IMG_3063.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="triggerAI()">
@@ -602,6 +602,61 @@
             <input type="file" id="icon-file-input" class="hidden" accept="image/*" onchange="handleIconSelect(this)">
         </div>
     </div>
+    <div id="emoji-panel" class="fixed inset-x-0 bottom-0 bg-[#f7f7f7] z-[120] rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transform translate-y-full transition-transform duration-300 flex flex-col" style="height: 50vh;">
+        <div class="h-12 border-b flex items-center px-4 bg-white rounded-t-2xl shrink-0">
+            <button onclick="closeEmojiPanel()" class="text-gray-600 text-[15px] font-medium w-[40px] text-left">取消</button>
+            <div class="flex-1 flex justify-center gap-6 text-[15px]">
+                <button onclick="openAddEmojiCategory()" class="text-blue-500 font-bold active:scale-90">分类</button>
+                <button onclick="openBatchEmojiModal()" class="text-blue-500 font-bold active:scale-90">批量</button>
+                <button onclick="document.getElementById('emoji-upload-input').click()" class="text-blue-500 font-bold active:scale-90">上传</button>
+                <input type="file" id="emoji-upload-input" class="hidden" accept="image/*" onchange="handleSingleEmojiUpload(this)">
+            </div>
+            <div class="w-[40px]"></div>
+        </div>
+        <div id="emoji-category-tabs" class="flex gap-3 px-4 py-2 bg-white border-b overflow-x-auto shrink-0 text-[14px] no-scrollbar">
+            </div>
+        <div id="emoji-list-container" class="flex-1 overflow-y-auto p-4 grid grid-cols-4 gap-4 place-content-start">
+            </div>
+    </div>
+
+    <div id="add-emoji-category-modal" class="fixed inset-0 bg-black/50 hidden z-[130] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-3 text-center">管理分类</h3>
+            <div id="existing-categories" class="flex flex-wrap gap-2 mb-4 max-h-[80px] overflow-y-auto">
+                </div>
+            <input id="new-emoji-category-name" type="text" placeholder="输入新分类名称" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700 mb-6">
+            <div class="flex gap-3">
+                <button onclick="closeAddEmojiCategory()" class="w-1/3 py-2 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
+                <button onclick="saveEmojiCategory()" class="flex-1 py-2 bg-black text-white rounded-full font-bold text-[16px]">添加分类</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="batch-emoji-modal" class="fixed inset-0 bg-black/50 hidden z-[130] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-2 text-center">批量上传表情包</h3>
+            <p class="text-[12px] text-gray-400 mb-4 text-center">每行一个：意思 + 空格 + 链接</p>
+            <textarea id="batch-emoji-text" class="w-full border border-gray-500 rounded-[20px] px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 mb-6" placeholder="大笑 https://...&#10;难过 https://..."></textarea>
+            <div class="flex gap-3">
+                <button onclick="closeBatchEmojiModal()" class="w-1/3 py-2 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
+                <button onclick="saveBatchEmoji()" class="flex-1 py-2 bg-black text-white rounded-full font-bold text-[16px]">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="single-emoji-modal" class="fixed inset-0 bg-black/50 hidden z-[130] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-4 text-center">填写表情包意思</h3>
+            <div class="flex justify-center mb-4">
+                <img id="single-emoji-preview" src="" class="w-24 h-24 object-contain bg-gray-50 border border-gray-200 rounded-xl p-1">
+            </div>
+            <input id="single-emoji-meaning" type="text" placeholder="输入表情包意思" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700 mb-6">
+            <div class="flex gap-3">
+                <button onclick="closeSingleEmojiModal()" class="w-1/3 py-2 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
+                <button onclick="saveSingleEmoji()" class="flex-1 py-2 bg-black text-white rounded-full font-bold text-[16px]">确定</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-6">
         <div class="bg-white rounded-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-2xl">
@@ -644,6 +699,162 @@ let userProfile = {
 let chatHistory = [];
 let friendList = [];
 let currentFriendId = null;
+// ================= 表情包系统功能 =================
+let emojiData = JSON.parse(localStorage.getItem('emoji_data')) || { "默认": [] };
+let currentEmojiCategory = "默认";
+let tempSingleEmojiSrc = "";
+
+function openEmojiPanel() {
+    document.getElementById('emoji-panel').classList.remove('translate-y-full');
+    // 如果当前选中的分类被删了或者没有，默认选第一个
+    if (!emojiData[currentEmojiCategory]) {
+        currentEmojiCategory = Object.keys(emojiData)[0] || "默认";
+        if(!emojiData["默认"]) emojiData["默认"] = [];
+    }
+    renderEmojiTabs();
+    renderEmojis();
+}
+
+function closeEmojiPanel() {
+    document.getElementById('emoji-panel').classList.add('translate-y-full');
+}
+
+function renderEmojiTabs() {
+    const tabsContainer = document.getElementById('emoji-category-tabs');
+    tabsContainer.innerHTML = '';
+    for (const cat in emojiData) {
+        const isActive = cat === currentEmojiCategory;
+        const btn = document.createElement('div');
+        btn.className = `whitespace-nowrap px-4 py-1.5 rounded-full cursor-pointer transition-colors ${isActive ? 'bg-black text-white font-bold' : 'bg-gray-100 text-gray-600'}`;
+        btn.innerText = cat;
+        btn.onclick = () => {
+            currentEmojiCategory = cat;
+            renderEmojiTabs();
+            renderEmojis();
+        };
+        tabsContainer.appendChild(btn);
+    }
+}
+
+function renderEmojis() {
+    const container = document.getElementById('emoji-list-container');
+    container.innerHTML = '';
+    const emojis = emojiData[currentEmojiCategory] || [];
+    
+    if (emojis.length === 0) {
+        container.innerHTML = '<div class="col-span-4 text-center text-gray-400 text-xs mt-6">当前分类空空如也</div>';
+        return;
+    }
+    
+    emojis.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'flex flex-col items-center cursor-pointer active:scale-95 transition-transform';
+        // 点击就会把表情包当作图片发出去
+        div.onclick = () => {
+            const imgHtml = `<img src="${item.url}" class="w-32 h-32 object-contain rounded-lg">`;
+            renderMsg(imgHtml, 'user', false);
+            closeEmojiPanel();
+            // 让聊天往上滚一下
+            setTimeout(() => {
+                const flow = document.getElementById('chat-flow');
+                flow.parentElement.scrollTop = flow.parentElement.scrollHeight;
+            }, 100);
+        };
+        div.innerHTML = `
+            <img src="${item.url}" class="w-[65px] h-[65px] object-cover bg-white rounded-xl shadow-sm border border-gray-100 mb-1">
+            <span class="text-[10px] text-gray-500 w-full text-center overflow-hidden whitespace-nowrap">${item.meaning}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function openAddEmojiCategory() {
+    document.getElementById('add-emoji-category-modal').classList.remove('hidden');
+    document.getElementById('new-emoji-category-name').value = '';
+    
+    // 显示现在有哪些分类
+    const existingContainer = document.getElementById('existing-categories');
+    existingContainer.innerHTML = '';
+    for (const cat in emojiData) {
+        existingContainer.innerHTML += `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[12px]">${cat}</span>`;
+    }
+}
+function closeAddEmojiCategory() {
+    document.getElementById('add-emoji-category-modal').classList.add('hidden');
+}
+function saveEmojiCategory() {
+    const name = document.getElementById('new-emoji-category-name').value.trim();
+    if (!name) return alert('你还没输入名字呢！');
+    if (emojiData[name]) return alert('这个分类已经存在啦！');
+    
+    emojiData[name] = [];
+    currentEmojiCategory = name; // 自动跳转到新加的分类
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    
+    closeAddEmojiCategory();
+    renderEmojiTabs();
+    renderEmojis();
+}
+
+function openBatchEmojiModal() {
+    document.getElementById('batch-emoji-modal').classList.remove('hidden');
+    document.getElementById('batch-emoji-text').value = '';
+}
+function closeBatchEmojiModal() {
+    document.getElementById('batch-emoji-modal').classList.add('hidden');
+}
+function saveBatchEmoji() {
+    const text = document.getElementById('batch-emoji-text').value.trim();
+    if (!text) return alert('请先填点内容哦！');
+    const lines = text.split('\n');
+    let count = 0;
+    
+    lines.forEach(line => {
+        // 通过空格拆分：前面是意思，后面是链接
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const meaning = parts[0];
+            const url = parts.slice(1).join('');
+            if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
+            emojiData[currentEmojiCategory].push({ meaning, url });
+            count++;
+        }
+    });
+    
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    alert(`成功识别并添加了 ${count} 个表情包到【${currentEmojiCategory}】分类里！`);
+    closeBatchEmojiModal();
+    renderEmojis();
+}
+
+function handleSingleEmojiUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            tempSingleEmojiSrc = e.target.result;
+            document.getElementById('single-emoji-preview').src = tempSingleEmojiSrc;
+            document.getElementById('single-emoji-meaning').value = '';
+            document.getElementById('single-emoji-modal').classList.remove('hidden');
+            input.value = ''; // 清空，允许重复传同一张图
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+function closeSingleEmojiModal() {
+    document.getElementById('single-emoji-modal').classList.add('hidden');
+}
+function saveSingleEmoji() {
+    const meaning = document.getElementById('single-emoji-meaning').value.trim();
+    if (!meaning) return alert('还没告诉我是什么意思呢！');
+    
+    if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
+    emojiData[currentEmojiCategory].push({ meaning: meaning, url: tempSingleEmojiSrc });
+    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+    
+    closeSingleEmojiModal();
+    renderEmojis();
+}
+// ==============================================
 
 // ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
 let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
