@@ -635,8 +635,9 @@
     <div id="batch-emoji-modal" class="fixed inset-0 bg-black/50 hidden z-[130] flex items-center justify-center p-6">
         <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
             <h3 class="font-bold text-[#333] mb-2 text-center">批量上传表情包</h3>
-            <p class="text-[12px] text-gray-400 mb-4 text-center">每行一个：意思 + 空格 + 链接</p>
-            <textarea id="batch-emoji-text" class="w-full border border-gray-500 rounded-[20px] px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 mb-6" placeholder="大笑 https://...&#10;难过 https://..."></textarea>
+                        <p class="text-[12px] text-gray-400 mb-2 text-center">每行一个：意思 + 空格 + 链接</p>
+            <div id="batch-preview-container" class="flex flex-wrap gap-2 mb-2 max-h-[80px] overflow-y-auto"></div>
+            <textarea id="batch-emoji-text" oninput="updateBatchPreview()" class="w-full border border-gray-500 rounded-[20px] px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 mb-6" placeholder="大笑 https://...&#10;难过 https://..."></textarea>
             <div class="flex gap-3">
                 <button onclick="closeBatchEmojiModal()" class="w-1/3 py-2 bg-white border border-gray-300 rounded-full font-bold text-black">取消</button>
                 <button onclick="saveBatchEmoji()" class="flex-1 py-2 bg-black text-white rounded-full font-bold text-[16px]">确认添加</button>
@@ -718,16 +719,25 @@ function openEmojiPanel() {
 function closeEmojiPanel() {
     document.getElementById('emoji-panel').classList.add('translate-y-full');
 }
-
 function renderEmojiTabs() {
     const tabsContainer = document.getElementById('emoji-category-tabs');
     tabsContainer.innerHTML = '';
     for (const cat in emojiData) {
         const isActive = cat === currentEmojiCategory;
         const btn = document.createElement('div');
-        btn.className = `whitespace-nowrap px-4 py-1.5 rounded-full cursor-pointer transition-colors ${isActive ? 'bg-black text-white font-bold' : 'bg-gray-100 text-gray-600'}`;
+        // 加入 select-none 防止手机长按文字变蓝
+        btn.className = `whitespace-nowrap px-4 py-1.5 rounded-full cursor-pointer transition-colors select-none ${isActive ? 'bg-black text-white font-bold' : 'bg-gray-100 text-gray-600'}`;
         btn.innerText = cat;
+        
+        let isLongPress = false;
+        let pressTimer;
+        btn.onpointerdown = () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; handleCategoryLongPress(cat); }, 600); };
+        btn.onpointerup = () => clearTimeout(pressTimer);
+        btn.onpointerleave = () => clearTimeout(pressTimer);
+        btn.oncontextmenu = (e) => { e.preventDefault(); isLongPress = true; clearTimeout(pressTimer); handleCategoryLongPress(cat); };
+
         btn.onclick = () => {
+            if(isLongPress) return;
             currentEmojiCategory = cat;
             renderEmojiTabs();
             renderEmojis();
@@ -748,112 +758,102 @@ function renderEmojis() {
     
     emojis.forEach((item) => {
         const div = document.createElement('div');
-        div.className = 'flex flex-col items-center cursor-pointer active:scale-95 transition-transform';
-        // 点击就会把表情包当作图片发出去
+        div.className = 'flex flex-col items-center cursor-pointer active:scale-95 transition-transform select-none';
+        
+        let isLongPress = false;
+        let pressTimer;
+        div.onpointerdown = () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; handleEmojiLongPress(item, currentEmojiCategory); }, 600); };
+        div.onpointerup = () => clearTimeout(pressTimer);
+        div.onpointerleave = () => clearTimeout(pressTimer);
+        div.oncontextmenu = (e) => { e.preventDefault(); isLongPress = true; clearTimeout(pressTimer); handleEmojiLongPress(item, currentEmojiCategory); };
+
         div.onclick = () => {
+            if(isLongPress) return;
             const imgHtml = `<img src="${item.url}" class="w-32 h-32 object-contain rounded-lg">`;
             renderMsg(imgHtml, 'user', false);
+            
+            // 存入历史记录，告诉AI这是个带图的表情包
+            chatHistory.push({
+                role: 'user',
+                display: imgHtml,
+                apiContent: [
+                    { type: "text", text: `[发送了一个表情包]\n意思：${item.meaning}` },
+                    { type: "image_url", image_url: { url: item.url } }
+                ]
+            });
+            
             closeEmojiPanel();
-            // 让聊天往上滚一下
             setTimeout(() => {
                 const flow = document.getElementById('chat-flow');
                 flow.parentElement.scrollTop = flow.parentElement.scrollHeight;
             }, 100);
         };
         div.innerHTML = `
-            <img src="${item.url}" class="w-[65px] h-[65px] object-cover bg-white rounded-xl shadow-sm border border-gray-100 mb-1">
-            <span class="text-[10px] text-gray-500 w-full text-center overflow-hidden whitespace-nowrap">${item.meaning}</span>
+            <img src="${item.url}" class="w-[65px] h-[65px] object-cover bg-white rounded-xl shadow-sm border border-gray-100 mb-1 pointer-events-none">
+            <span class="text-[10px] text-gray-500 w-full text-center overflow-hidden whitespace-nowrap pointer-events-none">${item.meaning}</span>
         `;
         container.appendChild(div);
     });
 }
 
-function openAddEmojiCategory() {
-    document.getElementById('add-emoji-category-modal').classList.remove('hidden');
-    document.getElementById('new-emoji-category-name').value = '';
-    
-    // 显示现在有哪些分类
-    const existingContainer = document.getElementById('existing-categories');
-    existingContainer.innerHTML = '';
-    for (const cat in emojiData) {
-        existingContainer.innerHTML += `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[12px]">${cat}</span>`;
+// ---- 新增的长按菜单和批量预览功能 ----
+window.handleCategoryLongPress = function(cat) {
+    if(cat === '默认') return alert('默认分类不可编辑或删除哦~');
+    let action = prompt(`对分类【${cat}】操作：\n1. 重命名\n2. 删除\n请输入数字 1 或 2：`);
+    if(action === '1') {
+        let newName = prompt('输入新名称：', cat);
+        if(newName && newName !== cat && !emojiData[newName]) {
+            emojiData[newName] = emojiData[cat];
+            delete emojiData[cat];
+            if(currentEmojiCategory === cat) currentEmojiCategory = newName;
+            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+            renderEmojiTabs(); renderEmojis();
+        } else if (emojiData[newName]) {
+            alert('分类名称已存在！');
+        }
+    } else if(action === '2') {
+        if(confirm(`确定删除【${cat}】及里面所有表情包吗？`)) {
+            delete emojiData[cat];
+            if(currentEmojiCategory === cat) currentEmojiCategory = '默认';
+            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+            renderEmojiTabs(); renderEmojis();
+        }
     }
-}
-function closeAddEmojiCategory() {
-    document.getElementById('add-emoji-category-modal').classList.add('hidden');
-}
-function saveEmojiCategory() {
-    const name = document.getElementById('new-emoji-category-name').value.trim();
-    if (!name) return alert('你还没输入名字呢！');
-    if (emojiData[name]) return alert('这个分类已经存在啦！');
-    
-    emojiData[name] = [];
-    currentEmojiCategory = name; // 自动跳转到新加的分类
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    
-    closeAddEmojiCategory();
-    renderEmojiTabs();
-    renderEmojis();
-}
+};
 
-function openBatchEmojiModal() {
-    document.getElementById('batch-emoji-modal').classList.remove('hidden');
-    document.getElementById('batch-emoji-text').value = '';
-}
-function closeBatchEmojiModal() {
-    document.getElementById('batch-emoji-modal').classList.add('hidden');
-}
-function saveBatchEmoji() {
-    const text = document.getElementById('batch-emoji-text').value.trim();
-    if (!text) return alert('请先填点内容哦！');
+window.handleEmojiLongPress = function(item, cat) {
+    let action = prompt(`对表情包【${item.meaning}】操作：\n1. 修改意思\n2. 删除\n请输入数字 1 或 2：`);
+    if(action === '1') {
+        let newMeaning = prompt('输入新意思：', item.meaning);
+        if(newMeaning) {
+            item.meaning = newMeaning;
+            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+            renderEmojis();
+        }
+    } else if(action === '2') {
+        if(confirm(`确定删除此表情包吗？`)) {
+            emojiData[cat] = emojiData[cat].filter(e => e !== item);
+            localStorage.setItem('emoji_data', JSON.stringify(emojiData));
+            renderEmojis();
+        }
+    }
+};
+
+window.updateBatchPreview = function() {
+    const text = document.getElementById('batch-emoji-text').value;
+    const container = document.getElementById('batch-preview-container');
+    container.innerHTML = '';
     const lines = text.split('\n');
-    let count = 0;
-    
     lines.forEach(line => {
-        // 通过空格拆分：前面是意思，后面是链接
         const parts = line.trim().split(/\s+/);
         if (parts.length >= 2) {
-            const meaning = parts[0];
             const url = parts.slice(1).join('');
-            if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
-            emojiData[currentEmojiCategory].push({ meaning, url });
-            count++;
+            if(url.startsWith('http') || url.startsWith('data:')) {
+                container.innerHTML += `<img src="${url}" class="w-10 h-10 object-cover rounded border border-gray-200">`;
+            }
         }
     });
-    
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    alert(`成功识别并添加了 ${count} 个表情包到【${currentEmojiCategory}】分类里！`);
-    closeBatchEmojiModal();
-    renderEmojis();
-}
-
-function handleSingleEmojiUpload(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            tempSingleEmojiSrc = e.target.result;
-            document.getElementById('single-emoji-preview').src = tempSingleEmojiSrc;
-            document.getElementById('single-emoji-meaning').value = '';
-            document.getElementById('single-emoji-modal').classList.remove('hidden');
-            input.value = ''; // 清空，允许重复传同一张图
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-function closeSingleEmojiModal() {
-    document.getElementById('single-emoji-modal').classList.add('hidden');
-}
-function saveSingleEmoji() {
-    const meaning = document.getElementById('single-emoji-meaning').value.trim();
-    if (!meaning) return alert('还没告诉我是什么意思呢！');
-    
-    if(!emojiData[currentEmojiCategory]) emojiData[currentEmojiCategory] = [];
-    emojiData[currentEmojiCategory].push({ meaning: meaning, url: tempSingleEmojiSrc });
-    localStorage.setItem('emoji_data', JSON.stringify(emojiData));
-    
-    closeSingleEmojiModal();
-    renderEmojis();
-}
+};
 // ==============================================
 
 // ===== 1. 数据管理：初始化并读取 Lorebook 数据 =====
@@ -1020,8 +1020,8 @@ function openChatDetail(id) {
     chatHistory = friend.chatHistory;
     const flow = document.getElementById('chat-flow');
     flow.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
-    chatHistory.forEach(msg => {
-        renderMsg(msg.content, msg.role, true);
+        chatHistory.forEach(msg => {
+        renderMsg(msg.display || msg.content, msg.role, true);
     });
     
     document.getElementById('chat-detail-page').classList.remove('slide-hidden');
@@ -1129,13 +1129,98 @@ function sendUserMsg(){
 
 async function triggerAI(){
     if(!currentFriendId) return;
-    
-    // 如果没有配置API，取消弹窗，直接让AI在聊天界面回复“api错误”
     if(!config.apiKey) {
         renderMsg("api错误", 'assistant');
         chatHistory.push({role: 'assistant', content: 'api错误'});
         return;
     }
+    
+    const btn=document.getElementById('gen-btn-icon');
+    if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
+    
+    let finalSystemMessage = config.systemPrompt;
+    
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(friend) {
+        finalSystemMessage = `你的真实名字是：${friend.realName}。
+你的设定是：${friend.persona}。
+请严格扮演此设定与用户聊天。你不知道自己被用户设置了什么备注。`;
+    }
+
+    finalSystemMessage += `\n\n当前与你对话的用户信息：
+    昵称: ${userProfile.name}
+    账号: ${userProfile.handle}
+    个性签名: ${userProfile.bio}
+    当前状态: ${userProfile.status}`;
+
+    const latestUserMsg = chatHistory.length > 0 ? (chatHistory[chatHistory.length - 1].content || chatHistory[chatHistory.length - 1].display) : "";
+    let injectedLore = [];
+    lorebook.forEach(entry => {
+        const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
+        for(let k of keywords) {
+            if(typeof latestUserMsg === 'string' && latestUserMsg.includes(k)) {
+                injectedLore.push(`[${entry.content}]`);
+                break; 
+            }
+        }
+    });
+    if(injectedLore.length > 0) {
+        finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
+    }
+
+    // --- 新增：给AI注入你的表情包库 ---
+    let emojiListStr = "";
+    for (const cat in emojiData) {
+        emojiData[cat].forEach(e => {
+            emojiListStr += `【${e.meaning}】 `;
+        });
+    }
+    finalSystemMessage += `\n\n【表情包权限】\n你可以向用户发送表情包。如果你想发送，请严格在回复中包含“[表情包:意思]”，例如：[表情包:大笑]。\n当前你能使用的表情包意思有：${emojiListStr || '暂无'}`;
+    // ------------------------------------
+
+    try{
+        // 打包带图记录发送给AI
+        const messagesForAPI = chatHistory.map(msg => ({
+            role: msg.role,
+            content: msg.apiContent || msg.content
+        })).slice(-10);
+
+        const response=await fetch(`${config.baseUrl}/chat/completions`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
+            body:JSON.stringify({
+                model:config.model,
+                messages:[{role:'system',content:finalSystemMessage}, ...messagesForAPI],
+                temperature: parseFloat(config.temperature),
+                max_tokens:300 // 调大了容量防止图片链接被截断
+            })
+        });
+        const data=await response.json();
+        const reply=data.choices[0].message.content;
+
+        // 拦截AI回复，如果它写了 [表情包:xxx] 就自动转换成你的真实图片！
+        let finalReplyDisplay = reply;
+        finalReplyDisplay = finalReplyDisplay.replace(/\[表情包:(.*?)\]/g, (match, meaning) => {
+            let foundUrl = null;
+            for (const cat in emojiData) {
+                const matchedEmoji = emojiData[cat].find(e => e.meaning === meaning);
+                if (matchedEmoji) { foundUrl = matchedEmoji.url; break; }
+            }
+            if (foundUrl) {
+                return `<img src="${foundUrl}" class="w-32 h-32 object-contain rounded-lg inline-block mt-1">`;
+            }
+            return match; // 如果没找到就保留原样
+        });
+
+        renderMsg(finalReplyDisplay, 'assistant');
+        chatHistory.push({role:'assistant', content: reply, display: finalReplyDisplay});
+    }catch(e){ 
+        renderMsg("（消息发送失败，请检查配置）",'assistant'); 
+    }
+    finally{ 
+        if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+    }
+}
     
         const btn=document.getElementById('gen-btn-icon');
     if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
