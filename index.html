@@ -300,12 +300,30 @@
                 <div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>
             </div>
         </div>
-        <div class="p-3 bg-[#f7f7f7] border-t flex flex-col gap-2 sticky bottom-0">
-            <div class="flex gap-2">
-                <input id="chat-input" type="text" class="flex-1 border-none rounded bg-white px-3 py-2 outline-none" placeholder="输入消息...">
-                <button onclick="sendUserMsg()" class="bg-green-600 text-white px-4 py-2 rounded">发送</button>
+                <div class="p-3 bg-[#f7f7f7] border-t flex items-center gap-2 sticky bottom-0 relative">
+            <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-3 gap-3 w-[240px] z-50">
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相册</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相机</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">转账</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
             </div>
-            <button onclick="triggerAI()" id="gen-btn" class="w-full bg-blue-500 text-white py-1 rounded text-sm">点击生成对方回复</button>
+
+            <div id="placeholder-menu" class="hidden absolute bottom-[60px] right-12 bg-white border border-gray-200 shadow-lg rounded-xl p-4 w-[120px] z-50 text-center text-gray-400 text-[13px]">
+                内部留白弹窗
+            </div>
+
+            <img id="inventory-btn" src="https://i.postimg.cc/7hx0JsFP/IMG_3064.png" class="w-7 h-7 object-contain cursor-pointer transition-transform duration-300" onclick="toggleInventory()">
+
+            <div class="flex-1 relative flex items-center">
+                <input id="chat-input" type="text" class="w-full border-none rounded-lg bg-white pl-3 pr-10 py-2 outline-none text-[15px]" placeholder="输入消息...">
+                <svg onclick="togglePlaceholderMenu()" class="w-6 h-6 absolute right-2 text-gray-400 cursor-pointer active:scale-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+
+            <img id="gen-btn-icon" src="https://i.postimg.cc/2yzhLcs5/IMG_3062.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="triggerAI()">
+
+            <img src="https://i.postimg.cc/zvJKHtsG/IMG_3063.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="sendUserMsg()">
         </div>
     </div>
 
@@ -873,7 +891,22 @@ function renderMsg(text, role, isInit = false) {
     // 自动滚动到最新的一条消息
     container.scrollTop = container.scrollHeight;
 }
+function toggleInventory() {
+    const menu = document.getElementById('inventory-menu');
+    const btn = document.getElementById('inventory-btn');
+    if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+        btn.style.transform = 'rotate(90deg)';
+    } else {
+        menu.classList.add('hidden');
+        btn.style.transform = 'rotate(0deg)';
+    }
+}
 
+function togglePlaceholderMenu() {
+    const menu = document.getElementById('placeholder-menu');
+    menu.classList.toggle('hidden');
+}
 function sendUserMsg(){
     if(!currentFriendId) return;
     const input=document.getElementById('chat-input');
@@ -893,8 +926,8 @@ async function triggerAI(){
         return;
     }
     
-    const btn=document.getElementById('gen-btn');
-    btn.innerText="对方正在输入..."; btn.disabled=true;
+        const btn=document.getElementById('gen-btn-icon');
+    if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
     
     let finalSystemMessage = config.systemPrompt;
     
@@ -945,7 +978,7 @@ async function triggerAI(){
         renderMsg(reply.substring(0,50),'assistant');
         chatHistory.push({role:'assistant',content:reply});
     }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
-    finally{ btn.innerText="点击生成对方回复"; btn.disabled=false; }
+        finally{ if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
 }
 
 function openMePage(title) {
