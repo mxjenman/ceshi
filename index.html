@@ -374,7 +374,7 @@
             <img src="https://i.postimg.cc/2yzhLcs5/IMG_3062.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="sendUserMsg()">
         </div>
     </div>
-    <div id="friend-info-page" class="page-layer slide-hidden flex flex-col z-[70] bg-[#f2f2f6]">
+    <div id="friend-info-page" class="page-layer slide-hidden flex flex-col z-[70] bg-white">
         <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
             <button onclick="closeFriendInfo()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -386,8 +386,8 @@
         </div>
         <div class="flex-1 overflow-y-auto">
             <div class="bg-white p-8 flex flex-col items-center border-b border-gray-200">
-                <div class="relative mb-4">
-                    <img id="fi-avatar" src="" class="w-20 h-20 rounded-[18px] object-cover shadow-sm cursor-pointer" onclick="document.getElementById('fi-avatar-input').click()">
+                <div class="relative mb-4" style="transform: translate(-200px, -3px);">
+                    <img id="fi-avatar" src="" class="w-[90px] h-[90px] rounded-full object-cover shadow-sm cursor-pointer" onclick="document.getElementById('fi-avatar-input').click()">
                     <input type="file" id="fi-avatar-input" class="hidden" accept="image/*" onchange="changeFriendAvatar(this)">
                 </div>
                 <div id="fi-name" class="font-bold text-[22px] cursor-pointer mb-1 text-black tracking-wide" onclick="editFriendName()">{{char}}</div>
@@ -396,16 +396,19 @@
             
             <div class="mt-2 bg-white flex flex-col px-4 border-y border-gray-200">
                 <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('设定')">
-                    <span class="text-[16px] text-black">设定</span> <span class="text-gray-400 font-serif">〉</span>
+                    <span class="text-[16px] text-black">设定</span>
                 </div>
                 <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('世界书')">
-                    <span class="text-[16px] text-black">世界书</span> <span class="text-gray-400 font-serif">〉</span>
+                    <span class="text-[16px] text-black">世界书</span>
                 </div>
                 <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('记忆')">
-                    <span class="text-[16px] text-black">记忆</span> <span class="text-gray-400 font-serif">〉</span>
+                    <span class="text-[16px] text-black">记忆</span>
                 </div>
-                <div class="py-4 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('气泡')">
-                    <span class="text-[16px] text-black">气泡</span> <span class="text-gray-400 font-serif">〉</span>
+                <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('气泡')">
+                    <span class="text-[16px] text-black">气泡</span>
+                </div>
+                <div class="py-4 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('其他')">
+                    <span class="text-[16px] text-black">其他</span>
                 </div>
             </div>
         </div>
@@ -1237,7 +1240,7 @@ function openFriendInfo() {
     // 打开页面时，读取该好友的数据显示出来
     document.getElementById('fi-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
     document.getElementById('fi-name').innerText = friend.remark;
-    document.getElementById('fi-desc').innerText = friend.desc || '亲爱的雪人先生…';
+    document.getElementById('fi-desc').innerText = friend.desc || '亲爱的雪人先生 为什么天一亮你就会不见呢？';
     
     document.getElementById('friend-info-page').classList.remove('slide-hidden');
 }
