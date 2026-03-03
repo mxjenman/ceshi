@@ -980,7 +980,7 @@ async function triggerAI(){
     }catch(e){ renderMsg("（消息发送失败，请检查配置）",'assistant'); }
         finally{ if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
 }
-
+}
 function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
