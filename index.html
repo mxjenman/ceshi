@@ -12,8 +12,19 @@
     <title>AI Mobile OS - Plus Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="custom-style">
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
+        body { 
+            background: #f0f0f0; 
+            background-size: cover;
+            background-position: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        #home-screen {
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease;
+        }
+       .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
         .chat-msg-user { background: #95ec69; border-radius: 6px 0 6px 6px; }
@@ -92,6 +103,11 @@
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
         .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
+
+        /* 外观设置列表 */
+        .icon-edit-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: #f9f9f9; border-radius: 12px; }
+        .icon-edit-preview { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; border: 1px solid #eee; cursor: pointer; }
+        .icon-edit-name { font-size: 11px; color: #333; text-align: center; width: 100%; border: none; background: transparent; outline: none; border-bottom: 1px dashed #ccc; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
@@ -257,10 +273,27 @@
         
         <div class="flex-1 p-4 overflow-y-auto">
             <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
-                <h3 class="font-bold text-[15px] mb-3 text-gray-800">自定义 CSS</h3>
-                <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-48 focus:border-blue-400 transition-colors" placeholder="在此输入CSS代码进行全局美化..."></textarea>
-                <button onclick="saveAppearanceApp()" class="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold active:scale-95 transition-transform">应用并保存外观</button>
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面图标与名称管理</h3>
+                <div class="grid grid-cols-4 gap-3" id="icon-edit-grid">
+                    </div>
             </div>
+
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">桌面壁纸</h3>
+                <div class="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-3 relative group">
+                    <img id="wallpaper-preview" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <span class="text-white text-xs">点击下方更换</span>
+                    </div>
+                </div>
+                <button onclick="triggerWallpaperUpload()" class="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium">更换主屏幕壁纸</button>
+                <input type="file" id="wallpaper-input" class="hidden" accept="image/*" onchange="previewWallpaper(this)">
+            </div>
+
+            <div class="bg-white rounded-[20px] p-5 mb-5 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">高级 CSS 自定义</h3>
+                <textarea id="app-cfg-css" class="w-full bg-gray-50 border border-gray-100 p-3 mb-4 rounded-xl text-sm font-mono outline-none resize-none h-32 focus:border-blue-400" placeholder="CSS 代码..."></textarea>
+           </div>
         </div>
     </div>
 
