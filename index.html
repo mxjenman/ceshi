@@ -334,8 +334,14 @@
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div id="chat-detail-title" class="flex-1 text-center font-bold text-[17px]">好友</div>
-            <div class="w-6"></div>
+                        <div id="chat-detail-title" class="flex-1 text-center font-bold text-[17px]">好友</div>
+            <div class="w-6 flex items-center justify-end cursor-pointer active:scale-90" onclick="openFriendInfo()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="5" cy="12" r="2" fill="black"/>
+                    <circle cx="12" cy="12" r="2" fill="black"/>
+                    <circle cx="19" cy="12" r="2" fill="black"/>
+                </svg>
+            </div>
         </div>
         <div class="flex-1 overflow-y-auto bg-[#ededed]">
             <div id="chat-flow" class="p-4 space-y-4 min-h-full">
@@ -368,7 +374,42 @@
             <img src="https://i.postimg.cc/2yzhLcs5/IMG_3062.png" class="w-7 h-7 object-contain cursor-pointer active:scale-90 transition-transform" onclick="sendUserMsg()">
         </div>
     </div>
-
+    <div id="friend-info-page" class="page-layer slide-hidden flex flex-col z-[70] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+            <button onclick="closeFriendInfo()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">聊天信息</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            <div class="bg-white p-8 flex flex-col items-center border-b border-gray-200">
+                <div class="relative mb-4">
+                    <img id="fi-avatar" src="" class="w-20 h-20 rounded-[18px] object-cover shadow-sm cursor-pointer" onclick="document.getElementById('fi-avatar-input').click()">
+                    <input type="file" id="fi-avatar-input" class="hidden" accept="image/*" onchange="changeFriendAvatar(this)">
+                </div>
+                <div id="fi-name" class="font-bold text-[22px] cursor-pointer mb-1 text-black tracking-wide" onclick="editFriendName()">{{char}}</div>
+                <div id="fi-desc" class="text-[13px] text-gray-400 cursor-pointer text-center px-6 leading-relaxed" onclick="editFriendDesc()">亲爱的雪人先生…</div>
+            </div>
+            
+            <div class="mt-2 bg-white flex flex-col px-4 border-y border-gray-200">
+                <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('设定')">
+                    <span class="text-[16px] text-black">设定</span> <span class="text-gray-400 font-serif">〉</span>
+                </div>
+                <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('世界书')">
+                    <span class="text-[16px] text-black">世界书</span> <span class="text-gray-400 font-serif">〉</span>
+                </div>
+                <div class="py-4 border-b border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('记忆')">
+                    <span class="text-[16px] text-black">记忆</span> <span class="text-gray-400 font-serif">〉</span>
+                </div>
+                <div class="py-4 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('气泡')">
+                    <span class="text-[16px] text-black">气泡</span> <span class="text-gray-400 font-serif">〉</span>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
         <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
             <div class="mb-4">
@@ -1104,12 +1145,14 @@ function saveFriend() {
     const persona = document.getElementById('friend-persona').value.trim();
     if(!remark || !realName || !persona) return alert("请填写完整");
     
-    const friend = {
+        const friend = {
         id: 'f_' + Date.now(),
         remark: remark,
         realName: realName,
         persona: persona,
-        chatHistory: []
+        chatHistory: [],
+        avatar: "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg",
+        desc: "亲爱的雪人先生…"
     };
     friendList.push(friend);
     closeAddFriendModal();
@@ -1131,7 +1174,7 @@ function renderFriendList() {
             div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
             div.onclick = () => openChatDetail(f.id);
             div.innerHTML = `
-                <div class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex items-center justify-center text-white font-bold text-lg">${f.remark.charAt(0)}</div>
+                <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex-shrink-0">
                 <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
             `;
             container.appendChild(div);
@@ -1185,6 +1228,63 @@ function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
     menu.classList.toggle('hidden');
 }
+// ================= 新增：聊天详情(好友信息)专属功能 =================
+function openFriendInfo() {
+    if(!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    // 打开页面时，读取该好友的数据显示出来
+    document.getElementById('fi-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    document.getElementById('fi-name').innerText = friend.remark;
+    document.getElementById('fi-desc').innerText = friend.desc || '亲爱的雪人先生…';
+    
+    document.getElementById('friend-info-page').classList.remove('slide-hidden');
+}
+
+function closeFriendInfo() { document.getElementById('friend-info-page').classList.add('slide-hidden'); }
+
+function changeFriendAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const newSrc = e.target.result;
+            document.getElementById('fi-avatar').src = newSrc;
+            // 存入当前好友的大脑
+            const friend = friendList.find(f => f.id === currentFriendId);
+            if(friend) friend.avatar = newSrc;
+            // 刷新后面的聊天列表和聊天框
+            renderFriendList();
+            renderAllMessages();
+        }
+        reader.readAsDataURL(input.files[0]);
+        input.value = ''; // 清空方便下次重复选
+    }
+}
+
+function editFriendName() {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    const res = prompt("修改好友备注：", friend.remark);
+    if(res !== null && res.trim() !== "") {
+        friend.remark = res.trim();
+        document.getElementById('fi-name').innerText = friend.remark;
+        document.getElementById('chat-detail-title').innerText = friend.remark;
+        renderFriendList(); // 刷新外面列表的名字
+    }
+}
+
+function editFriendDesc() {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    const currentDesc = friend.desc || '亲爱的雪人先生…';
+    const res = prompt("修改个性文案：", currentDesc);
+    if(res !== null && res.trim() !== "") {
+        friend.desc = res.trim();
+        document.getElementById('fi-desc').innerText = friend.desc;
+    }
+}
+// ==========================================================
 function openChatDetail(id) {
     currentFriendId = id;
     const friend = friendList.find(f => f.id === id);
@@ -1211,10 +1311,10 @@ function renderAllMessages() {
     const container = document.getElementById('chat-flow');
     container.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
     
-    let aiAvatarText = "A";
+       let aiAvatarUrl = "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg";
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
-        if (friend) aiAvatarText = friend.remark.charAt(0);
+        if (friend && friend.avatar) aiAvatarUrl = friend.avatar;
     }
 
     chatHistory.forEach((msg, index) => {
@@ -1258,7 +1358,7 @@ function renderAllMessages() {
         } else {
             bubbleHtml = `
                 ${checkboxHtml}
-                <div class="w-[45px] h-[45px] mr-2 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-lg flex-shrink-0 shadow-sm border border-gray-100">${aiAvatarText}</div>
+                <img src="${aiAvatarUrl}" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100">
                 <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                     ${quoteHtml}${displayContent}
                     <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
