@@ -1528,14 +1528,94 @@ function renderFriendList() {
         hint.classList.remove('hidden');
     } else {
         hint.classList.add('hidden');
-        friendList.forEach(f => {
+        
+        // 1. 把列表排个序，被置顶的好友排在最上面
+        const sortedFriends = [...friendList].sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            return 0;
+        });
+
+        sortedFriends.forEach(f => {
             const div = document.createElement('div');
-            div.className = "flex items-center gap-3 p-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
-            div.onclick = () => openChatDetail(f.id);
+            // 置顶的好友背景稍微带点浅灰，区分普通好友
+            div.className = `flex items-center gap-3 p-3 border-b border-gray-100 cursor-pointer active:bg-gray-200 select-none ${f.isPinned ? 'bg-gray-50' : 'bg-white'}`;
+            
+            // 2. 提取最后一条聊天记录用于展示
+            let lastMsg = '暂无聊天记录';
+            if (f.chatHistory && f.chatHistory.length > 0) {
+                let lastContent = f.chatHistory[f.chatHistory.length - 1].content;
+                // 把图片代码替换成干净的 [图片] 两个字
+                lastMsg = lastContent.replace(/<img[^>]*>/g, '[图片]');
+                // 如果是引用消息，去掉引用的前缀，只显示回复的字
+                if (lastMsg.startsWith('[引用:')) {
+                    lastMsg = lastMsg.substring(lastMsg.indexOf(']\n') + 2);
+                }
+                // 去掉多余的表情包动作旁白
+                if (lastMsg.includes('[我发送了一个表情包')) {
+                    lastMsg = lastMsg.replace(/\[我发送了一个表情包.*?\n/, '');
+                }
+            }
+
+            // 3. 渲染头像、名字和最后一条消息（加了 truncate 自动省略号）
             div.innerHTML = `
-                <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 bg-gray-300 rounded-lg object-cover flex-shrink-0">
-                <div class="flex-1 font-medium text-[16px]">${f.remark}</div>
+                <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-[48px] h-[48px] bg-gray-300 rounded-[10px] object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                    <div class="font-medium text-[16px] text-black truncate">${f.remark}</div>
+                    <div class="text-[13px] text-gray-400 truncate">${lastMsg}</div>
+                </div>
             `;
+            
+            // 4. 点击进入聊天（加了防止长按误触的逻辑）
+            div.onclick = (e) => {
+                if (!div.getAttribute('data-longpressed')) {
+                    openChatDetail(f.id);
+                }
+            };
+
+            // 5. 长按呼出“置顶”和“删除”菜单的魔法
+            let pressTimer;
+            const startPress = (e) => {
+                div.removeAttribute('data-longpressed');
+                pressTimer = setTimeout(() => {
+                    div.setAttribute('data-longpressed', 'true');
+                    showContextMenu(e, [
+                        { 
+                            label: f.isPinned ? '取消置顶' : '置顶好友', 
+                            action: () => { 
+                                const actualFriend = friendList.find(x => x.id === f.id);
+                                if(actualFriend) {
+                                    actualFriend.isPinned = !actualFriend.isPinned;
+                                    localStorage.setItem('friend_list', JSON.stringify(friendList));
+                                    renderFriendList();
+                                }
+                            }
+                        },
+                        { 
+                            label: '删除好友', 
+                            action: () => { 
+                                if(confirm(`危险操作：确定要彻底删除与 ${f.remark} 的所有聊天记录和人物设定吗？删了就找不回了哦！`)) {
+                                    // 彻底从大脑里抹除这个角色
+                                    friendList = friendList.filter(x => x.id !== f.id);
+                                    localStorage.setItem('friend_list', JSON.stringify(friendList));
+                                    renderFriendList();
+                                }
+                            }
+                        }
+                    ], div);
+                }, 500); // 500毫秒算作长按
+            };
+            
+            const cancelPress = () => clearTimeout(pressTimer);
+            
+            // 绑定所有触摸和鼠标按压事件
+            div.addEventListener('touchstart', startPress);
+            div.addEventListener('touchend', cancelPress);
+            div.addEventListener('touchmove', cancelPress);
+            div.addEventListener('mousedown', startPress);
+            div.addEventListener('mouseup', cancelPress);
+            div.addEventListener('mouseleave', cancelPress);
+
             container.appendChild(div);
         });
     }
