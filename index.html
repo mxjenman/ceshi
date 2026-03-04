@@ -2273,27 +2273,17 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-        // 1. 把文字按换行符拆开 (并植入你指定的翻译HTML代码)
+        // 1. 把文字按换行符拆开 (保护 HTML 直出逻辑)
         if (textOnly) {
-            const isTransOn = friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled;
-            if (isTransOn) {
-                // 精准提取 AI 回复的原文和翻译
-                const msgMatch = textOnly.match(/<msg>([\s\S]*?)<\/msg>/i);
-                const transMatch = textOnly.match(/<trans>([\s\S]*?)<\/trans>/i);
-                
-                if (msgMatch && transMatch) {
-                    const originalText = msgMatch[1].trim();
-                    const translatedText = transMatch[1].trim();
-                    // 严格使用你给的 HTML 代码结构进行组装，这段代码会直接存进消息里，编辑时也能直接看到和修改！
-                    const htmlContent = `<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">${originalText}</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">${translatedText}</div></div></div>`;
-                    newMessages.push({role: 'assistant', content: htmlContent});
-                } else {
-                    // 极端情况兜底：如果AI抽风没带标签，直接发出来
-                    newMessages.push({role: 'assistant', content: textOnly});
-                }
+            // 把 AI 可能会犯贱加上的 markdown 代码块外壳扒掉
+            let cleanText = textOnly.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
+            
+            // 如果开启了翻译，并且 AI 发出来的是那段 HTML 代码，就整段吞下，绝对不拆分！
+            if (cleanText.includes('<div style="display:inline-block;') || cleanText.includes('trans-container')) {
+                newMessages.push({role:'assistant', content: cleanText});
             } else {
-                // 没开翻译的时候，正常按换行拆分气泡
-                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                // 如果没开翻译，就恢复正常的按换行拆分成多条气泡
+                const textLines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
                 textLines.forEach(line => {
                     newMessages.push({role:'assistant', content: line});
                 });
@@ -3147,7 +3137,8 @@ async function triggerSmsAI() {
     let finalSystemMessage = config.systemPrompt;
     const friendForPrompt = friendList.find(f => f.id === currentFriendId);
     if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-        finalSystemMessage += `\n\n【强制翻译要求】：已开启自动翻译！你必须使用XML标签包裹你的原文和中文翻译，格式如下（绝对不要输出这之外的废话）：\n<msg>这里写你的回复原文（保留你的外语或原语言）</msg>\n<trans>这里写对应的中文翻译</trans>`;
+        // 让 AI 直接变成一个无情的 HTML 填词机器
+        finalSystemMessage += `\n\n【系统强制指令】：已开启自动翻译。你的所有回复必须严格套用以下HTML代码格式输出，绝对不要有任何多余的解释，也不要加Markdown代码块（不要写\`\`\`html）：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">你的回复原文（保留原文语种）</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">对应的中文翻译</div></div></div>`;
     }
     
     if(friend) {
