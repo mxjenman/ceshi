@@ -2273,13 +2273,25 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-        // 1. 把文字按换行符拆开
-        if (textOnly) {
-            const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            textLines.forEach(line => {
-                newMessages.push({role:'assistant', content: line});
-            });
-        }
+            // 1. 把文字按换行符拆开（遇到翻译则巧妙缝合进上一个气泡）
+            if (textOnly) {
+                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                let mergedLines = [];
+                
+                textLines.forEach(line => {
+                    // 如果这一行带有【翻译】字眼，并且前面已经有内容了
+                    if (line.includes('【翻译】') && mergedLines.length > 0) {
+                        // 给翻译加上优美的排版（加一条浅色顶部分割线，缩小字号并变灰），强行塞进上一句话的肚子里！
+                        mergedLines[mergedLines.length - 1] += `<br><span class="block mt-1.5 pt-1.5 border-t border-gray-300/40 text-[13px] text-gray-500 font-normal leading-relaxed">${line}</span>`;
+                    } else {
+                        mergedLines.push(line);
+                    }
+                });
+
+                mergedLines.forEach(line => {
+                    newMessages.push({role:'assistant', content: line});
+                });
+            }
         
         // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
@@ -3127,7 +3139,8 @@ async function triggerSmsAI() {
     let finalSystemMessage = config.systemPrompt;
     const friendForPrompt = friendList.find(f => f.id === currentFriendId);
     if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-        finalSystemMessage += `\n\n【强制翻译要求】：无论你使用什么语言回复，都必须在你回复的最后另起一行，附带精准的中文翻译！格式必须为：\n\n【翻译】：[这里写中文翻译]`;
+        // 强化翻译指令，防止 AI 偷懒不按格式写
+        finalSystemMessage += `\n\n【系统最高指令】：你正在与用户进行跨语言交流。不管你用什么语言回复，回复的最后都必须换行并附带中文翻译！严格使用此格式：“【翻译】：[中文内容]”。`;
     }
     
     if(friend) {
