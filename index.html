@@ -230,7 +230,7 @@
         </div>
 
         <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4" style="transform: translateY(20px);">
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('短信')">
+            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
@@ -667,6 +667,96 @@
         <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
     </div>
 
+    <div id="sms-app-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[50]">
+        <div id="sms-list-view" class="flex-1 flex flex-col">
+            <div class="h-14 flex items-center justify-between px-4 mt-2">
+                <button onclick="closeSmsApp()" class="text-blue-500 text-[17px]">取消</button>
+                <div class="font-bold text-[17px]">信息</div>
+                <div class="w-10"></div>
+            </div>
+            <div class="px-4 mb-2">
+                <h1 class="text-3xl font-bold mt-2 mb-4">信息</h1>
+                <div class="bg-gray-100 rounded-lg p-1.5 flex items-center text-gray-500">
+                    <svg class="w-4 h-4 ml-1 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" placeholder="搜索" class="bg-transparent outline-none text-[15px] w-full">
+                </div>
+            </div>
+            <div id="sms-friend-list" class="flex-1 overflow-y-auto px-4"></div>
+        </div>
+
+        <div id="sms-chat-view" class="hidden flex-1 flex flex-col bg-white">
+            <div class="h-14 bg-white/90 backdrop-blur-md flex items-center px-2 border-b border-gray-200 z-10 sticky top-0">
+                <button onclick="closeSmsChat()" class="text-blue-500 flex items-center gap-1 w-[70px]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    <span class="text-[17px]">信息</span>
+                </button>
+                <div class="flex-1 flex flex-col items-center justify-center cursor-pointer">
+                    <img id="sms-chat-avatar" src="" class="w-8 h-8 rounded-full object-cover mb-0.5">
+                    <div id="sms-chat-name" class="text-[11px] font-medium text-gray-800 flex items-center gap-1">
+                        姓名 <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+                <button onclick="openSmsMemoryPage()" class="w-[70px] flex justify-end pr-2 text-blue-500">
+                    <span class="text-[14px]">记忆</span>
+                </button>
+            </div>
+            
+            <div id="sms-chat-flow" class="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+                <div class="text-center text-[11px] text-gray-400 my-2">iMessage 信息</div>
+            </div>
+
+            <div class="p-3 bg-white border-t border-gray-200 flex items-end gap-2 pb-6">
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500 cursor-pointer">+</div>
+                <div class="flex-1 min-h-[36px] bg-white border border-gray-300 rounded-2xl flex items-center px-3 py-1 relative">
+                    <input id="sms-input" type="text" class="w-full bg-transparent outline-none text-[15px]" placeholder="iMessage 信息" onkeydown="if(event.key === 'Enter') sendSmsUserMsg()">
+                </div>
+                <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 text-white cursor-pointer active:scale-90 transition-transform" onclick="sendSmsUserMsg()">
+                    <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="sms-memory-page" class="page-layer slide-hidden flex flex-col z-[90] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
+            <button onclick="closeSmsMemoryPage()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">短信记忆</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <div class="text-[14px] text-[#333] mb-4 font-bold">此短信窗口当前对话：<span id="sms-current-msg-count" class="font-bold">0</span> 条</div>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[14px] text-[#333] font-bold">开启自动总结记忆</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="sms-auto-summary-switch" class="sr-only peer" onchange="saveSmsMemorySettings()">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[14px] text-[#333]">每进行</span>
+                    <input type="number" id="sms-auto-summary-threshold" value="20" class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center outline-none text-[14px]" onchange="saveSmsMemorySettings()">
+                    <span class="text-[14px] text-[#333]">条短信自动总结</span>
+                </div>
+                <div class="text-[14px] text-[#333] mb-2 font-bold">AI 在短信里记住的事：</div>
+                <div id="sms-memory-blocks-container" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2"></div>
+            </div>
+            
+            <div class="bg-white rounded-[16px] p-4 shadow-sm mt-2 mb-6">
+                <div class="text-[14px] text-[#333] font-bold mb-3">手动总结短信记忆</div>
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <span class="text-[14px] text-[#333]">总结第</span>
+                    <input type="number" id="sms-manual-summary-start" value="1" class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center outline-none text-[14px]">
+                    <span class="text-[14px] text-[#333]">条 到第</span>
+                    <input type="number" id="sms-manual-summary-end" value="10" class="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-center outline-none text-[14px]">
+                    <span class="text-[14px] text-[#333]">条</span>
+                </div>
+                <button onclick="manualSmsSummarize()" id="sms-manual-summary-btn" class="w-full py-2.5 bg-green-500 text-white rounded-xl font-bold text-[15px] shadow-sm active:scale-95 transition-transform">开始提取短信记忆</button>
+            </div>
+        </div>
+    </div>
     <div id="settings-app-screen" class="page-layer slide-hidden flex flex-col z-[90]">
         <div class="h-12 bg-white flex items-center px-4 border-b">
             <button onclick="closeSettingsApp()" class="back-icon">
@@ -1626,21 +1716,28 @@ async function triggerAI(){
 
     let finalSystemMessage = config.systemPrompt;
 
-    // --- 新增：把总结好的卡片记忆喂给 AI ---
+    // --- 修改：把微信和短信双端记忆都喂给 AI，但告诉它这是在微信 ---
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
         if (friend) {
-            let memoryText = "";
-            // 如果有新版的记忆卡片列表
+            finalSystemMessage += `\n\n【重要提示：你现在正在和用户在“微信”上聊天，这是日常聊天主阵地。】\n`;
+            
+            let wxMemoryText = "";
             if (friend.memoryList && friend.memoryList.length > 0) {
-                memoryText = friend.memoryList.join('\n');
+                wxMemoryText = friend.memoryList.join('\n');
             } else if (friend.aiMemory) {
-                // 兼容旧版本的长文本记忆
-                memoryText = friend.aiMemory;
+                wxMemoryText = friend.aiMemory;
+            }
+            if (wxMemoryText) {
+                finalSystemMessage += `\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
             }
             
-            if (memoryText) {
-                finalSystemMessage += `\n\n【你们之前的记忆总结，请你一定要记住】：\n${memoryText}`;
+            let smsMemoryText = "";
+            if (friend.smsMemoryList && friend.smsMemoryList.length > 0) {
+                smsMemoryText = friend.smsMemoryList.join('\n');
+            }
+            if (smsMemoryText) {
+                finalSystemMessage += `\n【你们在短信的记忆总结】：\n${smsMemoryText}`;
             }
         }
     }
@@ -2483,7 +2580,344 @@ function saveAppearanceApp() {
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
 window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); renderFriendList(); };
-// ================= 新增：自动总结记忆功能引擎 (卡片版) =================
+
+// ================= 新增：短信(iMessage)功能模块 =================
+let currentSmsFriendId = null;
+let smsChatHistory = [];
+
+function openSmsApp() {
+    document.getElementById('sms-app-screen').classList.remove('hidden');
+    document.getElementById('sms-list-view').classList.remove('hidden');
+    document.getElementById('sms-chat-view').classList.add('hidden');
+    renderSmsFriendList();
+}
+function closeSmsApp() {
+    document.getElementById('sms-app-screen').classList.add('hidden');
+}
+
+function renderSmsFriendList() {
+    const container = document.getElementById('sms-friend-list');
+    container.innerHTML = '';
+    
+    if(friendList.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">暂无联系人</div>';
+        return;
+    }
+    
+    friendList.forEach(f => {
+        // 同步微信信息，列表样式变更为苹果原生短信风格
+        const lastMsg = (f.smsHistory && f.smsHistory.length > 0) ? f.smsHistory[f.smsHistory.length-1].content.substring(0,20) : '暂无短信';
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-3 py-3 border-b border-gray-100 bg-white cursor-pointer active:bg-gray-50";
+        div.onclick = () => openSmsChat(f.id);
+        div.innerHTML = `
+            <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-center mb-0.5">
+                    <span class="font-semibold text-[16px] text-black truncate">${f.remark}</span>
+                    <span class="text-[13px] text-gray-400">刚刚</span>
+                </div>
+                <div class="text-[14px] text-gray-500 truncate">${lastMsg.replace(/<img[^>]*>/g, '[图片]')}</div>
+            </div>
+            <div class="text-gray-300 text-xl font-light">›</div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function openSmsChat(id) {
+    currentSmsFriendId = id;
+    const friend = friendList.find(f => f.id === id);
+    if (!friend.smsHistory) friend.smsHistory = [];
+    smsChatHistory = friend.smsHistory;
+    
+    document.getElementById('sms-chat-name').innerHTML = `${friend.remark} <svg class="w-2.5 h-2.5 text-gray-400 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+    document.getElementById('sms-chat-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    
+    document.getElementById('sms-list-view').classList.add('hidden');
+    document.getElementById('sms-chat-view').classList.remove('hidden');
+    
+    renderSmsMessages();
+}
+
+function closeSmsChat() {
+    document.getElementById('sms-chat-view').classList.add('hidden');
+    document.getElementById('sms-list-view').classList.remove('hidden');
+    currentSmsFriendId = null;
+    renderSmsFriendList(); // 刷新列表的“最后一条消息”
+}
+
+function renderSmsMessages(isIncremental = false) {
+    const container = document.getElementById('sms-chat-flow');
+    if (!isIncremental) container.innerHTML = '<div class="text-center text-[11px] text-gray-400 my-2">iMessage 信息</div>';
+    
+    const alreadyDrawnCount = isIncremental ? container.querySelectorAll('.sms-bubble-wrapper').length : 0;
+    
+    smsChatHistory.forEach((msg, index) => {
+        if (isIncremental && index < alreadyDrawnCount) return;
+
+        const div = document.createElement('div');
+        div.className = "flex w-full sms-bubble-wrapper " + (msg.role === 'user' ? "justify-end" : "justify-start") + " items-end mb-2 relative";
+        
+        let displayContent = msg.content;
+        if (displayContent.includes('[我发送了一个表情包')) {
+            displayContent = displayContent.replace(/\[我发送了一个表情包.*?\n/, '');
+        }
+
+        if (msg.role === 'user') {
+            div.innerHTML = `<div class="max-w-[70%] bg-[#007aff] text-white px-3.5 py-2 rounded-2xl rounded-br-sm shadow-sm break-words" style="font-size: 15px; line-height: 1.4;">${displayContent}</div>`;
+        } else {
+            div.innerHTML = `<div class="max-w-[70%] bg-[#e5e5ea] text-black px-3.5 py-2 rounded-2xl rounded-bl-sm shadow-sm break-words" style="font-size: 15px; line-height: 1.4;">${displayContent}</div>`;
+        }
+        
+        // 短信长按删除
+        let pressTimer;
+        const startMsgPress = () => {
+            pressTimer = setTimeout(() => {
+                if(confirm("要删除这条短信吗？")) {
+                    smsChatHistory.splice(index, 1);
+                    renderSmsMessages();
+                }
+            }, 600);
+        };
+        const cancelMsgPress = () => clearTimeout(pressTimer);
+        div.addEventListener('touchstart', startMsgPress);
+        div.addEventListener('touchend', cancelMsgPress);
+        div.addEventListener('mousedown', startMsgPress);
+        div.addEventListener('mouseup', cancelMsgPress);
+
+        container.appendChild(div);
+    });
+    
+    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+}
+
+function sendSmsUserMsg() {
+    if(!currentSmsFriendId) return;
+    const input = document.getElementById('sms-input');
+    if(!input.value.trim()) return;
+    
+    smsChatHistory.push({role:'user', content: input.value});
+    input.value = '';
+    renderSmsMessages(true);
+    triggerSmsAI();
+}
+
+async function triggerSmsAI() {
+    if(!currentSmsFriendId || !config.apiKey) return;
+    
+    const titleEl = document.getElementById('sms-chat-name');
+    const originalTitleHtml = titleEl.innerHTML;
+    titleEl.innerHTML = '<span style="color: #999; font-size: 11px;">对方正在输入...</span>';
+    
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    let finalSystemMessage = config.systemPrompt;
+    
+    if(friend) {
+        const now = new Date();
+        const timeString = now.getHours() + "点" + now.getMinutes() + "分";
+        finalSystemMessage = `你的真实名字是：${friend.realName}。
+你的设定是：${friend.persona}。
+【活人感引擎：当前时间是 ${timeString}】
+【重要提示：你现在正在和用户在苹果“短信(iMessage)”上聊天，不要发微信特有的表情包或功能。短信通常比微信更直接，偏向有事说事或短平快的生活碎片，没有微信那么多寒暄。】
+每次只回复 1 到 2 条简短信息。`;
+
+        // 喂入双端记忆
+        let wxMemoryText = (friend.memoryList && friend.memoryList.length > 0) ? friend.memoryList.join('\n') : (friend.aiMemory || "");
+        if (wxMemoryText) finalSystemMessage += `\n\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
+        
+        let smsMemoryText = (friend.smsMemoryList && friend.smsMemoryList.length > 0) ? friend.smsMemoryList.join('\n') : "";
+        if (smsMemoryText) finalSystemMessage += `\n【你们在短信的记忆总结，请一定记住】：\n${smsMemoryText}`;
+    }
+    
+    try {
+        const response=await fetch(`${config.baseUrl}/chat/completions`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
+            body:JSON.stringify({
+                model:config.model,
+                messages:[{role:'system',content:finalSystemMessage}, ...smsChatHistory.slice(-5)],
+                temperature: parseFloat(config.temperature),
+                max_tokens:800
+            })
+        });
+        const data=await response.json();
+        const reply=data.choices[0].message.content;
+        
+        let newMessages = [];
+        const textLines = reply.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        textLines.forEach(line => newMessages.push({role:'assistant', content: line}));
+        if (newMessages.length === 0) newMessages.push({role:'assistant', content: reply});
+        
+        let msgIndex = 0;
+        function showNextMsg() {
+            if (msgIndex < newMessages.length) {
+                smsChatHistory.push(newMessages[msgIndex]);
+                renderSmsMessages(true);
+                msgIndex++;
+                setTimeout(showNextMsg, 1200); 
+            } else {
+                titleEl.innerHTML = originalTitleHtml;
+                checkAndTriggerSmsAutoSummary();
+            }
+        }
+        showNextMsg();
+    } catch(e) { 
+        smsChatHistory.push({role:'assistant',content:"（短信发送失败）"});
+        renderSmsMessages(true);
+        titleEl.innerHTML = originalTitleHtml;
+    }
+}
+
+// ==== 短信独立记忆管理 ====
+function openSmsMemoryPage() {
+    if (!currentSmsFriendId) return alert('请先进入一个短信聊天');
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if (!friend) return;
+    
+    if (!friend.smsMemoryList) friend.smsMemoryList = [];
+    document.getElementById('sms-current-msg-count').innerText = smsChatHistory.length;
+    document.getElementById('sms-auto-summary-switch').checked = friend.smsAutoSummary || false;
+    document.getElementById('sms-auto-summary-threshold').value = friend.smsSummaryThreshold || 20;
+    
+    document.getElementById('sms-manual-summary-start').value = 1;
+    document.getElementById('sms-manual-summary-end').value = smsChatHistory.length > 0 ? smsChatHistory.length : 1;
+    
+    renderSmsMemoryBlocks();
+    document.getElementById('sms-memory-page').classList.remove('slide-hidden');
+}
+
+function closeSmsMemoryPage() { document.getElementById('sms-memory-page').classList.add('slide-hidden'); }
+
+function renderSmsMemoryBlocks() {
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if(!friend) return;
+    
+    const container = document.getElementById('sms-memory-blocks-container');
+    container.innerHTML = '';
+    
+    if(!friend.smsMemoryList || friend.smsMemoryList.length === 0) {
+        container.innerHTML = '<div class="text-[13px] text-gray-400 text-center py-6">短信暂无记忆...</div>';
+        return;
+    }
+
+    friend.smsMemoryList.forEach((mem, index) => {
+        const block = document.createElement('div');
+        block.className = 'bg-gray-50 border border-gray-200 rounded-xl p-3 relative shadow-sm';
+        block.innerHTML = `
+            <div class="text-[13px] text-gray-700 pr-14 whitespace-pre-wrap break-words leading-relaxed">${mem}</div>
+            <div class="absolute top-2 right-2 flex flex-col gap-2">
+                <button onclick="editSmsMemoryBlock(${index})" class="text-green-500 text-[11px] font-bold bg-green-50 px-2 py-1 rounded active:scale-95 transition-transform">编辑</button>
+                <button onclick="deleteSmsMemoryBlock(${index})" class="text-red-500 text-[11px] font-bold bg-red-50 px-2 py-1 rounded active:scale-95 transition-transform">删除</button>
+            </div>
+        `;
+        container.appendChild(block);
+    });
+}
+
+function editSmsMemoryBlock(index) {
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if(!friend) return;
+    const newMem = prompt("编辑短信记忆：", friend.smsMemoryList[index]);
+    if(newMem !== null && newMem.trim() !== "") {
+        friend.smsMemoryList[index] = newMem.trim();
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        renderSmsMemoryBlocks();
+    }
+}
+
+function deleteSmsMemoryBlock(index) {
+    if(confirm("确定要删除这条短信记忆吗？")) {
+        const friend = friendList.find(f => f.id === currentSmsFriendId);
+        if(!friend) return;
+        friend.smsMemoryList.splice(index, 1);
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        renderSmsMemoryBlocks();
+    }
+}
+
+function saveSmsMemorySettings() {
+    if (!currentSmsFriendId) return;
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if (!friend) return;
+    friend.smsAutoSummary = document.getElementById('sms-auto-summary-switch').checked;
+    friend.smsSummaryThreshold = parseInt(document.getElementById('sms-auto-summary-threshold').value) || 20;
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+}
+
+async function executeSmsSummarize(messagesArray, friend) {
+    if(!messagesArray || messagesArray.length === 0) return;
+    const chatText = messagesArray.map(msg => `${msg.role === 'user' ? '我' : 'TA'}: ${msg.content}`).join('\n');
+    
+    try {
+        const response = await fetch(config.baseUrl + '/chat/completions', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.apiKey},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [
+                    {role: 'system', content: '你是一个用于提炼短信记忆的助手。请将以下短信对话提取出核心记忆点。如果无实际意义回复“无”。'},
+                    {role: 'user', content: chatText}
+                ],
+                temperature: 0.3
+            })
+        });
+        const data = await response.json();
+        let summary = data.choices[0].message.content.trim();
+        if(summary !== '无' && summary !== '') {
+            if (!friend.smsMemoryList) friend.smsMemoryList = [];
+            friend.smsMemoryList.push(`[短信记忆]: ${summary}`);
+            if (!document.getElementById('sms-memory-page').classList.contains('slide-hidden')) {
+                renderSmsMemoryBlocks();
+            }
+        }
+        friend.smsLastSummarizedLength = smsChatHistory.length;
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+    } catch(e) { console.error("短信记忆失败:", e); }
+}
+
+async function manualSmsSummarize() {
+    if (!currentSmsFriendId) return;
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if (!friend) return;
+    
+    const startIdx = parseInt(document.getElementById('sms-manual-summary-start').value);
+    const endIdx = parseInt(document.getElementById('sms-manual-summary-end').value);
+    if (isNaN(startIdx) || isNaN(endIdx) || startIdx < 1 || endIdx > smsChatHistory.length || startIdx > endIdx) return alert("条数范围错误！");
+
+    const btn = document.getElementById('sms-manual-summary-btn');
+    btn.innerText = "正在提取中...";
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+    
+    const msgsToSummarize = smsChatHistory.slice(startIdx - 1, endIdx);
+    await executeSmsSummarize(msgsToSummarize, friend);
+    
+    btn.innerText = "开始提取短信记忆";
+    btn.style.opacity = "1";
+    btn.style.pointerEvents = "auto";
+    alert("✅ 短信记忆提取完成！");
+}
+
+function checkAndTriggerSmsAutoSummary() {
+    if (!currentSmsFriendId) return;
+    const friend = friendList.find(f => f.id === currentSmsFriendId);
+    if (!friend) return;
+    
+    const countEl = document.getElementById('sms-current-msg-count');
+    if(countEl) countEl.innerText = smsChatHistory.length;
+    
+    if (!friend.smsAutoSummary) return;
+    const threshold = friend.smsSummaryThreshold || 20;
+    const unsummarizedCount = smsChatHistory.length - (friend.smsLastSummarizedLength || 0);
+    if (unsummarizedCount >= threshold) {
+        const msgsToSummarize = smsChatHistory.slice(friend.smsLastSummarizedLength || 0);
+        executeSmsSummarize(msgsToSummarize, friend);
+    }
+}
+
+// ================= 新增：自动总结记忆功能引擎 (卡片版)
+=================
 
 function openMemoryPage() {
     if (!currentFriendId) return alert('请先进入一个聊天');
