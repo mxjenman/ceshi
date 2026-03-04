@@ -1419,7 +1419,7 @@ function renderLoreList() {
         list.innerHTML += `
             <div class="bg-white rounded-[16px] p-4 shadow-sm relative border border-gray-50 flex flex-col h-[160px]">
                 <div class="font-bold text-[#333] mb-1 text-[16px] pr-24 truncate">${entry.title || '无标题'}</div>
-                <div class="font-bold text-[#1d9bf0] mb-2 text-[12px] truncate">🔑 关键词：${entry.key || '（未设置）'}</div>
+                <div class="font-bold text-[#1d9bf0] mb-2 text-[12px] truncate">关键词：${entry.key || '（未设置）'}</div>
                 <div class="text-gray-700 leading-relaxed break-words flex-1 overflow-y-auto text-[13px]">${entry.content}</div>
                 <div class="absolute top-4 right-4 flex gap-2">
                     <button onclick="editLoreEntry(${entry.originalIndex})" class="text-blue-500 font-bold text-[12px] bg-blue-50 px-2 py-1 rounded active:scale-95">编辑</button>
