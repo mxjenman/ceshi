@@ -691,9 +691,8 @@
                 </button>
                 <div class="flex-1 flex flex-col items-center justify-center cursor-pointer -mt-[1px]">
                     <img id="sms-chat-avatar" src="" class="w-[53px] h-[53px] rounded-full object-cover shadow-sm border border-gray-100">
-                    <div id="sms-chat-name" class="text-[12px] font-medium text-gray-800 mt-[1px] relative flex items-center justify-center">
-                        <span id="sms-chat-name-text">姓名</span>
-                        <svg class="w-2.5 h-2.5 text-gray-400 absolute -right-[14px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    <div id="sms-chat-name" class="text-[12px] font-medium text-gray-800 flex items-center justify-center gap-1 mt-[1px]">
+                        姓名 <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </div>
                 </div>
                 <button onclick="openSmsMemoryPage()" class="w-[70px] flex justify-end pr-2 text-blue-500 active:opacity-50">
@@ -708,15 +707,14 @@
             </div>
 
             <div class="p-3 bg-white border-t border-gray-200 flex items-end gap-2 pb-6 relative">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500 cursor-pointer active:scale-90" onclick="document.getElementById('sms-image-input').click()">+</div>
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-500 cursor-pointer text-xl font-light pb-0.5" onclick="document.getElementById('sms-image-input').click()">+</div>
                 <input type="file" id="sms-image-input" class="hidden" accept="image/*" onchange="sendSmsImage(this)">
                 
                 <div class="flex-1 min-h-[36px] bg-white border border-gray-300 rounded-2xl flex items-center px-3 py-1 relative">
                     <input id="sms-input" type="text" class="w-full bg-transparent outline-none text-[15px]" placeholder="iMessage 信息" onkeydown="if(event.key === 'Enter') sendSmsUserMsg()">
                 </div>
-                <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 text-white cursor-pointer active:scale-90 transition-transform" onclick="sendSmsUserMsg()">
-                    <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
-                </div>
+                
+                <img src="https://i.postimg.cc/yNCHyqLg/IMG-3216.png" class="w-8 h-8 object-contain cursor-pointer active:scale-90 transition-transform flex-shrink-0" onclick="sendSmsUserMsg()">
             </div>
         </div>
     </div>
@@ -1867,26 +1865,23 @@ TimeChecklist:
         console.log("注入了世界书数据:", injectedLore);
     }
 
-       try {
-        // 修改点2配套：让 AI 能够理解图片
-        const apiMessages = [{role: 'system', content: finalSystemMessage}];
-        
-        // 把最后 5 条消息喂给 AI
-        const recentHistory = smsChatHistory.slice(-5);
-        recentHistory.forEach(msg => {
-            if (msg.visionBase64) {
-                // 如果消息带图片，转换成视觉大模型的特定格式
-                apiMessages.push({
+    try {
+        [span_0](start_span)// 新增：自动检测聊天记录里有没有图片，如果有，就把它转换成 AI 视觉模型能看懂的格式[span_0](end_span)
+        let formattedMessages = [{role:'system', content:finalSystemMessage}];
+        smsChatHistory.slice(-5).forEach(msg => {
+            const imgMatch = msg.content.match(/<img[^>]+src="([^">]+)"/);
+            if (imgMatch) {
+                const base64Url = imgMatch[1];
+                const textOnly = msg.content.replace(/<img[^>]*>/g, '').trim() || "【我发送了一张图片，请根据图片内容回复我】";
+                formattedMessages.push({
                     role: msg.role,
-                    content: [ { type: "image_url", image_url: { url: msg.visionBase64 } } ]
+                    content: [
+                        { type: "text", text: textOnly },
+                        { type: "image_url", image_url: { url: base64Url } }
+                    ]
                 });
             } else {
-                // 如果是纯文本，把可能混进去的 html 屏蔽掉
-                let safeContent = msg.content;
-                if (typeof safeContent === 'string') {
-                    safeContent = safeContent.replace(/<img[^>]*>/g, '[图片]');
-                }
-                apiMessages.push({ role: msg.role, content: safeContent });
+                formattedMessages.push({ role: msg.role, content: msg.content });
             }
         });
 
@@ -1895,7 +1890,7 @@ TimeChecklist:
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
             body:JSON.stringify({
                 model:config.model,
-                messages: apiMessages, // 使用改装过的新数据包
+                messages: formattedMessages, // 替换为格式化好的多模态消息
                 temperature: parseFloat(config.temperature),
                 max_tokens:800
             })
@@ -2657,10 +2652,9 @@ function openSmsChat(id) {
     if (!friend.smsHistory) friend.smsHistory = [];
     smsChatHistory = friend.smsHistory;
     
-    // 更新真名，填入我们刚写好的独立 span 里
-    const nameTextEl = document.getElementById('sms-chat-name-text');
-    if(nameTextEl) nameTextEl.innerText = friend.realName || friend.remark;
-    
+    // 修改点：把 friend.remark 改成了 friend.realName，这样顶栏就显示真名了
+    // 后面加了个 || friend.remark 是为了防止你没填真名时报错，没填就会兜底显示备注
+    document.getElementById('sms-chat-name').innerHTML = `${friend.realName || friend.remark} <svg class="w-2.5 h-2.5 text-gray-400 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
     document.getElementById('sms-chat-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
     
     document.getElementById('sms-list-view').classList.add('hidden');
@@ -2724,37 +2718,34 @@ function renderSmsMessages(isIncremental = false) {
 function sendSmsUserMsg() {
     if(!currentSmsFriendId) return;
     const input = document.getElementById('sms-input');
+    const text = input.value.trim();
     
-    // 修改点3：如果框里没字，不加新气泡，直接叫醒AI进行回复！
-    if(!input.value.trim()) {
+    // 修改：如果输入框是空的，直接触发 AI 回复（相当于戳一下它）
+    if(!text) {
         triggerSmsAI();
         return;
     }
     
-    smsChatHistory.push({role:'user', content: input.value});
+    smsChatHistory.push({role:'user', content: text});
     input.value = '';
     renderSmsMessages(true);
     triggerSmsAI();
 }
 
-// 修改点2配套：真正把图片发出去，并保存给AI看的“视觉密码”
+// 新增：读取相册图片，并在屏幕上画出来，然后自动叫 AI 看图
 function sendSmsImage(input) {
     if(!currentSmsFriendId) return;
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
             const base64Img = e.target.result;
-            // 发一个图片气泡，附带 visionBase64 让 AI 知道这是啥
-            smsChatHistory.push({
-                role: 'user',
-                content: `<img src="${base64Img}" class="max-w-[200px] max-h-[200px] rounded-xl object-cover my-1 shadow-sm">`,
-                visionBase64: base64Img 
-            });
-            input.value = ''; // 清空选择
+            // 把图片变成气泡存进聊天记录
+            smsChatHistory.push({role:'user', content: `<img src="${base64Img}" class="max-w-full rounded-xl mt-1 shadow-sm border border-gray-100">`});
             renderSmsMessages(true);
-            triggerSmsAI(); // 发完图让AI看
-        };
+            triggerSmsAI(); // 发完图立刻叫 AI 回复
+        }
         reader.readAsDataURL(input.files[0]);
+        input.value = ''; // 清空，防止下次选同一张图没反应
     }
 }
 
