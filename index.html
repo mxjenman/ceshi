@@ -685,19 +685,19 @@
         </div>
 
         <div id="sms-chat-view" class="hidden flex-1 flex flex-col bg-white">
-            <div class="h-14 bg-white/90 backdrop-blur-md flex items-center px-2 border-b border-gray-200 z-10 sticky top-0">
-                <button onclick="closeSmsChat()" class="text-blue-500 flex items-center gap-1 w-[70px]">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    <span class="text-[17px]">信息</span>
+            <div class="h-[76px] bg-white/90 backdrop-blur-md flex items-center px-2 border-b border-gray-200 z-10 sticky top-0">
+                <button onclick="closeSmsChat()" class="text-[#007aff] flex items-center gap-1 w-[70px]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    <span class="text-[16px] font-medium tracking-widest -mt-1">...</span>
                 </button>
-                <div class="flex-1 flex flex-col items-center justify-center cursor-pointer">
-                    <img id="sms-chat-avatar" src="" class="w-8 h-8 rounded-full object-cover mb-0.5">
+                <div class="flex-1 flex flex-col items-center justify-center cursor-pointer mt-1">
+                    <img id="sms-chat-avatar" src="" class="w-[46px] h-[46px] rounded-full object-cover mb-1 shadow-sm">
                     <div id="sms-chat-name" class="text-[11px] font-medium text-gray-800 flex items-center gap-1">
-                        姓名 <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        姓名 <svg class="w-2.5 h-2.5 text-gray-400 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </div>
                 </div>
-                <button onclick="openSmsMemoryPage()" class="w-[70px] flex justify-end pr-2 text-blue-500">
-                    <span class="text-[14px]">记忆</span>
+                <button onclick="openSmsMemoryPage()" class="w-[70px] flex justify-end pr-2 text-[#007aff] active:opacity-50">
+                    <span class="text-[15px] font-medium">记忆</span>
                 </button>
             </div>
             
@@ -2631,7 +2631,8 @@ function openSmsChat(id) {
     if (!friend.smsHistory) friend.smsHistory = [];
     smsChatHistory = friend.smsHistory;
     
-    document.getElementById('sms-chat-name').innerHTML = `${friend.remark} <svg class="w-2.5 h-2.5 text-gray-400 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+    // 修改：将 friend.remark 改成了 friend.realName（如果没填真名，再拿备注兜底）
+    document.getElementById('sms-chat-name').innerHTML = `${friend.realName || friend.remark} <svg class="w-2.5 h-2.5 text-gray-400 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
     document.getElementById('sms-chat-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
     
     document.getElementById('sms-list-view').classList.add('hidden');
