@@ -2263,42 +2263,8 @@ TimeChecklist:
             })
         });
         const data=await response.json();
-        let reply=data.choices[0].message.content.trim();
+        const reply=data.choices[0].message.content;
         
-        // ==========================================
-        // 【终极黑科技】：后台隐形双引擎翻译！
-        // 角色说出外语后，系统强行拦截，调用纯粹的翻译机单独翻译，再用代码缝合！AI绝对无法反抗！
-        if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-            try {
-                // 把纯文字抠出来去翻译，防止图片代码捣乱
-                const textToTranslate = reply.replace(/<img[^>]*>/g, '').trim();
-                if (textToTranslate) {
-                    const transRes = await fetch(`${config.baseUrl}/chat/completions`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-                        body: JSON.stringify({
-                            model: config.model,
-                            messages: [
-                                {role: 'system', content: '你是一个无情的翻译机器。请将用户的文本精准翻译成中文。只输出翻译结果，不要任何多余的解释、标点或换行。如果已经是中文，也请原样输出。'},
-                                {role: 'user', content: textToTranslate}
-                            ],
-                            temperature: 0.1
-                        })
-                    });
-                    const transData = await transRes.json();
-                    const translation = transData.choices[0].message.content.trim();
-                    
-                    // 用系统代码强行打上独一无二的烙印
-                    if (translation) {
-                        reply = reply + "\n#系统绝对翻译#\n" + translation;
-                    }
-                }
-            } catch(e) {
-                console.error("后台双引擎翻译失败", e);
-            }
-        }
-        // ==========================================
-
         // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
         const images = reply.match(imgRegex);
@@ -2307,25 +2273,33 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-        // 1. 拆分消息与翻译格式化 (双引擎绝对靠谱版)
-        if (textOnly) {
-            if (textOnly.includes('#系统绝对翻译#')) {
-                // 认准系统自己偷偷加的印记，一刀劈开！
-                let parts = textOnly.split('#系统绝对翻译#');
-                let mainText = parts[0].trim().replace(/\n/g, '<br>'); 
-                let transText = parts[1].trim(); 
+            // 1. 拆分消息与翻译格式化 (XML终极防雷版)
+            if (textOnly) {
+                const isTransOn = friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled;
                 
-                // 完美拼接出带有虚线的效果
-                let combinedHtml = `${mainText}<div class="mt-2 pt-2 border-t border-dashed border-gray-400/50 text-[13px] text-gray-500 leading-relaxed font-normal">${transText}</div>`;
-                newMessages.push({role: 'assistant', content: combinedHtml});
-            } else {
-                // 没开翻译开关的情况
-                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                textLines.forEach(line => {
-                    newMessages.push({role:'assistant', content: line});
-                });
+                if (isTransOn) {
+                    // 无论AI怎么乱排版，只精准抓取 <msg> 和 <trans> 标签里的内容
+                    const msgMatch = textOnly.match(/<msg>([\s\S]*?)<\/msg>/i);
+                    const transMatch = textOnly.match(/<trans>([\s\S]*?)<\/trans>/i);
+                    
+                    if (msgMatch && transMatch) {
+                        // 抓到了！原文和翻译拼装进同一个气泡，中间加虚线
+                        let mainText = msgMatch[1].trim().replace(/\n/g, '<br>');
+                        let transText = transMatch[1].trim().replace(/\n/g, '<br>');
+                        let combinedHtml = `${mainText}<div class="mt-2 pt-2 border-t border-dashed border-gray-400/50 text-[13px] text-gray-500 leading-relaxed font-normal">${transText}</div>`;
+                        newMessages.push({role: 'assistant', content: combinedHtml});
+                    } else {
+                        // 极端兜底：如果AI实在笨到连标签都写错，就不拆分了，把它的所有废话全塞进一个气泡里
+                        newMessages.push({role: 'assistant', content: textOnly.replace(/\n/g, '<br>')});
+                    }
+                } else {
+                    // 没开翻译：按照原来的习惯，遇到换行就切成好几个连续的小气泡
+                    const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                    textLines.forEach(line => {
+                        newMessages.push({role:'assistant', content: line});
+                    });
+                }
             }
-        }
         
         // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
@@ -3172,7 +3146,10 @@ async function triggerSmsAI() {
     const friend = friendList.find(f => f.id === currentSmsFriendId);
     let finalSystemMessage = config.systemPrompt;
     const friendForPrompt = friendList.find(f => f.id === currentFriendId);
-    // (已删除强制角色自身翻译的指令，让它专心扮演，翻译工作交给纯洁的后台双引擎)
+    if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
+        // 【最强控制】：采用编程界最稳的 XML 标签强制输出，专治 AI 各种不服
+        finalSystemMessage += `\n\n【系统最高强制指令】：已开启自动翻译模式。你必须将“回复原文”和“中文翻译”用专门的标签严格包裹起来！\n格式必须且只能是：\n<msg>你的回复原文（保留语气，不管用什么语言）</msg>\n<trans>对应的中文翻译</trans>\n绝对不允许在这两个标签之外输出任何废话！`;
+    }
     
     if(friend) {
         const now = new Date();
