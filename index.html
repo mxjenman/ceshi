@@ -64,7 +64,8 @@
         /* 论坛主页样式扩展 */
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
         .profile-avatar-main { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
-        .tab-active { border-bottom: 4px solid #1d9bf0; color: #000; font-weight: bold; }
+        .tab-active { border-bottom: 4px solid #000000; color: #000; font-weight: bold;
+        }
         
         /* 进场动画 */
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
@@ -424,7 +425,7 @@
                 </svg>
             </button>
             <div class="flex-1 text-center font-bold text-[17px]">关联世界书</div>
-            <button onclick="saveFriendLorebook()" class="w-12 text-blue-500 font-bold text-[15px] text-right active:opacity-50">保存</button>
+            <button onclick="saveFriendLorebook()" class="w-12 text-black font-bold text-[15px] text-right active:opacity-50">保存</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="friend-lorebook-list">
             </div>
@@ -447,7 +448,7 @@
                     <span class="text-[14px] text-[#333] font-bold">开启自动总结记忆</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="auto-summary-switch" class="sr-only peer" onchange="saveMemorySettings()">
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                     </label>
                 </div>
                 
@@ -612,7 +613,7 @@
             </div>
         </div>
         <div class="h-16 border-t flex items-center justify-around bg-white absolute bottom-0 w-full z-20">
-            <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-blue-500"><span class="text-xs font-bold">首页</span></button>
+            <button onclick="switchForumTab('square')" id="tab-square" class="flex flex-col items-center text-black"><span class="text-xs font-bold">首页</span></button>
             <button onclick="alert('搜索功能暂未开放')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">搜索</span></button>
             <button onclick="alert('通知中心为空')" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">通知</span></button>
             <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">我</span></button>
@@ -766,7 +767,7 @@
                     <span class="text-[14px] text-[#333] font-bold">开启自动总结记忆</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="sms-auto-summary-switch" class="sr-only peer" onchange="saveSmsMemorySettings()">
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                     </label>
                 </div>
                 <div class="flex items-center gap-2 mb-4">
@@ -799,7 +800,7 @@
                 </svg>
             </button>
             <div class="flex-1 text-center font-bold text-[17px]">设置</div>
-            <button onclick="saveSettingsApp()" class="text-blue-500 font-bold text-[15px] w-12 text-right">保存</button>
+            <button onclick="saveSettingsApp()" class="text-black font-bold text-[15px] w-12 text-right">保存</button>
         </div>
         <div class="flex-1 overflow-y-auto p-5 bg-[#f2f2f6]">
             <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
@@ -813,7 +814,7 @@
             <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
                     <label class="text-sm text-gray-500">AI 模型选择</label>
-                    <button id="fetch-models-btn" onclick="fetchModelsFromAPI()" class="bg-blue-50 text-blue-500 px-3 py-1 rounded-full text-xs font-bold">拉取模型</button>
+                    <button id="fetch-models-btn" onclick="fetchModelsFromAPI()" class="bg-gray-100 text-black px-3 py-1 rounded-full text-xs font-bold">拉取模型</button>
                 </div>
                 <select id="app-cfg-model" class="w-full border border-gray-200 rounded-lg p-2 text-[15px] outline-none bg-white">
                     <option value="">请先拉取或手动输入</option>
@@ -825,7 +826,7 @@
                     <label class="text-sm text-gray-500">随机性 (Temperature): <span id="temp-display" class="text-black font-bold">1.0</span></label>
                 </div>
                                 <p class="text-[11px] text-gray-400 mb-3 leading-tight">数值越高(如1.5)回答越发散和有创造性；数值越低(如0.2)回答越确定、严谨。范围 0 ~ 2。</p>
-                <input id="app-cfg-temp" type="range" min="0" max="2" step="0.1" value="1.0" class="w-full accent-blue-500" oninput="document.getElementById('temp-display').innerText=this.value">
+                <input id="app-cfg-temp" type="range" min="0" max="2" step="0.1" value="1.0" class="w-full accent-black" oninput="document.getElementById('temp-display').innerText=this.value">
             </div>
 
             <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
@@ -833,7 +834,7 @@
                 
                 <div class="flex gap-2 mb-3">
                     <input id="app-font-url" type="text" class="flex-1 border border-gray-200 rounded py-1 px-2 text-sm outline-none" placeholder="输入字体链接 (.ttf/.woff)">
-                    <button onclick="applyFontUrl()" class="bg-gray-100 px-3 rounded text-sm font-bold text-blue-500">应用</button>
+                    <button onclick="applyFontUrl()" class="bg-gray-100 px-3 rounded text-sm font-bold text-black">应用</button>
                 </div>
                 <div class="mb-4">
                     <button onclick="document.getElementById('font-upload-input').click()" class="w-full bg-gray-100 text-black py-2 rounded text-sm font-bold">📂 从手机文件选择字体</button>
@@ -843,7 +844,7 @@
                 <div class="flex justify-between items-center mb-1">
                     <label class="text-sm text-gray-500">字体大小: <span id="font-size-display" class="text-black font-bold">14</span> px</label>
                 </div>
-                <input id="app-font-size" type="range" min="12" max="30" step="1" value="14" class="w-full accent-blue-500 mb-4" oninput="changePreviewFontSize(this.value)">
+                <input id="app-font-size" type="range" min="12" max="30" step="1" value="14" class="w-full accent-black mb-4" oninput="changePreviewFontSize(this.value)">
 
                 <div class="bg-gray-50 p-3 rounded-lg mb-4 text-center border border-gray-200 overflow-hidden">
                     <div id="font-preview-box" style="font-size: 14px; color: #333;">
@@ -858,7 +859,7 @@
                     </select>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="saveFontPreset()" class="flex-1 bg-blue-50 text-blue-500 py-1.5 rounded text-sm font-bold">保存预设</button>
+                    <button onclick="saveFontPreset()" class="flex-1 bg-gray-100 text-black py-1.5 rounded text-sm font-bold">保存预设</button>
                     <button onclick="deleteFontPreset()" class="flex-1 bg-red-50 text-red-500 py-1.5 rounded text-sm font-bold">删除预设</button>
                 </div>
             </div>
@@ -874,7 +875,7 @@
                 </svg>
             </button>
             <div class="flex-1 text-center font-bold text-[17px]">外观设置</div>
-            <button onclick="saveAppearanceApp()" class="text-blue-500 font-bold text-[15px] w-12 text-right">保存</button>
+            <button onclick="saveAppearanceApp()" class="text-black font-bold text-[15px] w-12 text-right">保存</button>
         </div>
         <div class="flex-1 overflow-y-auto p-5 bg-[#f2f2f6]">
             <h3 class="text-gray-500 text-xs font-bold mb-2 ml-2 uppercase">桌面壁纸</h3>
@@ -2185,12 +2186,12 @@ function switchForumTab(tab){
     
     if(tab === 'square'){
         square.classList.remove('hidden'); profile.classList.add('hidden');
-        tabSq.classList.add('text-blue-500'); tabSq.classList.remove('text-gray-400');
-        tabPr.classList.add('text-gray-400'); tabPr.classList.remove('text-blue-500');
+        tabSq.classList.add('text-black'); tabSq.classList.remove('text-gray-400');
+        tabPr.classList.add('text-gray-400'); tabPr.classList.remove('text-black');
     } else {
         square.classList.add('hidden'); profile.classList.remove('hidden');
-        tabPr.classList.add('text-blue-500'); tabPr.classList.remove('text-gray-400');
-        tabSq.classList.add('text-gray-400'); tabSq.classList.remove('text-blue-500');
+        tabPr.classList.add('text-black'); tabPr.classList.remove('text-gray-400');
+        tabSq.classList.add('text-gray-400'); tabSq.classList.remove('text-black');
     }
 }
 
@@ -3265,7 +3266,7 @@ function openFriendLorebook() {
                     </div>
                     <div class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
                         <input type="checkbox" class="sr-only peer lore-checkbox" value="${entry.id}" ${isChecked}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                     </div>
                 `;
                 listDiv.appendChild(itemDiv);
