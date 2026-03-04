@@ -1229,60 +1229,187 @@ function saveSingleEmoji() {
 }
 
 let lorebook = JSON.parse(localStorage.getItem('lorebook_data')) || [];
-function openLorebook() { document.getElementById('lorebook-screen').classList.remove('hidden'); renderLoreList(); }
-function closeLorebook() { document.getElementById('lorebook-screen').classList.add('hidden'); }
+let currentLoreCategory = '默认分类';
 
-// 新增：打开和关闭“添加世界书”的弹窗
-function openAddLoreModal() {
-    document.getElementById('lore-key').value = '';
-    document.getElementById('lore-content').value = '';
+function openLorebook() { 
+    document.getElementById('lorebook-screen').classList.remove('hidden'); 
+    
+    // 如果没有任何词条，确保有一个默认分类
+    if (lorebook.length > 0) {
+        const categories = [...new Set(lorebook.map(item => item.category || '默认分类'))];
+        if (!categories.includes(currentLoreCategory)) {
+            currentLoreCategory = categories[0];
+        }
+    } else {
+        currentLoreCategory = '默认分类';
+    }
+    
+    renderLoreTabs();
+    renderLoreList(); 
+}
+
+function closeLorebook() { 
+    document.getElementById('lorebook-screen').classList.add('hidden'); 
+}
+
+// 渲染世界书分类选项卡
+function renderLoreTabs() {
+    const tabsContainer = document.getElementById('lore-category-tabs');
+    tabsContainer.innerHTML = '';
+    
+    let categories = [...new Set(lorebook.map(item => item.category || '默认分类'))];
+    if (categories.length === 0) categories = ['默认分类'];
+
+    categories.forEach(cat => {
+        const isActive = cat === currentLoreCategory;
+        const btn = document.createElement('div');
+        btn.className = `whitespace-nowrap px-4 py-1.5 rounded-full cursor-pointer transition-colors select-none ${isActive ? 'bg-black text-white font-bold shadow-sm' : 'bg-gray-100 text-gray-600'}`;
+        btn.innerText = cat;
+        btn.onclick = () => {
+            currentLoreCategory = cat;
+            renderLoreTabs();
+            renderLoreList();
+        };
+        tabsContainer.appendChild(btn);
+    });
+}
+
+// 更新下拉框的分类列表
+function updateCategorySelect(selectedCat) {
+    const select = document.getElementById('lore-category-select');
+    let categories = [...new Set(lorebook.map(item => item.category || '默认分类'))];
+    if (!categories.includes('默认分类')) categories.unshift('默认分类');
+    if (selectedCat && !categories.includes(selectedCat)) categories.push(selectedCat);
+
+    select.innerHTML = '';
+    categories.forEach(cat => {
+        const isSelected = cat === (selectedCat || currentLoreCategory) ? 'selected' : '';
+        select.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
+    });
+}
+
+// 创建新分类
+function createNewLoreCategory() {
+    const newCat = prompt("请输入新分类名称：");
+    if (newCat && newCat.trim() !== "") {
+        updateCategorySelect(newCat.trim());
+    }
+}
+
+// 打开面板（支持新建或编辑）
+function openAddLoreModal(editIndex = -1) {
+    const modalTitle = document.getElementById('lore-modal-title');
+    const indexInput = document.getElementById('lore-edit-index');
+    
+    if (editIndex >= 0 && editIndex < lorebook.length) {
+        // 编辑模式
+        const entry = lorebook[editIndex];
+        modalTitle.innerText = "编辑世界书";
+        indexInput.value = editIndex;
+        document.getElementById('lore-title').value = entry.title || '';
+        document.getElementById('lore-key').value = entry.key || '';
+        document.getElementById('lore-content').value = entry.content || '';
+        updateCategorySelect(entry.category || '默认分类');
+    } else {
+        // 新建模式
+        modalTitle.innerText = "新建世界书";
+        indexInput.value = -1;
+        document.getElementById('lore-title').value = '';
+        document.getElementById('lore-key').value = '';
+        document.getElementById('lore-content').value = '';
+        updateCategorySelect(currentLoreCategory);
+    }
+    
     document.getElementById('add-lore-modal').classList.remove('hidden');
 }
+
 function closeAddLoreModal() {
     document.getElementById('add-lore-modal').classList.add('hidden');
 }
 
+// 保存（新增或者更新）
 function saveLoreEntry() {
-    const keyStr = document.getElementById('lore-key').value.trim();
-    const content = document.getElementById('lore-content').value.trim();
-    if (!keyStr || !content) return alert("触发词和内容都不能为空哦！");
-    lorebook.push({ key: keyStr, content: content });
+    const titleStr = document.getElementById('lore-title').value.trim();
+    const keyStr = document.getElementById('lore-key').value.trim(); // 选填
+    const contentStr = document.getElementById('lore-content').value.trim();
+    const categoryStr = document.getElementById('lore-category-select').value;
+    const editIndex = parseInt(document.getElementById('lore-edit-index').value);
+
+    if (!titleStr || !contentStr) return alert("标题和内容都必须要填哦！");
+    
+    const newEntry = { 
+        title: titleStr, 
+        key: keyStr, 
+        category: categoryStr, 
+        content: contentStr 
+    };
+
+    if (editIndex >= 0) {
+        lorebook[editIndex] = newEntry; // 覆盖旧的
+    } else {
+        lorebook.push(newEntry); // 新增
+    }
+    
     localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
     
-    // 保存后关掉弹窗，并且刷新列表
+    currentLoreCategory = categoryStr; // 存完直接跳转到这个分类下
+    
     closeAddLoreModal();
+    renderLoreTabs();
     renderLoreList();
 }
 
 function deleteLoreEntry(index) {
-    if(confirm("确定要删除这条世界设定吗？")) {
+    if(confirm("确定要删除这条世界书设定吗？")) {
         lorebook.splice(index, 1);
         localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+        
+        // 如果删空了当前分类，切回默认
+        const categories = [...new Set(lorebook.map(item => item.category || '默认分类'))];
+        if (!categories.includes(currentLoreCategory) && categories.length > 0) {
+            currentLoreCategory = categories[0];
+        }
+        
+        renderLoreTabs();
         renderLoreList();
     }
 }
 
+function editLoreEntry(index) {
+    openAddLoreModal(index);
+}
+
+// 渲染卡片列表
 function renderLoreList() {
     const list = document.getElementById('lore-list');
     list.innerHTML = '';
     
-    // 修改：如果世界书是空的，显示一个更好看的缺省页面
-    if (lorebook.length === 0) {
+    // 过滤出当前分类的词条，并保留它们在原本大全集里的索引位置（用于编辑删除）
+    const filteredLore = lorebook.map((entry, index) => ({...entry, originalIndex: index}))
+                                 .filter(entry => (entry.category || '默认分类') === currentLoreCategory);
+
+    if (filteredLore.length === 0) {
         list.innerHTML = `
             <div class="flex flex-col items-center justify-center h-64 opacity-50 mt-10">
                 <span class="text-6xl mb-4">📖</span>
-                <div class="text-gray-500 text-[15px] font-bold mb-1">世界书空空如也</div>
-                <div class="text-gray-400 text-[13px]">点击右上角 "+" 添加世界设定吧</div>
+                <div class="text-gray-500 text-[15px] font-bold mb-1">当前分类空空如也</div>
+                <div class="text-gray-400 text-[13px]">点击右上角 "+" 添加世界书吧</div>
             </div>
         `;
         return;
     }
-    lorebook.forEach((entry, index) => {
+    
+    filteredLore.forEach(entry => {
+        // 卡片写死了 h-[160px]，内部内容超出部分会变成滚动条（flex-1 overflow-y-auto）
         list.innerHTML += `
-            <div class="bg-white rounded-[16px] p-4 shadow-sm relative text-sm border border-gray-50">
-                <div class="font-bold text-[#1d9bf0] mb-1 text-[13px]">🔑 触发词：${entry.key}</div>
-                <div class="text-gray-700 leading-relaxed break-words pr-12">${entry.content}</div>
-                <button onclick="deleteLoreEntry(${index})" class="absolute top-4 right-4 text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded">删除</button>
+            <div class="bg-white rounded-[16px] p-4 shadow-sm relative border border-gray-50 flex flex-col h-[160px]">
+                <div class="font-bold text-[#333] mb-1 text-[16px] pr-24 truncate">${entry.title || '无标题'}</div>
+                <div class="font-bold text-[#1d9bf0] mb-2 text-[12px] truncate">🔑 关键词：${entry.key || '（未设置）'}</div>
+                <div class="text-gray-700 leading-relaxed break-words flex-1 overflow-y-auto text-[13px]">${entry.content}</div>
+                <div class="absolute top-4 right-4 flex gap-2">
+                    <button onclick="editLoreEntry(${entry.originalIndex})" class="text-blue-500 font-bold text-[12px] bg-blue-50 px-2 py-1 rounded active:scale-95">编辑</button>
+                    <button onclick="deleteLoreEntry(${entry.originalIndex})" class="text-red-400 font-bold text-[12px] bg-red-50 px-2 py-1 rounded active:scale-95">删除</button>
+                </div>
             </div>
         `;
     });
@@ -1881,13 +2008,18 @@ TimeChecklist:
     }
     if (hasEmoji) { finalSystemMessage += aiEmojiLib; }
 
-    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
+     const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
     lorebook.forEach(entry => {
-        const keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
+        // 如果没填关键词，就默认把“世界书标题”作为唯一的触发条件！
+        const keyString = entry.key ? entry.key : entry.title;
+        if(!keyString) return; 
+        
+        const keywords = keyString.split(',').map(k => k.trim()).filter(k => k);
         for(let k of keywords) {
             if(latestUserMsg.includes(k)) {
-                injectedLore.push(`[${entry.content}]`);
+                // 将标题和内容一起喂给 AI，防止它搞混
+                injectedLore.push(`[设定《${entry.title}》: ${entry.content}]`);
                 break; 
             }
         }
