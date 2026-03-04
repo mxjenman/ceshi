@@ -1390,17 +1390,28 @@ function closeChatDetail() {
 }
 
 // 核心重制：全局渲染消息！有了它，删除和编辑才会立刻生效！
-function renderAllMessages() {
+// 新增 isIncremental 参数：解决一闪一顿的问题！
+function renderAllMessages(isIncremental = false) {
     const container = document.getElementById('chat-flow');
-    container.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
     
-       let aiAvatarUrl = "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg";
+    // 如果不是只加新消息（比如平时刚打开聊天、删除消息时），才清空屏幕重画
+    if (!isIncremental) {
+        container.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
+    }
+    
+    // 记住屏幕上已经有几条消息了
+    const alreadyDrawnCount = isIncremental ? container.querySelectorAll('.animate-in').length : 0;
+
+    let aiAvatarUrl = "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg";
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
         if (friend && friend.avatar) aiAvatarUrl = friend.avatar;
     }
 
     chatHistory.forEach((msg, index) => {
+        // 【闪烁修复魔法】：如果是只加新消息，并且这条消息之前已经画过了，直接跳过！
+        if (isIncremental && index < alreadyDrawnCount) return;
+
         const div = document.createElement('div');
         div.className = "flex w-full " + (msg.role === 'user' ? "justify-end" : "justify-start") + " items-center mb-4 animate-in relative select-none";
         
@@ -1562,10 +1573,10 @@ async function triggerAI(){
     const btn=document.getElementById('gen-btn-icon');
     if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
 
-    // --- 新增：把顶部名字变成浅灰色的“对方正在输入中...” ---
+    // --- 修改：保持字体大小和粗细跟原本完全一致，仅仅把颜色改成浅灰色 ---
     const titleEl = document.getElementById('chat-detail-title');
     const originalTitle = titleEl.innerText; // 先偷偷记住原来的备注名
-    titleEl.innerHTML = '<span style="color: #999; font-size: 13px; font-weight: normal;">对方正在输入中...</span>';
+    titleEl.innerHTML = '<span style="color: #999;">对方正在输入中...</span>';
 
     let finalSystemMessage = config.systemPrompt;
     
@@ -1734,15 +1745,14 @@ TimeChecklist:
         
         // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
         let msgIndex = 0;
-        function showNextMsg() {
-            if (msgIndex < newMessages.length) {
-                // 拿走当前的一条消息，放到聊天记录里
-                chatHistory.push(newMessages[msgIndex]);
-                renderAllMessages(); // 刷新屏幕，显示这条新消息
-                msgIndex++;
-                
-                // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
-                setTimeout(showNextMsg, 1200); 
+function showNextMsg() {
+    if (msgIndex < newMessages.length) {
+        // 拿走当前的一条消息，放到聊天记录里
+        chatHistory.push(newMessages[msgIndex]);
+        renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
+        msgIndex++;
+        // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
+        setTimeout(showNextMsg, 1200);
             } else {
                 // 消息全发完了，恢复原来的备注名字和发送按钮
                 titleEl.innerText = originalTitle;
