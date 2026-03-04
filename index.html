@@ -2273,21 +2273,28 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-            // 1. 拆分消息与翻译格式化
+            // 1. 拆分消息与翻译格式化 (天罗地网版)
             if (textOnly) {
-                // 如果系统检测到了我们强制要求的“#翻译#”标记
-                if (textOnly.includes('#翻译#')) {
-                    let parts = textOnly.split('#翻译#');
-                    // 原文部分：把换行符替换成网页换行<br>，保留外语的段落感
+                // 这个魔法正则能抓住 AI 各种乱写的翻译标记，比如 ====, ----, #翻译#, 【翻译】, 翻译： 等等
+                const transRegex = /\n*(?:====|----|#翻译#|【翻译】|翻译[:：])\n*/;
+                
+                if (friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled && transRegex.test(textOnly)) {
+                    // 只要命中了上面任何一种分割符，就把它切开
+                    let parts = textOnly.split(transRegex);
+                    // 上半部分：原文
                     let mainText = parts[0].trim().replace(/\n/g, '<br>'); 
-                    // 翻译部分：去掉 AI 可能多管闲事加的冒号
-                    let transText = parts[1].trim().replace(/^[:：]/, '').trim(); 
+                    // 下半部分：翻译（如果有多个分隔符，就把剩下的拼起来防止遗漏）
+                    let transText = parts.slice(1).join('<br>').trim().replace(/^[:：]/, '').trim(); 
                     
-                    // 将它们强行缝合进同一个气泡，中间加入你想要的“虚线(border-dashed)”！
-                    let combinedHtml = `${mainText}<div class="mt-2 pt-2 border-t border-dashed border-gray-400/50 text-[13px] text-gray-500 leading-relaxed font-normal">${transText}</div>`;
-                    newMessages.push({role: 'assistant', content: combinedHtml});
+                    if (transText) {
+                        // 完美缝合：原文 + 虚线 + 中文翻译
+                        let combinedHtml = `${mainText}<div class="mt-2 pt-2 border-t border-dashed border-gray-400/50 text-[13px] text-gray-500 leading-relaxed font-normal">${transText}</div>`;
+                        newMessages.push({role: 'assistant', content: combinedHtml});
+                    } else {
+                        newMessages.push({role: 'assistant', content: mainText});
+                    }
                 } else {
-                    // 如果没开翻译，或者发的是纯中文，还是走正常的逐句拆分气泡逻辑
+                    // 没开翻译或者没检测到分割符，走正常的逐句弹气泡
                     const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
                     textLines.forEach(line => {
                         newMessages.push({role:'assistant', content: line});
@@ -3141,8 +3148,8 @@ async function triggerSmsAI() {
     let finalSystemMessage = config.systemPrompt;
     const friendForPrompt = friendList.find(f => f.id === currentFriendId);
     if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-        // 【终极指令】给 AI 定下死规矩，必须用特殊符号分割
-        finalSystemMessage += `\n\n【系统最高强制指令】：你必须在回复的最末尾附带中文翻译，并且严格使用“#翻译#”作为外语和中文之间的唯一分隔符。例如：\n[你的外语正文]\n#翻译#\n[对应的中文翻译]\n绝对不要改变这个格式！`;
+        // 强化指令：用 AI 最敏感的 ==== 作为分割线
+        finalSystemMessage += `\n\n【系统最高强制指令】：无论你用什么语言回复，都必须在最后带上中文翻译！请严格按照以下格式输出：\n[你的外语回复内容]\n====\n[对应的中文翻译]\n(注意：必须包含“====”四个等号作为唯一的分割线，绝不能改变此格式！)`;
     }
     
     if(friend) {
