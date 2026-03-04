@@ -401,7 +401,7 @@
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openCharacterSettings()">
                     <span class="text-[16px] text-black">设定</span>
                 </div>
-                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('世界书')">
+                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openFriendLorebook()">
                     <span class="text-[16px] text-black">世界书</span>
                 </div>
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openMemoryPage()">
@@ -415,6 +415,19 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div id="friend-lorebook-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 shrink-0">
+            <button onclick="closeFriendLorebook()" class="back-icon w-12 flex justify-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">关联世界书</div>
+            <button onclick="saveFriendLorebook()" class="w-12 text-blue-500 font-bold text-[15px] text-right active:opacity-50">保存</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="friend-lorebook-list">
+            </div>
     </div>
     <div id="memory-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
         <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
@@ -1352,7 +1365,9 @@ function saveLoreEntry() {
 
     if (!titleStr || !contentStr) return alert("标题和内容都必须要填哦！");
     
+    // 修改：加上了隐形的 id 身份证，用来与好友进行精准关联绑定
     const newEntry = { 
+        id: (editIndex >= 0 && lorebook[editIndex].id) ? lorebook[editIndex].id : 'lore_' + Math.random().toString(36).substr(2, 9),
         title: titleStr, 
         key: keyStr, 
         category: categoryStr, 
@@ -2025,7 +2040,11 @@ TimeChecklist:
 
      const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
-    lorebook.forEach(entry => {
+    // 【核心修改】：只拿当前好友被打钩关联的世界书
+    const linkedIds = friend.linkedLorebooks || [];
+    const activeLorebooks = lorebook.filter(entry => linkedIds.includes(entry.id));
+
+    activeLorebooks.forEach(entry => {
         let keywords = [];
         
         // 1. 如果填了关键词，就把关键词放进触发条件里
@@ -2034,7 +2053,6 @@ TimeChecklist:
         }
         
         // 2. 不管填没填关键词，都把“世界书内容”本身也加进触发条件里
-        // 注：这里坚决不使用 entry.title 作为触发条件
         if (entry.content) {
             keywords.push(entry.content);
         }
@@ -3174,6 +3192,116 @@ function checkAndTriggerSmsAutoSummary() {
         const msgsToSummarize = smsChatHistory.slice(friend.smsLastSummarizedLength || 0);
         executeSmsSummarize(msgsToSummarize, friend);
     }
+}
+
+// ================= 新增：好友专属关联世界书功能 =================
+function openFriendLorebook() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+
+    // 【数据兼容】给以前没 ID 的老世界书自动发个身份证，防止以前加的没法关联
+    let needsSave = false;
+    lorebook.forEach(entry => {
+        if(!entry.id) {
+            entry.id = 'lore_' + Math.random().toString(36).substr(2, 9);
+            needsSave = true;
+        }
+    });
+    if(needsSave) localStorage.setItem('lorebook_data', JSON.stringify(lorebook));
+
+    const linkedIds = friend.linkedLorebooks || [];
+    const container = document.getElementById('friend-lorebook-list');
+    container.innerHTML = '';
+
+    if (lorebook.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">暂无世界书设定，请先去主屏幕添加。</div>';
+    } else {
+        // 按照分类自动把世界书聚在一起
+        const grouped = {};
+        lorebook.forEach(entry => {
+            const cat = entry.category || '默认分类';
+            if(!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(entry);
+        });
+
+        for (const cat in grouped) {
+            const catDiv = document.createElement('div');
+            catDiv.className = 'bg-white rounded-[16px] shadow-sm overflow-hidden mb-1';
+            
+            // 分类的标题头（带折叠小箭头）
+            const header = document.createElement('div');
+            header.className = 'px-4 py-3 flex justify-between items-center bg-gray-50 border-b border-gray-100 cursor-pointer active:bg-gray-200';
+            header.innerHTML = `
+                <span class="font-bold text-[#333] text-[15px]">${cat} <span class="text-gray-400 text-[12px] font-normal ml-1">(${grouped[cat].length})</span></span>
+                <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" style="transform: rotate(0deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            `;
+            
+            // 内部的一条条世界书选项
+            const listDiv = document.createElement('div');
+            listDiv.className = 'flex flex-col transition-all';
+            
+            // 点击折叠的魔法
+            header.onclick = () => {
+                const svg = header.querySelector('svg');
+                if (listDiv.classList.contains('hidden')) {
+                    listDiv.classList.remove('hidden');
+                    svg.style.transform = 'rotate(0deg)';
+                } else {
+                    listDiv.classList.add('hidden');
+                    svg.style.transform = 'rotate(-90deg)';
+                }
+            };
+
+            // 渲染每个开关
+            grouped[cat].forEach((entry, idx) => {
+                const isChecked = linkedIds.includes(entry.id) ? 'checked' : '';
+                const itemDiv = document.createElement('label');
+                itemDiv.className = `px-4 py-3 flex items-center justify-between cursor-pointer ${idx !== grouped[cat].length - 1 ? 'border-b border-gray-50' : ''} active:bg-gray-50`;
+                itemDiv.innerHTML = `
+                    <div class="flex flex-col pr-4 overflow-hidden">
+                        <span class="font-bold text-[#333] text-[15px] mb-0.5 truncate">${entry.title || '无标题'}</span>
+                        <span class="text-[12px] text-gray-400 truncate">${entry.content}</span>
+                    </div>
+                    <div class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                        <input type="checkbox" class="sr-only peer lore-checkbox" value="${entry.id}" ${isChecked}>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </div>
+                `;
+                listDiv.appendChild(itemDiv);
+            });
+            
+            catDiv.appendChild(header);
+            catDiv.appendChild(listDiv);
+            container.appendChild(catDiv);
+        }
+    }
+    document.getElementById('friend-lorebook-page').classList.remove('slide-hidden');
+}
+
+function closeFriendLorebook() {
+    document.getElementById('friend-lorebook-page').classList.add('slide-hidden');
+}
+
+function saveFriendLorebook() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+
+    // 收集所有打钩的世界书ID
+    const checkboxes = document.querySelectorAll('.lore-checkbox');
+    const linkedIds = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            linkedIds.push(cb.value);
+        }
+    });
+
+    friend.linkedLorebooks = linkedIds;
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    
+    closeFriendLorebook();
+    alert("✅ 世界书关联已保存！AI现在只会提取你打勾的这些设定。");
 }
 
 // ================= 新增：自动总结记忆功能引擎 (卡片版) =================
