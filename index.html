@@ -1561,7 +1561,12 @@ async function triggerAI(){
     
     const btn=document.getElementById('gen-btn-icon');
     if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
-    
+
+    // --- 新增：把顶部名字变成浅灰色的“对方正在输入中...” ---
+    const titleEl = document.getElementById('chat-detail-title');
+    const originalTitle = titleEl.innerText; // 先偷偷记住原来的备注名
+    titleEl.innerHTML = '<span style="color: #999; font-size: 13px; font-weight: normal;">对方正在输入中...</span>';
+
     let finalSystemMessage = config.systemPrompt;
     
     const friend = friendList.find(f => f.id === currentFriendId);
@@ -1576,8 +1581,8 @@ async function triggerAI(){
 
 【核心回复气泡（条数）规则 - 极其重要】
 强制要求：你每次的回复必须拆分成多条独立的消息！请务必使用换行符（回车）来分隔你的每条消息。
-- 通常情况：每次回复分为 3 到 4 条独立的消息（即写 3 到 4 行）。
-- ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫的人设只回 1 到 2 行即可；话痨、开朗、激动的人设可以回 5 行以上。
+- 通常情况：每次回复分为 5 到 6 条独立的消息（即写 5 到 6 行）。
+- ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
 - 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
 
 【活人感引擎：注意，当前真实世界时间是 ${timeString}】
@@ -1704,33 +1709,56 @@ TimeChecklist:
         const images = reply.match(imgRegex);
         const textOnly = reply.replace(imgRegex, '').trim();
 
-        // 1. 把文字按换行符拆开，每一行变成一个独立的聊天气泡！
+        // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
+        let newMessages = [];
+
+        // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
             textLines.forEach(line => {
-                chatHistory.push({role:'assistant', content: line});
+                newMessages.push({role:'assistant', content: line});
             });
         }
         
         // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
             images.forEach(img => {
-                chatHistory.push({role:'assistant', content: img});
+                newMessages.push({role:'assistant', content: img});
             });
         }
         
         // 3. 兜底
         if (!textOnly && (!images || images.length === 0)) {
-            chatHistory.push({role:'assistant', content: reply});
+            newMessages.push({role:'assistant', content: reply});
         }
         
-        renderAllMessages(); // AI回话了，刷新屏幕
+        // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
+        let msgIndex = 0;
+        function showNextMsg() {
+            if (msgIndex < newMessages.length) {
+                // 拿走当前的一条消息，放到聊天记录里
+                chatHistory.push(newMessages[msgIndex]);
+                renderAllMessages(); // 刷新屏幕，显示这条新消息
+                msgIndex++;
+                
+                // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
+                setTimeout(showNextMsg, 1200); 
+            } else {
+                // 消息全发完了，恢复原来的备注名字和发送按钮
+                titleEl.innerText = originalTitle;
+                if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+            }
+        }
+        showNextMsg(); // 启动一条条发送！
+
     }catch(e){ 
         chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
         renderAllMessages();
-    } finally{ 
+        // 如果网络出错，也要记得恢复名字和发送按钮
+        titleEl.innerText = originalTitle;
         if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
     }
+    // 注意：原来的 finally 代码块已经被我删掉了，因为恢复按钮的逻辑已经写到了上面的发完消息的步骤里
 }
 // --- 替换部分结束 ---
 
