@@ -411,8 +411,8 @@
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('气泡')">
                     <span class="text-[16px] text-black">气泡</span>
                 </div>
-                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('其他')">
-                    <span class="text-[16px] text-black">其他</span>
+                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openOtherSettings()">
+                    <span class="text-[16px] text-black">其他 (高级管理)</span>
                 </div>
             </div>
         </div>
@@ -473,6 +473,86 @@
                     <span class="text-[14px] text-[#333]">条</span>
                 </div>
                 <button onclick="manualSummarize()" id="manual-summary-btn" class="w-full py-2.5 bg-black text-white rounded-xl font-bold text-[15px] shadow-sm active:scale-95 transition-transform">开始手动总结</button>
+            </div>
+        </div>
+    </div>
+    <div id="inner-voice-page" class="page-layer slide-hidden flex flex-col z-[90] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 shrink-0">
+            <button onclick="closeInnerVoice()" class="back-icon w-12 flex justify-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18L9 12L15 6"/></svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">TA 的心声</div>
+            <div class="w-12"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="inner-voice-list">
+            </div>
+    </div>
+
+    <div id="other-settings-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 shrink-0">
+            <button onclick="closeOtherSettings()" class="back-icon w-12 flex justify-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18L9 12L15 6"/></svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">高级管理</div>
+            <button onclick="saveOtherSettings()" class="w-12 text-black font-bold text-[15px] text-right">保存</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            
+            <div class="bg-white rounded-[16px] p-4 shadow-sm flex justify-between items-center">
+                <div>
+                    <div class="font-bold text-[#333]">多语言自动翻译</div>
+                    <div class="text-[11px] text-gray-400 mt-0.5">不管角色说哪国语言，均在下方附带中文</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="os-translation" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                </label>
+            </div>
+
+            <div class="bg-white rounded-[16px] p-4 shadow-sm border border-red-100">
+                <div class="flex justify-between items-center mb-3 border-b pb-3 border-gray-100">
+                    <div>
+                        <div class="font-bold text-red-500">拉黑此角色</div>
+                        <div class="text-[11px] text-gray-400 mt-0.5">拉黑期间TA将无法在微信发消息</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="os-block-switch" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[14px] text-gray-700">拉黑惩罚时长：</span>
+                    <div><input type="number" id="os-block-duration" class="w-12 border-b border-gray-300 text-center outline-none text-[15px] font-bold text-red-500" value="60"> <span class="text-[13px] text-gray-500">分钟</span></div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-[14px] text-gray-700">允许短信求和间隔：</span>
+                    <div><input type="number" id="os-block-sms" class="w-12 border-b border-gray-300 text-center outline-none text-[15px] font-bold" value="10"> <span class="text-[13px] text-gray-500">分钟/次</span></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <div class="font-bold text-[#333] mb-1">后台主动活跃 (不拉黑时生效)</div>
+                <div class="text-[11px] text-gray-400 mb-3">当你不说话时，TA多久主动找你聊天一次</div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[14px] text-gray-700">每隔</span>
+                    <input type="number" id="os-bg-activity" class="w-16 border border-gray-200 rounded-lg text-center outline-none py-1" placeholder="0">
+                    <span class="text-[14px] text-gray-700">分钟主动发微信 <span class="text-gray-400 text-xs">(0为关闭)</span></span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[16px] p-4 shadow-sm flex flex-col gap-3">
+                <div class="font-bold text-[#333] mb-1">数据管理</div>
+                <button onclick="exportFriendData()" class="w-full py-2.5 bg-gray-100 text-black rounded-[10px] font-bold text-[14px] active:scale-95">📥 导出完整角色存档</button>
+                <div class="relative mt-1">
+                    <button onclick="document.getElementById('import-file-input').click()" class="w-full py-2.5 bg-gray-100 text-black rounded-[10px] font-bold text-[14px] active:scale-95">📤 导入角色存档文件</button>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="importFriendData(this)">
+                    <div class="text-[11px] text-gray-400 text-center mt-2 leading-tight">⚠️ 导入将会彻底覆盖该角色现有的所有对话、世界书、记忆与心声</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[16px] p-4 shadow-sm mt-2 mb-8 border border-red-100">
+                <button onclick="clearFriendHistory()" class="w-full py-3 bg-red-50 text-red-500 rounded-[10px] font-bold text-[14px] active:scale-95">彻底清空所有记录</button>
+                <div class="text-[11px] text-red-400 text-center mt-2 leading-tight">⚠️ 危险操作：清空所有微信对话、短信、心声和长短期记忆，不可恢复！</div>
             </div>
         </div>
     </div>
@@ -1847,7 +1927,7 @@ function renderAllMessages(isIncremental = false) {
         } else {
             bubbleHtml = `
                 ${checkboxHtml}
-                <img src="${aiAvatarUrl}" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100">
+                <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
                 <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                     ${quoteHtml}${displayContent}
                     <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
@@ -2228,8 +2308,10 @@ function showNextMsg() {
                 titleEl.innerText = originalTitle;
                 if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
 
-                // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
+                                // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
                 checkAndTriggerAutoSummary();
+                // 自动根据这轮对话生成TA的心声！
+                generateInnerVoiceForLastMsg(currentFriendId, reply);
             }
         }
         showNextMsg(); // 启动一条条发送！
@@ -3043,6 +3125,10 @@ async function triggerSmsAI() {
     
     const friend = friendList.find(f => f.id === currentSmsFriendId);
     let finalSystemMessage = config.systemPrompt;
+    const friendForPrompt = friendList.find(f => f.id === currentFriendId);
+    if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
+        finalSystemMessage += `\n\n【强制翻译要求】：无论你使用什么语言回复，都必须在你回复的最后另起一行，附带精准的中文翻译！格式必须为：\n\n【翻译】：[这里写中文翻译]`;
+    }
     
     if(friend) {
         const now = new Date();
@@ -3612,6 +3698,259 @@ function deleteFriendAction() {
         }
     }
     closeFriendActionModal();
+}
+
+// ================= 新增：高级管理系统 (导出/拉黑/主动活跃/心声) =================
+
+function openOtherSettings() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+
+    document.getElementById('os-translation').checked = friend.isTranslationEnabled || false;
+    document.getElementById('os-bg-activity').value = friend.bgActivityInterval || '';
+    document.getElementById('os-block-switch').checked = friend.isBlocked || false;
+    document.getElementById('os-block-duration').value = friend.blockDuration || 60;
+    document.getElementById('os-block-sms').value = friend.blockSmsInterval || 10;
+
+    document.getElementById('other-settings-page').classList.remove('slide-hidden');
+}
+
+function closeOtherSettings() {
+    document.getElementById('other-settings-page').classList.add('slide-hidden');
+}
+
+function saveOtherSettings() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+
+    friend.isTranslationEnabled = document.getElementById('os-translation').checked;
+    friend.bgActivityInterval = parseInt(document.getElementById('os-bg-activity').value) || 0;
+    
+    const wasBlocked = friend.isBlocked;
+    friend.isBlocked = document.getElementById('os-block-switch').checked;
+    friend.blockDuration = parseInt(document.getElementById('os-block-duration').value) || 60;
+    friend.blockSmsInterval = parseInt(document.getElementById('os-block-sms').value) || 10;
+
+    // 如果刚开启拉黑，记录拉黑的精确起始时间
+    if (friend.isBlocked && !wasBlocked) {
+        friend.blockStartTime = Date.now();
+        friend.lastProactiveSmsTime = Date.now(); // 重新计时短信
+    } else if (!friend.isBlocked) {
+        friend.blockStartTime = null;
+    }
+
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    closeOtherSettings();
+    alert("✅ 高级设置保存成功！");
+}
+
+function clearFriendHistory() {
+    if (!currentFriendId) return;
+    if (confirm("⚠️ 警告：这将会彻底清空与该角色的所有聊天记录、心声、总结记忆以及短信记录！不可恢复！确定要清空吗？")) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        friend.chatHistory = [];
+        friend.smsHistory = [];
+        friend.memoryList = [];
+        friend.smsMemoryList = [];
+        friend.aiMemory = "";
+        friend.lastSummarizedLength = 0;
+        friend.smsLastSummarizedLength = 0;
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        
+        closeOtherSettings();
+        renderAllMessages();
+        alert("🗑️ 已彻底清空该角色的所有记录！");
+    }
+}
+
+function exportFriendData() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    
+    const blob = new Blob([JSON.stringify(friend, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AI角色存档_${friend.remark || friend.realName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importFriendData(input) {
+    if (!currentFriendId) return;
+    if (input.files && input.files[0]) {
+        if(confirm("确定要导入覆盖吗？这会抹除当前角色的所有记录！")) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported.id || !imported.remark) throw new Error("文件格式不对");
+                    
+                    const idx = friendList.findIndex(f => f.id === currentFriendId);
+                    // 强制保持当前的 ID，防止列表错乱
+                    imported.id = friendList[idx].id; 
+                    friendList[idx] = imported;
+                    
+                    localStorage.setItem('friend_list', JSON.stringify(friendList));
+                    alert("🎉 存档导入成功！");
+                    location.reload(); // 强制刷新页面应用全部新数据
+                } catch(err) {
+                    alert("❌ 导入失败，似乎不是正确的存档文件。");
+                }
+            };
+            reader.readAsText(input.files[0]);
+        }
+        input.value = '';
+    }
+}
+
+// ==== 心声生成与管理 ====
+async function generateInnerVoiceForLastMsg(fId, lastReply) {
+    const friend = friendList.find(f => f.id === fId);
+    if (!friend || !config.apiKey) return;
+    try {
+        const context = friend.chatHistory.slice(-4).map(m => `${m.role === 'user' ? '我' : 'TA'}: ${m.content}`).join('\n');
+        const prompt = `你是${friend.realName}。设定：${friend.persona}。\n这是最近的对话：\n${context}\n你刚刚回复了：“${lastReply}”。\n【任务】：根据你的人设和当前情境，写出你此刻内心的真实想法（心声）。\n【要求】：绝对不要使用任何格式，直接输出你的心声。控制在100字以内。`;
+        
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'user', content: prompt}],
+                temperature: 0.8
+            })
+        });
+        const data = await response.json();
+        const voice = data.choices[0].message.content.trim();
+        
+        // 挂载到最后一条AI消息上
+        for (let i = friend.chatHistory.length - 1; i >= 0; i--) {
+            if (friend.chatHistory[i].role === 'assistant') {
+                friend.chatHistory[i].innerVoice = voice;
+                break;
+            }
+        }
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+    } catch(e) { console.error("心声生成失败", e); }
+}
+
+function openInnerVoice() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    const container = document.getElementById('inner-voice-list');
+    container.innerHTML = '';
+    
+    let hasVoice = false;
+    friend.chatHistory.forEach((msg, idx) => {
+        if (msg.role === 'assistant') {
+            hasVoice = true;
+            const voice = msg.innerVoice || "（此轮未捕捉到心声）";
+            container.innerHTML += `
+            <div class="bg-white rounded-[16px] p-4 shadow-sm relative border border-gray-50">
+                <div class="text-[11px] text-gray-400 mb-2 truncate">回复了：${msg.content.replace(/<[^>]+>/g, '[图片]').substring(0, 20)}...</div>
+                <div class="text-[14px] text-gray-800 font-medium leading-relaxed pr-10">${voice}</div>
+                <div class="absolute top-3 right-3 flex flex-col gap-2">
+                    <button onclick="editInnerVoice(${idx})" class="text-blue-500 font-bold text-[11px] bg-blue-50 px-2 py-1 rounded">编辑</button>
+                    <button onclick="deleteInnerVoice(${idx})" class="text-red-400 font-bold text-[11px] bg-red-50 px-2 py-1 rounded">删除</button>
+                </div>
+            </div>`;
+        }
+    });
+
+    if (!hasVoice) container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">还没有任何心声记录</div>';
+    
+    document.getElementById('inner-voice-page').classList.remove('slide-hidden');
+}
+
+function closeInnerVoice() { document.getElementById('inner-voice-page').classList.add('slide-hidden'); }
+
+function editInnerVoice(idx) {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    const newVoice = prompt("修改TA的心声：", friend.chatHistory[idx].innerVoice || "");
+    if (newVoice !== null) {
+        friend.chatHistory[idx].innerVoice = newVoice.trim();
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        openInnerVoice(); // 刷新列表
+    }
+}
+
+function deleteInnerVoice(idx) {
+    if (confirm("确定删除这条心声吗？")) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        friend.chatHistory[idx].innerVoice = "";
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        openInnerVoice();
+    }
+}
+
+// ==== 全局后台主动活跃与拉黑求和引擎 ====
+setInterval(async () => {
+    if (!config.apiKey) return;
+    const now = Date.now();
+    
+    for (const friend of friendList) {
+        // 1. 如果被拉黑了
+        if (friend.isBlocked && friend.blockStartTime) {
+            const blockEnd = friend.blockStartTime + (friend.blockDuration * 60000);
+            if (now >= blockEnd) {
+                friend.isBlocked = false; // 刑满释放
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
+            } else if (friend.blockSmsInterval > 0) {
+                // 在拉黑期间，判断是否该发短信求和了
+                const nextSms = (friend.lastProactiveSmsTime || friend.blockStartTime) + (friend.blockSmsInterval * 60000);
+                if (now >= nextSms) {
+                    friend.lastProactiveSmsTime = now;
+                    localStorage.setItem('friend_list', JSON.stringify(friendList));
+                    await executeProactiveMessage(friend, 'sms');
+                }
+            }
+        } 
+        // 2. 没被拉黑，且设置了后台活跃发微信
+        else if (!friend.isBlocked && friend.bgActivityInterval > 0) {
+            const nextChat = (friend.lastProactiveTime || now) + (friend.bgActivityInterval * 60000);
+            if (now >= nextChat) {
+                friend.lastProactiveTime = now;
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
+                await executeProactiveMessage(friend, 'wechat');
+            }
+        }
+    }
+}, 15000); // 每15秒巡逻一次
+
+async function executeProactiveMessage(friend, type) {
+    let prompt = `你是${friend.realName}。你的设定是：${friend.persona}。\n`;
+    if (type === 'sms') {
+        prompt += `【强制任务】：你现在被用户拉黑了，不能发微信。你非常着急或想挽回，所以偷偷通过“短信”发消息。请结合你的人设，写一条发送给用户的短信（比如求和、道歉或傲娇的询问），控制在2句话内。直接输出短信内容。`;
+    } else {
+        prompt += `【强制任务】：你们有一段时间没聊天了，你需要主动寻找话题给用户发一条微信。请结合你的人设，发一条自然的主动问候或生活分享，控制在2句话内。直接输出内容。`;
+    }
+    
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'user', content: prompt}],
+                temperature: 0.9
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        if (type === 'sms') {
+            if(!friend.smsHistory) friend.smsHistory = [];
+            friend.smsHistory.push({role: 'assistant', content: reply});
+            if (currentSmsFriendId === friend.id) renderSmsMessages(); // 如果恰好停在短信页，刷新一下
+        } else {
+            friend.chatHistory.push({role: 'assistant', content: reply});
+            if (currentFriendId === friend.id) renderAllMessages(true); // 如果恰好在微信页，挤出消息
+        }
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+    } catch(e) {}
 }
 </script>
 </body>
