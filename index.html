@@ -507,6 +507,21 @@
             <button onclick="saveCharacterSettings()" class="w-full py-3 bg-black text-white rounded-[16px] font-bold text-[16px] mt-2 mb-6 shadow-md active:scale-95 transition-transform">保存更改</button>
         </div>
     </div>
+    <div id="friend-action-modal" class="fixed inset-0 hidden z-[150] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" onclick="closeFriendActionModal()"></div>
+        <div class="bg-white rounded-[16px] w-[260px] flex flex-col overflow-hidden shadow-2xl relative z-10 animate-in">
+            <div id="action-modal-title" class="py-4 text-[13px] text-gray-500 text-center border-b border-gray-100 px-4 truncate">
+                好友备注名
+            </div>
+            <button id="action-btn-pin" onclick="togglePinFriend()" class="py-3.5 text-[16px] text-black bg-white active:bg-gray-50 border-b border-gray-100 transition-colors">
+                置顶好友
+            </button>
+            <button onclick="deleteFriendAction()" class="py-3.5 text-[16px] text-red-500 bg-white active:bg-gray-50 font-bold transition-colors">
+                删除好友
+            </button>
+        </div>
+    </div>
+
     <div id="add-friend-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
         <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
             <div class="mb-4">
@@ -1573,36 +1588,14 @@ function renderFriendList() {
                 }
             };
 
-            // 5. 长按呼出“置顶”和“删除”菜单的魔法
+            // 5. 长按呼出屏幕正中央的“置顶”和“删除”弹窗
             let pressTimer;
             const startPress = (e) => {
                 div.removeAttribute('data-longpressed');
                 pressTimer = setTimeout(() => {
                     div.setAttribute('data-longpressed', 'true');
-                    showContextMenu(e, [
-                        { 
-                            label: f.isPinned ? '取消置顶' : '置顶好友', 
-                            action: () => { 
-                                const actualFriend = friendList.find(x => x.id === f.id);
-                                if(actualFriend) {
-                                    actualFriend.isPinned = !actualFriend.isPinned;
-                                    localStorage.setItem('friend_list', JSON.stringify(friendList));
-                                    renderFriendList();
-                                }
-                            }
-                        },
-                        { 
-                            label: '删除好友', 
-                            action: () => { 
-                                if(confirm(`危险操作：确定要彻底删除与 ${f.remark} 的所有聊天记录和人物设定吗？删了就找不回了哦！`)) {
-                                    // 彻底从大脑里抹除这个角色
-                                    friendList = friendList.filter(x => x.id !== f.id);
-                                    localStorage.setItem('friend_list', JSON.stringify(friendList));
-                                    renderFriendList();
-                                }
-                            }
-                        }
-                    ], div);
+                    // 呼出正中间的小弹窗，并把这个好友的 ID 传过去
+                    openFriendActionModal(f.id); 
                 }, 500); // 500毫秒算作长按
             };
             
@@ -3572,6 +3565,53 @@ function checkAndTriggerAutoSummary() {
         const msgsToSummarize = chatHistory.slice(friend.lastSummarizedLength || 0);
         executeSummarize(msgsToSummarize, friend); // 不弹窗，静默提取
     }
+}
+// ================= 新增：好友列表长按居中弹窗功能 =================
+let actionTargetFriendId = null;
+
+function openFriendActionModal(id) {
+    actionTargetFriendId = id;
+    const friend = friendList.find(f => f.id === id);
+    if (!friend) return;
+    
+    // 把弹窗最上面的字，换成这个好友的备注名（比如“雨雨雨～”）
+    document.getElementById('action-modal-title').innerText = friend.remark;
+    
+    // 根据TA是否已经被置顶，动态改变按钮的文字
+    const pinBtn = document.getElementById('action-btn-pin');
+    pinBtn.innerText = friend.isPinned ? '取消置顶' : '置顶好友';
+    
+    document.getElementById('friend-action-modal').classList.remove('hidden');
+}
+
+function closeFriendActionModal() {
+    document.getElementById('friend-action-modal').classList.add('hidden');
+    actionTargetFriendId = null;
+}
+
+function togglePinFriend() {
+    if (!actionTargetFriendId) return;
+    const friend = friendList.find(f => f.id === actionTargetFriendId);
+    if (friend) {
+        friend.isPinned = !friend.isPinned;
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        renderFriendList();
+    }
+    closeFriendActionModal();
+}
+
+function deleteFriendAction() {
+    if (!actionTargetFriendId) return;
+    const friend = friendList.find(f => f.id === actionTargetFriendId);
+    if (friend) {
+        if(confirm(`危险操作：确定要彻底删除与 ${friend.remark} 的所有聊天记录和人物设定吗？删了就找不回了哦！`)) {
+            // 从列表里彻底抹除
+            friendList = friendList.filter(x => x.id !== actionTargetFriendId);
+            localStorage.setItem('friend_list', JSON.stringify(friendList));
+            renderFriendList();
+        }
+    }
+    closeFriendActionModal();
 }
 </script>
 </body>
