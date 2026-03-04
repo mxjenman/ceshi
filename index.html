@@ -428,7 +428,7 @@
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             <div class="bg-white rounded-[16px] p-4 shadow-sm">
-                <div class="text-[14px] text-[#333] mb-4">此聊天窗口当前对话：<span id="current-msg-count" class="font-bold text-blue-500 text-[18px]">0</span> 条</div>
+                <div class="text-[14px] text-[#333] mb-4 font-bold">此聊天窗口当前对话：<span id="current-msg-count" class="font-bold">0</span> 条</div>
                 
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-[14px] text-[#333] font-bold">开启自动总结记忆</span>
@@ -445,10 +445,21 @@
                 </div>
 
                 <div class="text-[14px] text-[#333] mb-2 font-bold">AI 当前记住的事：</div>
-                <textarea id="current-memory-text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-40 text-gray-700 bg-gray-50" placeholder="暂无记忆，可以手动填写或等AI自动总结..." onchange="saveMemorySettings()"></textarea>
+                <div id="memory-blocks-container" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2">
+                    </div>
             </div>
             
-            <button onclick="manualSummarize()" id="manual-summary-btn" class="w-full py-3 bg-black text-white rounded-[16px] font-bold text-[16px] mt-2 mb-6 shadow-md active:scale-95 transition-transform">手动提取记忆</button>
+            <div class="bg-white rounded-[16px] p-4 shadow-sm mt-2 mb-6">
+                <div class="text-[14px] text-[#333] font-bold mb-3">手动总结记忆</div>
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <span class="text-[14px] text-[#333]">总结第</span>
+                    <input type="number" id="manual-summary-start" value="1" class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center outline-none text-[14px]">
+                    <span class="text-[14px] text-[#333]">条 到第</span>
+                    <input type="number" id="manual-summary-end" value="10" class="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-center outline-none text-[14px]">
+                    <span class="text-[14px] text-[#333]">条</span>
+                </div>
+                <button onclick="manualSummarize()" id="manual-summary-btn" class="w-full py-2.5 bg-black text-white rounded-xl font-bold text-[15px] shadow-sm active:scale-95 transition-transform">开始手动总结</button>
+            </div>
         </div>
     </div>
     <div id="character-settings-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
@@ -1615,12 +1626,22 @@ async function triggerAI(){
 
     let finalSystemMessage = config.systemPrompt;
 
-    // --- 新增：把总结好的记忆喂给 AI ---
+    // --- 新增：把总结好的卡片记忆喂给 AI ---
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
-        if (friend && friend.aiMemory) {
-            // 在基础设定的后面，加上之前的记忆
-            finalSystemMessage += `\n\n【你们之前的记忆总结，请你一定要记住】：\n${friend.aiMemory}`;
+        if (friend) {
+            let memoryText = "";
+            // 如果有新版的记忆卡片列表
+            if (friend.memoryList && friend.memoryList.length > 0) {
+                memoryText = friend.memoryList.join('\n');
+            } else if (friend.aiMemory) {
+                // 兼容旧版本的长文本记忆
+                memoryText = friend.aiMemory;
+            }
+            
+            if (memoryText) {
+                finalSystemMessage += `\n\n【你们之前的记忆总结，请你一定要记住】：\n${memoryText}`;
+            }
         }
     }
     
@@ -2462,19 +2483,30 @@ function saveAppearanceApp() {
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
 window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); renderFriendList(); };
-// ================= 新增：自动总结记忆功能引擎 =================
+// ================= 新增：自动总结记忆功能引擎 (卡片版) =================
 
 function openMemoryPage() {
     if (!currentFriendId) return alert('请先进入一个聊天');
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
     
+    // 自动兼容旧版记忆：把以前一大段的旧记忆变成第一张卡片
+    if (friend.aiMemory && (!friend.memoryList || friend.memoryList.length === 0)) {
+        friend.memoryList = [friend.aiMemory];
+        friend.aiMemory = ""; // 掏空旧数据
+    }
+    if (!friend.memoryList) friend.memoryList = [];
+    
     // 打开界面时，加载并显示保存的数据
     document.getElementById('current-msg-count').innerText = chatHistory.length;
     document.getElementById('auto-summary-switch').checked = friend.autoSummary || false;
     document.getElementById('auto-summary-threshold').value = friend.summaryThreshold || 20;
-    document.getElementById('current-memory-text').value = friend.aiMemory || '';
     
+    // 设置手动提取的默认范围：1 到 当前聊天条数
+    document.getElementById('manual-summary-start').value = 1;
+    document.getElementById('manual-summary-end').value = chatHistory.length > 0 ? chatHistory.length : 1;
+    
+    renderMemoryBlocks(); // 画出所有记忆卡片
     document.getElementById('memory-page').classList.remove('slide-hidden');
 }
 
@@ -2482,15 +2514,63 @@ function closeMemoryPage() {
     document.getElementById('memory-page').classList.add('slide-hidden');
 }
 
+// 渲染记忆卡片列表
+function renderMemoryBlocks() {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    const container = document.getElementById('memory-blocks-container');
+    container.innerHTML = ''; // 先清空
+    
+    if(!friend.memoryList || friend.memoryList.length === 0) {
+        container.innerHTML = '<div class="text-[13px] text-gray-400 text-center py-6">暂无记忆，可以手动提取或等AI自动总结...</div>';
+        return;
+    }
+
+    friend.memoryList.forEach((mem, index) => {
+        const block = document.createElement('div');
+        block.className = 'bg-gray-50 border border-gray-200 rounded-xl p-3 relative shadow-sm';
+        block.innerHTML = `
+            <div class="text-[13px] text-gray-700 pr-14 whitespace-pre-wrap break-words leading-relaxed">${mem}</div>
+            <div class="absolute top-2 right-2 flex flex-col gap-2">
+                <button onclick="editMemoryBlock(${index})" class="text-blue-500 text-[11px] font-bold bg-blue-50 px-2 py-1 rounded active:scale-95 transition-transform">编辑</button>
+                <button onclick="deleteMemoryBlock(${index})" class="text-red-500 text-[11px] font-bold bg-red-50 px-2 py-1 rounded active:scale-95 transition-transform">删除</button>
+            </div>
+        `;
+        container.appendChild(block);
+    });
+}
+
+function editMemoryBlock(index) {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    const newMem = prompt("编辑记忆内容 (AI 会严格记住这里的内容)：", friend.memoryList[index]);
+    if(newMem !== null && newMem.trim() !== "") {
+        friend.memoryList[index] = newMem.trim();
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        renderMemoryBlocks(); // 刷新卡片列表
+    }
+}
+
+function deleteMemoryBlock(index) {
+    if(confirm("确定要彻底删除这条记忆吗？AI 将彻底忘记这件事。")) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        if(!friend) return;
+        
+        friend.memoryList.splice(index, 1); // 咔嚓，抹除记忆
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        renderMemoryBlocks(); // 刷新卡片列表
+    }
+}
+
 function saveMemorySettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
     
-    // 当你填写数字或拨动开关时，实时保存
     friend.autoSummary = document.getElementById('auto-summary-switch').checked;
     friend.summaryThreshold = parseInt(document.getElementById('auto-summary-threshold').value) || 20;
-    friend.aiMemory = document.getElementById('current-memory-text').value;
     
     localStorage.setItem('friend_list', JSON.stringify(friendList));
 }
@@ -2523,17 +2603,16 @@ async function executeSummarize(messagesArray, friend) {
         let summary = data.choices[0].message.content.trim();
         
         if(summary !== '无' && summary !== '') {
-            // 把新总结的内容追加到旧记忆的后面
-            let newMemory = friend.aiMemory ? friend.aiMemory + "\n" : "";
-            newMemory += `[更新记忆]: ${summary}`;
-            friend.aiMemory = newMemory;
+            if (!friend.memoryList) friend.memoryList = [];
+            // 把新记忆做成卡片推进去
+            friend.memoryList.push(`[记忆点]: ${summary}`);
             
-            // 如果记忆页面正开着，顺便刷新一下文本框的显示
-            const memTextArea = document.getElementById('current-memory-text');
-            if(memTextArea) memTextArea.value = friend.aiMemory;
+            // 如果记忆页面正开着，顺便刷新一下卡片显示
+            if (!document.getElementById('memory-page').classList.contains('slide-hidden')) {
+                renderMemoryBlocks();
+            }
         }
         
-        // 记住这次总结算到了第几条消息，下次就从这里开始往下数
         friend.lastSummarizedLength = chatHistory.length;
         localStorage.setItem('friend_list', JSON.stringify(friendList));
     } catch(e) {
@@ -2541,30 +2620,33 @@ async function executeSummarize(messagesArray, friend) {
     }
 }
 
-// 给你留的一个手动一键提取按钮
+// 用户手动总结记忆
 async function manualSummarize() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
     
+    const startIdx = parseInt(document.getElementById('manual-summary-start').value);
+    const endIdx = parseInt(document.getElementById('manual-summary-end').value);
+    
+    if (isNaN(startIdx) || isNaN(endIdx) || startIdx < 1 || endIdx > chatHistory.length || startIdx > endIdx) {
+        return alert("输入的条数范围不正确哦！请检查一下~");
+    }
+
     const btn = document.getElementById('manual-summary-btn');
     btn.innerText = "正在大脑提取中...";
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
     
-    // 只总结上次总结之后的新消息，如果没有上次，就全总结
-    const unsummarizedCount = chatHistory.length - (friend.lastSummarizedLength || 0);
-    let msgsToSummarize = chatHistory;
-    if(unsummarizedCount > 0) {
-        msgsToSummarize = chatHistory.slice(friend.lastSummarizedLength || 0);
-    }
+    // 提取指定范围的消息（因为数组索引从0开始，所以 startIdx 要减 1）
+    const msgsToSummarize = chatHistory.slice(startIdx - 1, endIdx);
     
     await executeSummarize(msgsToSummarize, friend);
     
-    btn.innerText = "手动提取记忆";
+    btn.innerText = "开始手动总结";
     btn.style.opacity = "1";
     btn.style.pointerEvents = "auto";
-    alert("✅ 记忆提取完成！快去看看文本框吧！");
+    alert("✅ 记忆提取完成！上面多了一张新的记忆卡片！");
 }
 
 function checkAndTriggerAutoSummary() {
