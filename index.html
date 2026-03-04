@@ -2060,6 +2060,12 @@ async function triggerAI(){
     titleEl.innerHTML = '<span style="color: #999;">对方正在输入中...</span>';
 
     let finalSystemMessage = config.systemPrompt;
+    
+    // 【终极修复】：在微信给 AI 注入你的专属 HTML 排版代码指令
+    const friendForPrompt = friendList.find(f => f.id === currentFriendId);
+    if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
+        finalSystemMessage += `\n\n【最高级系统指令：自动翻译格式】\n当前已开启翻译功能。你的每一次回复，都必须且只能使用下面这段单行HTML代码来输出。如果有几句话要分开发送，就连续输出多次这段HTML。绝对不要输出这之外的任何纯文本！绝对不要加代码块(如\`\`\`html)！\n\n请严格套用以下格式（替换其中的"回复原文"和"中文翻译"）：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">你的回复原文（必须保留原语言）</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">对应的中文翻译</div></div></div>`;
+    }
 
     // --- 修改：把微信和短信双端记忆都喂给 AI，但告诉它这是在微信 ---
     if (currentFriendId) {
@@ -2273,16 +2279,23 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-        // 1. 把文字按换行符拆开 (保护 HTML 直出逻辑)
+        // 1. 把文字按换行符拆开 (完美适配HTML模板直出)
         if (textOnly) {
-            // 把 AI 可能会犯贱加上的 markdown 代码块外壳扒掉
             let cleanText = textOnly.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
+            const isTransOn = friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled;
             
-            // 如果开启了翻译，并且 AI 发出来的是那段 HTML 代码，就整段吞下，绝对不拆分！
-            if (cleanText.includes('<div style="display:inline-block;') || cleanText.includes('trans-container')) {
-                newMessages.push({role:'assistant', content: cleanText});
+            if (isTransOn && cleanText.includes('<div style="display:inline-block;')) {
+                // 用魔法正则把 AI 生成的每一段完整的 HTML 气泡都提取出来，防止它乱加换行导致排版被切碎
+                const htmlBubbles = cleanText.match(/<div style="display:inline-block;[\s\S]*?<\/div><\/div><\/div>/gi);
+                if (htmlBubbles && htmlBubbles.length > 0) {
+                    htmlBubbles.forEach(bubble => {
+                        newMessages.push({role:'assistant', content: bubble});
+                    });
+                } else {
+                    newMessages.push({role:'assistant', content: cleanText});
+                }
             } else {
-                // 如果没开翻译，就恢复正常的按换行拆分成多条气泡
+                // 没开翻译，正常按换行拆分成多条气泡
                 const textLines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
                 textLines.forEach(line => {
                     newMessages.push({role:'assistant', content: line});
@@ -3135,10 +3148,10 @@ async function triggerSmsAI() {
     const friend = friendList.find(f => f.id === currentSmsFriendId);
 
     let finalSystemMessage = config.systemPrompt;
-    const friendForPrompt = friendList.find(f => f.id === currentFriendId);
+    // 【修复 BUG】：这里必须要用 currentSmsFriendId，不能用微信的！
+    const friendForPrompt = friendList.find(f => f.id === currentSmsFriendId);
     if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-        // 让 AI 直接变成一个无情的 HTML 填词机器
-        finalSystemMessage += `\n\n【系统强制指令】：已开启自动翻译。你的所有回复必须严格套用以下HTML代码格式输出，绝对不要有任何多余的解释，也不要加Markdown代码块（不要写\`\`\`html）：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">你的回复原文（保留原文语种）</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">对应的中文翻译</div></div></div>`;
+        finalSystemMessage += `\n\n【最高级系统指令：自动翻译格式】\n当前已开启翻译功能。你的每一次回复，都必须且只能使用下面这段单行HTML代码来输出。如果有几句话要分开发送，就连续输出多次这段HTML。绝对不要输出这之外的任何纯文本！绝对不要加代码块(如\`\`\`html)！\n\n请严格套用以下格式（替换其中的"回复原文"和"中文翻译"）：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">你的回复原文（必须保留原语言）</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">对应的中文翻译</div></div></div>`;
     }
     
     if(friend) {
@@ -3149,17 +3162,14 @@ async function triggerSmsAI() {
 【活人感引擎：当前时间是 ${timeString}】
 【重要提示：你现在正在和用户在苹果“短信(iMessage)”上聊天，不要发微信特有的表情包或功能。短信通常比微信更直接，偏向有事说事或短平快的生活碎片，没有微信那么多寒暄。】
 每次只回复 1 到 2 条简短信息。`;
-
         // 喂入双端记忆
         let wxMemoryText = (friend.memoryList && friend.memoryList.length > 0) ? friend.memoryList.join('\n') : (friend.aiMemory || "");
         if (wxMemoryText) finalSystemMessage += `\n\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
-        
         let smsMemoryText = (friend.smsMemoryList && friend.smsMemoryList.length > 0) ? friend.smsMemoryList.join('\n') : "";
         if (smsMemoryText) finalSystemMessage += `\n【你们在短信的记忆总结，请一定记住】：\n${smsMemoryText}`;
     }
     
     try {
-        // 【新增】给短信也装上完全兼容 GPT-4o 等模型的视觉解析核心
         let formattedMessages = [{role:'system', content:finalSystemMessage}];
         smsChatHistory.slice(-5).forEach(msg => {
             const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
@@ -3167,14 +3177,7 @@ async function triggerSmsAI() {
                 const base64Url = imgMatch[1];
                 let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
                 if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
-                
-                formattedMessages.push({
-                    role: msg.role,
-                    content: [
-                        { type: "text", text: textOnly },
-                        { type: "image_url", image_url: { url: base64Url } }
-                    ]
-                });
+                formattedMessages.push({ role: msg.role, content: [ { type: "text", text: textOnly }, { type: "image_url", image_url: { url: base64Url } } ] });
             } else {
                 formattedMessages.push({ role: msg.role, content: msg.content });
             }
@@ -3194,8 +3197,20 @@ async function triggerSmsAI() {
         const reply=data.choices[0].message.content;
         
         let newMessages = [];
-        const textLines = reply.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        textLines.forEach(line => newMessages.push({role:'assistant', content: line}));
+        let cleanText = reply.replace(/```html\n?/gi, '').replace(/```\n?/g, '').trim();
+        const isTransOn = friendList.find(f => f.id === currentSmsFriendId)?.isTranslationEnabled;
+        
+        if (isTransOn && cleanText.includes('<div style="display:inline-block;')) {
+            const htmlBubbles = cleanText.match(/<div style="display:inline-block;[\s\S]*?<\/div><\/div><\/div>/gi);
+            if (htmlBubbles && htmlBubbles.length > 0) {
+                htmlBubbles.forEach(bubble => newMessages.push({role:'assistant', content: bubble}));
+            } else {
+                newMessages.push({role:'assistant', content: cleanText});
+            }
+        } else {
+            const textLines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            textLines.forEach(line => newMessages.push({role:'assistant', content: line}));
+        }
         if (newMessages.length === 0) newMessages.push({role:'assistant', content: reply});
         
         let msgIndex = 0;
@@ -3754,7 +3769,7 @@ function saveOtherSettings() {
 
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     closeOtherSettings();
-    alert("✅ 高级设置保存成功！");
+    alert("✅ 高级保存成功！");
 }
 
 function clearFriendHistory() {
