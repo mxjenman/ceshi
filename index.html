@@ -2273,33 +2273,35 @@ TimeChecklist:
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
 
-            // 1. 拆分消息与翻译格式化 (XML终极防雷版)
-            if (textOnly) {
-                const isTransOn = friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled;
+        // 1. 解析外语和翻译，并套用用户指定的超漂亮 HTML 格式
+        if (textOnly) {
+            const isTransOn = friendList.find(f => f.id === currentFriendId)?.isTranslationEnabled;
+            
+            // 如果开启了翻译，并且 AI 乖乖写了标签
+            if (isTransOn && textOnly.includes('<msg>') && textOnly.includes('<trans>')) {
+                const msgMatch = textOnly.match(/<msg>([\s\S]*?)<\/msg>/i);
+                const transMatch = textOnly.match(/<trans>([\s\S]*?)<\/trans>/i);
                 
-                if (isTransOn) {
-                    // 无论AI怎么乱排版，只精准抓取 <msg> 和 <trans> 标签里的内容
-                    const msgMatch = textOnly.match(/<msg>([\s\S]*?)<\/msg>/i);
-                    const transMatch = textOnly.match(/<trans>([\s\S]*?)<\/trans>/i);
+                if (msgMatch && transMatch) {
+                    let mainText = msgMatch[1].trim().replace(/\n/g, '<br>');
+                    let transText = transMatch[1].trim().replace(/\n/g, '<br>');
                     
-                    if (msgMatch && transMatch) {
-                        // 抓到了！原文和翻译拼装进同一个气泡，中间加虚线
-                        let mainText = msgMatch[1].trim().replace(/\n/g, '<br>');
-                        let transText = transMatch[1].trim().replace(/\n/g, '<br>');
-                        let combinedHtml = `${mainText}<div class="mt-2 pt-2 border-t border-dashed border-gray-400/50 text-[13px] text-gray-500 leading-relaxed font-normal">${transText}</div>`;
-                        newMessages.push({role: 'assistant', content: combinedHtml});
-                    } else {
-                        // 极端兜底：如果AI实在笨到连标签都写错，就不拆分了，把它的所有废话全塞进一个气泡里
-                        newMessages.push({role: 'assistant', content: textOnly.replace(/\n/g, '<br>')});
-                    }
+                    // 【严格采用你给的 HTML 格式】
+                    let combinedHtml = `<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">${mainText}</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">${transText}</div></div></div>`;
+                    
+                    newMessages.push({role: 'assistant', content: combinedHtml});
                 } else {
-                    // 没开翻译：按照原来的习惯，遇到换行就切成好几个连续的小气泡
-                    const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                    textLines.forEach(line => {
-                        newMessages.push({role:'assistant', content: line});
-                    });
+                    newMessages.push({role: 'assistant', content: textOnly});
                 }
+            } else {
+                // 如果没开翻译，就依然走老规矩，按换行拆分气泡
+                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                textLines.forEach(line => {
+                    newMessages.push({role:'assistant', content: line});
+                });
             }
+        }
+
         
         // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
@@ -3144,11 +3146,12 @@ async function triggerSmsAI() {
     titleEl.innerHTML = '<span style="color: #999; font-size: 11px;">对方正在输入...</span>';
     
     const friend = friendList.find(f => f.id === currentSmsFriendId);
+
     let finalSystemMessage = config.systemPrompt;
     const friendForPrompt = friendList.find(f => f.id === currentFriendId);
     if (friendForPrompt && friendForPrompt.isTranslationEnabled) {
-        // 【最强控制】：采用编程界最稳的 XML 标签强制输出，专治 AI 各种不服
-        finalSystemMessage += `\n\n【系统最高强制指令】：已开启自动翻译模式。你必须将“回复原文”和“中文翻译”用专门的标签严格包裹起来！\n格式必须且只能是：\n<msg>你的回复原文（保留语气，不管用什么语言）</msg>\n<trans>对应的中文翻译</trans>\n绝对不允许在这两个标签之外输出任何废话！`;
+        // 强制要求 AI 用标签打包，专治不听话
+        finalSystemMessage += `\n\n【系统最高强制指令】：已开启自动翻译模式。无论你使用什么语言回复，都必须提供中文翻译！\n你必须严格使用以下标签格式输出：\n<msg>这里写你的回复原文（保留语种和语气）</msg>\n<trans>这里写对应的中文翻译</trans>\n绝对不允许在标签外输出任何多余内容！`;
     }
     
     if(friend) {
