@@ -1685,20 +1685,26 @@ function deleteSelectedMessages() {
 
 function sendUserMsg(){
     if(!currentFriendId) return;
-    const input=document.getElementById('chat-input');
-    if(!input.value)return;
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
     
-    let finalContent = input.value;
-    // 如果带着引用，就把引用拼在前面
+    // 【核心修改】：如果输入框是空的，直接触发AI回复（相当于呼唤它）
+    if(!text && !currentQuoteMsg) {
+        triggerAI();
+        return;
+    }
+    
+    let finalContent = text;
     if (currentQuoteMsg) {
-        finalContent = `[引用:${currentQuoteMsg}]\n${input.value}`;
+        finalContent = `[引用:${currentQuoteMsg}]\n${text}`;
         currentQuoteMsg = null;
         input.placeholder = "输入消息...";
     }
     
+    // 把消息扔进屏幕，但不呼唤AI，实现单纯的“连发”
     chatHistory.push({role:'user',content:finalContent});
-    input.value='';
-    renderAllMessages(); // 刷新屏幕显示新消息
+    input.value = '';
+    renderAllMessages(true);
 }
 async function triggerAI(){
     if(!currentFriendId) return;
@@ -1864,15 +1870,18 @@ TimeChecklist:
         finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
         console.log("注入了世界书数据:", injectedLore);
     }
-
     try {
-        [span_0](start_span)// 新增：自动检测聊天记录里有没有图片，如果有，就把它转换成 AI 视觉模型能看懂的格式[span_0](end_span)
+
+        // 【修复】微信使用真正的多模态格式读取微信的历史记录
         let formattedMessages = [{role:'system', content:finalSystemMessage}];
-        smsChatHistory.slice(-5).forEach(msg => {
-            const imgMatch = msg.content.match(/<img[^>]+src="([^">]+)"/);
+        chatHistory.slice(-5).forEach(msg => {
+            const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
             if (imgMatch) {
                 const base64Url = imgMatch[1];
-                const textOnly = msg.content.replace(/<img[^>]*>/g, '').trim() || "【我发送了一张图片，请根据图片内容回复我】";
+                let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+                // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
+                if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
+                
                 formattedMessages.push({
                     role: msg.role,
                     content: [
@@ -1890,7 +1899,7 @@ TimeChecklist:
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
             body:JSON.stringify({
                 model:config.model,
-                messages: formattedMessages, // 替换为格式化好的多模态消息
+                messages: formattedMessages,
                 temperature: parseFloat(config.temperature),
                 max_tokens:800
             })
@@ -2720,32 +2729,30 @@ function sendSmsUserMsg() {
     const input = document.getElementById('sms-input');
     const text = input.value.trim();
     
-    // 修改：如果输入框是空的，直接触发 AI 回复（相当于戳一下它）
+    // 【核心修改】：输入框为空时点击发送，才会触发AI回复
     if(!text) {
         triggerSmsAI();
         return;
     }
     
+    // 有字的时候只负责发送上屏，不叫醒AI
     smsChatHistory.push({role:'user', content: text});
     input.value = '';
     renderSmsMessages(true);
-    triggerSmsAI();
 }
 
-// 新增：读取相册图片，并在屏幕上画出来，然后自动叫 AI 看图
+// 修改：发完图片也不自动触发AI了，你可以连发好几张图，最后点一下空白发送键让AI一起看
 function sendSmsImage(input) {
     if(!currentSmsFriendId) return;
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
             const base64Img = e.target.result;
-            // 把图片变成气泡存进聊天记录
             smsChatHistory.push({role:'user', content: `<img src="${base64Img}" class="max-w-full rounded-xl mt-1 shadow-sm border border-gray-100">`});
             renderSmsMessages(true);
-            triggerSmsAI(); // 发完图立刻叫 AI 回复
         }
         reader.readAsDataURL(input.files[0]);
-        input.value = ''; // 清空，防止下次选同一张图没反应
+        input.value = ''; 
     }
 }
 
@@ -2777,12 +2784,33 @@ async function triggerSmsAI() {
     }
     
     try {
+        // 【新增】给短信也装上完全兼容 GPT-4o 等模型的视觉解析核心
+        let formattedMessages = [{role:'system', content:finalSystemMessage}];
+        smsChatHistory.slice(-5).forEach(msg => {
+            const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
+            if (imgMatch) {
+                const base64Url = imgMatch[1];
+                let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+                if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
+                
+                formattedMessages.push({
+                    role: msg.role,
+                    content: [
+                        { type: "text", text: textOnly },
+                        { type: "image_url", image_url: { url: base64Url } }
+                    ]
+                });
+            } else {
+                formattedMessages.push({ role: msg.role, content: msg.content });
+            }
+        });
+
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
             body:JSON.stringify({
                 model:config.model,
-                messages:[{role:'system',content:finalSystemMessage}, ...smsChatHistory.slice(-5)],
+                messages: formattedMessages,
                 temperature: parseFloat(config.temperature),
                 max_tokens:800
             })
