@@ -4221,24 +4221,40 @@ function applyDarkModeStyle() {
     if (config.isDarkMode) {
         // 终极夜间模式引擎：强制覆盖所有角落
         styleTag.innerHTML = `
-            /* 1. 终极背景底色：覆盖所有大页面（论坛、朋友圈、短信、世界书等） */
-            body, #home-screen, .page-layer, #chat-screen, #forum-screen, #compose-screen, #sms-app-screen, #lorebook-screen, #chat-detail-page, #wechat-tab-messages, #wechat-tab-moments, #wechat-tab-me, #sms-chat-view, #sms-list-view, #moments-compose-screen, [class*="bg-[#ededed]"], [class*="bg-[#f2f2f6]"], [class*="bg-[#f0f0f0]"] {
+            /* 1. 终极背景底色（修复壁纸被遮挡：移除了 home-screen） */
+            body, .page-layer, #chat-screen, #forum-screen, #compose-screen, #sms-app-screen, #lorebook-screen, #chat-detail-page, #wechat-tab-messages, #wechat-tab-moments, #wechat-tab-me, #sms-chat-view, #sms-list-view, #moments-compose-screen, [class*="bg-[#ededed]"], [class*="bg-[#f2f2f6]"], [class*="bg-[#f0f0f0]"] {
                 background-color: #121212 !important;
                 color: #e0e0e0 !important;
             }
 
-            /* 2. 所有的白底面板、弹窗、顶栏底栏、设置卡片，统一变成护眼深灰 */
+            /* 修复桌面壁纸显示：让主屏幕透明，露出下面的壁纸 */
+            #home-screen {
+                background-color: transparent !important;
+            }
+
+            /* 修复微信主页/我页面底部的突兀色块：让原本占位的白块变透明融入背景 */
+            #wechat-tab-me .flex-1.bg-white, #wechat-tab-messages.bg-white {
+                background-color: transparent !important;
+            }
+            
+            /* 微信底部的三个按钮导航条：稍微提亮一点点，和主页区分开 */
+            .h-14.bg-\\[\\#f7f7f7\\] {
+                background-color: #1a1a1a !important;
+                border-top-color: #333 !important;
+            }
+
+            /* 2. 所有的白底面板、弹窗统一变成高级深灰 */
             [class*="bg-white"], [class*="bg-[#f7f7f7]"], [class*="bg-gray-50"], [class*="bg-gray-100"], .wx-me-header, #wechat-header, #sms-chat-flow, #friend-action-modal > div, #modal-overlay > div, #inventory-menu, #placeholder-menu, #emoji-panel, .tweet-card, .wx-menu-item {
                 background-color: #1e1e1e !important;
                 color: #e0e0e0 !important;
             }
 
-            /* 3. 按钮和特定区域的特殊深色（图片添加按钮、黑按钮） */
+            /* 3. 按钮特殊深色 */
             [class*="bg-[#f4f5f6]"], #post-image-add-btn, #moments-image-add-btn, [class*="bg-gray-200"], [class*="bg-gray-300"], [class*="bg-black"] {
                 background-color: #2c2c2c !important;
             }
 
-            /* 4. 文字颜色强制反转（黑字变白，灰字变暗灰） */
+            /* 4. 文字颜色强制反转 */
             [class*="text-black"], [class*="text-[#333]"], [class*="text-[#111]"], [class*="text-gray-800"], [class*="text-gray-700"], #wx-me-name, .tab-active { 
                 color: #e0e0e0 !important; 
             }
@@ -4250,35 +4266,39 @@ function applyDarkModeStyle() {
             [class*="border-b"], [class*="border-t"], [class*="border-gray-100"], [class*="border-gray-200"], [class*="border-gray-300"], [class*="border-gray-500"], .wx-divider-thin, [class*="border-[#DEDEDE]"], .tweet-card {
                 border-color: #333333 !important;
             }
-            .wx-divider-thin { background-color: #333 !important; height: 1px !important; }
+            .wx-divider-thin { background-color: #333333 !important; height: 0.5px !important; }
             .tab-active { border-bottom-color: #e0e0e0 !important; }
 
-            /* 6. 输入框、文本域完美隐身 */
+            /* 修复个人资料和设置中间的线，强制恢复 0.5px 细线 */
+            .wx-menu-item {
+                border-bottom: 0.5px solid #333333 !important;
+            }
+            .wx-menu-item:last-child {
+                border-bottom: none !important;
+            }
+
+            /* 6. 输入框完美隐身 */
             input, textarea, select {
                 background-color: #2c2c2c !important;
                 color: #e0e0e0 !important;
                 border-color: #444 !important;
             }
             input::placeholder, textarea::placeholder { color: #666 !important; }
-            /* 短信底部的搜索框和输入框外壳 */
             .bg-white.border.border-gray-300.rounded-2xl { background-color: #2c2c2c !important; border-color: #444 !important; }
             #sms-input { background-color: transparent !important; }
 
-            /* 7. ============ 桌面组件专项适配 ============ */
+            /* 7. 桌面组件 */
             .widget-card, .glass-card { background: linear-gradient(135deg, #1e1e1e, #121212) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important; }
-            /* 桌面文字气泡 */
             #mock-msg-1, #badge-char, #badge-user { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
             #mock-msg-2 { background-color: #3a3a3a !important; color: #e0e0e0 !important; }
 
-            /* 8. ============ 聊天气泡专项适配 ============ */
-            /* 微信AI白气泡 */
+            /* 8. 聊天气泡 */
             .chat-msg-ai { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
             #chat-input { background-color: #2c2c2c !important; }
-            /* 短信灰气泡与蓝气泡护眼处理 */
             [class*="bg-[#e5e5ea]"] { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
             [class*="bg-[#007aff]"] { background-color: #0b5ed7 !important; color: #ffffff !important; }
 
-            /* 9. 图标及细节修复 */
+            /* 9. 图标细节 */
             svg path[stroke="black"], svg path[stroke="#333"] { stroke: #aaaaaa !important; }
             svg circle[fill="black"] { fill: #aaaaaa !important; }
             .wechat-nav-active { color: #07c160 !important; }
