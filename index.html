@@ -408,7 +408,7 @@
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openMemoryPage()">
                     <span class="text-[16px] text-black">记忆</span>
                 </div>
-                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openPlaceholder('气泡')">
+                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openBubbleSettings()">
                     <span class="text-[16px] text-black">气泡</span>
                 </div>
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openOtherSettings()">
@@ -486,6 +486,38 @@
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="inner-voice-list">
             </div>
+    </div>
+    <div id="bubble-settings-page" class="page-layer slide-hidden flex flex-col z-[90] bg-[#f2f2f6]">
+        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 shrink-0">
+            <button onclick="closeBubbleSettings()" class="back-icon w-12 flex justify-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18L9 12L15 6"/></svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">气泡外观设置</div>
+            <button onclick="saveBubbleSettings()" class="w-12 text-black font-bold text-[15px] text-right">保存</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="font-bold text-[#333] text-[14px]">当前气泡 CSS 代码</label>
+                </div>
+                <textarea id="bubble-css-input" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none resize-none h-48 text-gray-700 bg-gray-50 font-mono" placeholder="输入自定义气泡CSS..."></textarea>
+            </div>
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="font-bold text-[#333] text-[14px] mb-2 block">气泡预设管理</label>
+                <div class="flex gap-2 mb-3">
+                    <select id="bubble-preset-select" class="flex-1 border border-gray-200 rounded-lg p-2 text-sm outline-none bg-white" onchange="loadBubblePreset()">
+                        <option value="">选择预设...</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveBubblePreset()" class="flex-1 bg-gray-100 text-black py-2 rounded-lg text-sm font-bold active:scale-95">保存为新预设</button>
+                    <button onclick="deleteBubblePreset()" class="flex-1 bg-red-50 text-red-500 py-2 rounded-lg text-sm font-bold active:scale-95">删除预设</button>
+                </div>
+            </div>
+            <div class="text-[12px] text-gray-400 px-2 leading-relaxed">
+                提示：针对TA的气泡使用 <b>.chat-msg-ai</b> 控制，针对你自己使用 <b>.chat-msg-user</b> 控制。气泡设置分角色独立保存，不同好友可应用不同预设。
+            </div>
+        </div>
     </div>
 
     <div id="other-settings-page" class="page-layer slide-hidden flex flex-col z-[80] bg-[#f2f2f6]">
@@ -1848,6 +1880,8 @@ function openChatDetail(id) {
     const friend = friendList.find(f => f.id === id);
     document.getElementById('chat-detail-title').innerText = friend.remark;
     chatHistory = friend.chatHistory;
+
+applyDynamicBubbleCss(friend.bubbleCss || '');
     
     // 每次打开聊天重置状态
     isMultiSelecting = false; 
@@ -3703,7 +3737,84 @@ function deleteFriendAction() {
 }
 
 // ================= 新增：高级管理系统 (导出/拉黑/主动活跃/心声) =================
+let bubblePresets = JSON.parse(localStorage.getItem('bubblePresets_data')) || {};
 
+function openBubbleSettings() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+    
+    document.getElementById('bubble-css-input').value = friend.bubbleCss || '';
+    renderBubblePresets();
+    document.getElementById('bubble-settings-page').classList.remove('slide-hidden');
+}
+
+function closeBubbleSettings() {
+    document.getElementById('bubble-settings-page').classList.add('slide-hidden');
+}
+
+function saveBubbleSettings() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+    
+    const cssContent = document.getElementById('bubble-css-input').value;
+    friend.bubbleCss = cssContent;
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    
+    applyDynamicBubbleCss(cssContent);
+    closeBubbleSettings();
+    alert('✅ 气泡样式已保存并立即生效！');
+}
+
+function renderBubblePresets() {
+    const select = document.getElementById('bubble-preset-select');
+    select.innerHTML = '<option value="">选择预设...</option>';
+    for (const name in bubblePresets) {
+        select.innerHTML += `<option value="${name}">${name}</option>`;
+    }
+}
+
+function saveBubblePreset() {
+    const presetName = prompt("请输入预设名称 (如: 赛博朋克风)：", "新预设");
+    if (!presetName) return;
+    
+    bubblePresets[presetName] = document.getElementById('bubble-css-input').value;
+    localStorage.setItem('bubblePresets_data', JSON.stringify(bubblePresets));
+    renderBubblePresets();
+    
+    document.getElementById('bubble-preset-select').value = presetName;
+    alert("✅ 气泡预设保存成功！");
+}
+
+function deleteBubblePreset() {
+    const select = document.getElementById('bubble-preset-select');
+    const presetName = select.value;
+    if (!presetName) return alert("请先在下拉框选择一个要删除的预设！");
+    
+    if (confirm(`确定要删除气泡预设 "${presetName}" 吗？`)) {
+        delete bubblePresets[presetName];
+        localStorage.setItem('bubblePresets_data', JSON.stringify(bubblePresets));
+        renderBubblePresets();
+        select.value = "";
+    }
+}
+
+function loadBubblePreset() {
+    const select = document.getElementById('bubble-preset-select');
+    if (!select.value) return;
+    document.getElementById('bubble-css-input').value = bubblePresets[select.value];
+}
+
+function applyDynamicBubbleCss(css) {
+    let styleTag = document.getElementById('dynamic-bubble-css');
+    if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = 'dynamic-bubble-css';
+        document.head.appendChild(styleTag);
+    }
+    styleTag.innerHTML = css || '';
+}
 function openOtherSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
