@@ -243,24 +243,25 @@
             </div>
         </div>
         </div> <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
-            <div onclick="openMusicPlayer()" class="w-full rounded-[24px] py-4 px-5 relative overflow-hidden shadow-lg cursor-pointer transition-transform active:scale-95" style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px solid rgba(255,255,255,0.2); transform: translateY(-10px);">
+            <div onclick="openMusicPlayer()" class="w-full rounded-[24px] py-4 px-5 relative overflow-hidden shadow-lg cursor-pointer transition-transform active:scale-95" style="background: rgba(255, 255, 255, 0.25);
+backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px solid rgba(255,255,255,0.2); transform: translateY(-10px);">
                 <div class="flex gap-4 items-center mb-3">
                     <div class="w-[50px] h-[50px] bg-gray-300 rounded-[12px] flex-shrink-0 overflow-hidden shadow-md">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover">
+                        <img id="widget-cover" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
-                        <div class="font-bold text-[16px] truncate text-gray-500 music-widget-text drop-shadow-sm" onclick="event.stopPropagation(); editAnyText('music-title')" id="music-title">默认文本</div>
-                        <div class="text-[13px] text-gray-400 truncate music-widget-text drop-shadow-sm mt-0.5" onclick="event.stopPropagation(); editAnyText('music-artist')" id="music-artist">默认文本 / 默认文本</div>
+                        <div class="font-bold text-[16px] truncate text-gray-500 music-widget-text drop-shadow-sm" id="music-title">暂无歌曲</div>
+                        <div class="text-[13px] text-gray-400 truncate music-widget-text drop-shadow-sm mt-0.5" id="music-artist">请点击打开播放器添加</div>
                     </div>
                     <div class="text-gray-400 music-widget-text font-bold tracking-widest mb-3">……</div>
                 </div>
                 
                 <div class="flex items-center gap-3 mb-2.5 text-[11px] text-gray-500 music-widget-text font-medium">
-                    <span>0:00</span>
+                    <span id="widget-curr-time">0:00</span>
                     <div class="flex-1 h-[5px] bg-black/10 rounded-full overflow-hidden relative">
-                        <div class="w-1/4 h-full bg-gray-400 music-widget-bg rounded-full absolute left-0 top-0"></div>
+                        <div id="widget-progress" class="w-0 h-full bg-gray-400 music-widget-bg rounded-full absolute left-0 top-0 transition-all duration-300"></div>
                     </div>
-                    <span>-0:00</span>
+                    <span id="widget-total-time">-0:00</span>
                 </div>
                 
                 <div class="flex justify-between items-center px-1 text-gray-500 music-widget-text">
@@ -268,7 +269,9 @@
                     
                     <div class="flex gap-6 items-center">
                         <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
-                        <svg class="w-[38px] h-[38px]" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <div class="w-[38px] h-[38px] cursor-pointer active:scale-90 transition-transform flex items-center justify-center" onclick="event.stopPropagation(); togglePlay();">
+                            <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24" id="widget-play-icon"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
                         <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
                     </div>
                     
@@ -1190,23 +1193,30 @@
             </button>
         </div>
 
-        <div class="flex-1 flex items-center justify-center p-8" style="transform: translateY(-10px);">
-            <div class="w-[70%] aspect-square rounded-full shadow-2xl flex items-center justify-center overflow-hidden" id="record-player" style="animation: spin 10s linear infinite; animation-play-state: paused;">
-                <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover rounded-full">
+        <div class="flex-1 flex items-center justify-center p-8 relative" style="transform: translateY(-10px);">
+            <div class="w-[70%] aspect-square rounded-full shadow-2xl flex items-center justify-center overflow-hidden cursor-pointer absolute transition-opacity duration-300" id="record-player" style="animation: spin 10s linear infinite; animation-play-state: paused;" onclick="toggleLyricsView()">
+                <img id="player-cover-img" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover rounded-full">
+            </div>
+            <div class="w-full h-full absolute inset-0 flex flex-col items-center overflow-hidden cursor-pointer opacity-0 pointer-events-none transition-opacity duration-300 px-6 py-4" id="lyrics-view" onclick="toggleLyricsView()">
+                <div class="flex-1 w-full overflow-y-auto no-scrollbar scroll-smooth relative" id="lyrics-container" style="mask-image: linear-gradient(transparent, black 20%, black 80%, transparent); -webkit-mask-image: linear-gradient(transparent, black 20%, black 80%, transparent);">
+                    <div id="lyrics-content" class="flex flex-col items-center text-center space-y-6 text-gray-400 font-medium py-[50%]">
+                        <div class="text-sm">暂无歌词，点击可切回封面</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="px-6 pb-12">
             <div class="text-center mb-6">
-                <h2 class="text-xl font-bold mb-1">默认歌曲名</h2>
-                <p class="text-sm text-gray-400">未知歌手</p>
+                <h2 class="text-xl font-bold mb-1" id="player-title">暂无歌曲</h2>
+                <p class="text-sm text-gray-400" id="player-artist">请打开播放列表添加</p>
             </div>
             <div class="flex justify-between text-xs text-gray-400 mb-2">
-                <span>0:00</span>
-                <span>4:19</span>
+                <span id="player-curr-time">0:00</span>
+                <span id="player-total-time">0:00</span>
             </div>
             <div class="h-1.5 bg-gray-700 rounded-full mb-8 relative">
-                <div class="w-1/4 h-full bg-white rounded-full"></div>
+                <div id="player-progress" class="w-0 h-full bg-white rounded-full transition-all duration-300"></div>
             </div>
             
             <div class="flex justify-between items-center px-4">
@@ -1223,26 +1233,45 @@
         <div class="absolute inset-0" onclick="closePlaylist()"></div>
         <div class="bg-[#1e1e1e] w-full h-[60vh] rounded-t-[24px] relative z-10 flex flex-col text-white transform transition-transform duration-300 translate-y-full" id="playlist-container">
             <div class="p-5 border-b border-gray-800 flex justify-between items-center">
-                <h3 class="font-bold text-lg">当前播放 (占位)</h3>
-                <button onclick="closePlaylist()" class="text-gray-400 font-bold active:scale-90">关闭</button>
+                <div class="w-10"></div>
+                <h3 class="font-bold text-lg flex-1 text-center">播放列表</h3>
+                <div class="flex items-center gap-4 w-16 justify-end">
+                    <button onclick="openAddSongModal()" class="text-white text-2xl font-light active:scale-90">+</button>
+                    <button onclick="closePlaylist()" class="text-gray-400 font-bold active:scale-90 text-[15px]">关闭</button>
+                </div>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 space-y-2">
-                <div class="flex items-center p-3 cursor-pointer active:bg-gray-800 rounded-xl bg-gray-800/50">
-                    <span class="text-blue-400 mr-4 font-bold">▶</span>
-                    <div class="flex-1">
-                        <div class="text-[15px] font-bold text-blue-400">占位歌曲 1</div>
-                        <div class="text-[12px] text-gray-400">某某歌手</div>
-                    </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-2" id="playlist-items">
                 </div>
-                <div class="flex items-center p-3 cursor-pointer active:bg-gray-800 rounded-xl">
-                    <span class="text-gray-500 mr-4 font-bold">2</span>
-                    <div class="flex-1">
-                        <div class="text-[15px] text-gray-200">占位歌曲 2</div>
-                        <div class="text-[12px] text-gray-500">某某歌手</div>
-                    </div>
-                </div>
-                
-                <div class="text-center text-gray-500 text-xs mt-10">（下一步我们再来做真实的添加音乐功能）</div>
+        </div>
+    </div>
+
+    <div id="add-song-modal" class="fixed inset-0 hidden z-[120] flex items-center justify-center p-6 transition-all" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+        <div class="bg-white/10 border border-white/20 rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative text-white">
+            <h3 class="font-bold mb-4 text-center text-lg">添加新歌曲</h3>
+            
+            <input id="new-song-title" type="text" placeholder="歌曲名称 (必填)" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 mb-3 outline-none text-[14px]">
+            <input id="new-song-artist" type="text" placeholder="歌手名称" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 mb-3 outline-none text-[14px]">
+            
+            <div class="mb-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">1. 封面图片</label>
+                <input type="file" id="new-song-cover" accept="image/*" class="text-[11px] w-full text-gray-400">
+            </div>
+            
+            <div class="mb-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">2. 音乐源 (选本地 或 填链接)</label>
+                <input type="file" id="new-song-audio-file" accept="audio/*" class="text-[11px] w-full text-gray-400 mb-2">
+                <input id="new-song-audio-url" type="text" placeholder="或填写音乐URL链接..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 outline-none text-[12px]">
+            </div>
+
+            <div class="mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
+                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">3. 歌词 (支持LRC时间轴)</label>
+                <input type="file" id="new-song-lrc-file" accept=".lrc,.txt" class="text-[11px] w-full text-gray-400 mb-2">
+                <textarea id="new-song-lrc-text" placeholder="或直接粘贴LRC歌词文本..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 outline-none h-16 text-[12px] resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeAddSongModal()" class="w-1/3 py-2.5 bg-white/10 rounded-xl font-bold text-[15px] active:scale-95">取消</button>
+                <button onclick="saveNewSong()" class="flex-1 py-2.5 bg-white text-black rounded-xl font-bold text-[15px] active:scale-95">确定添加</button>
             </div>
         </div>
     </div>
@@ -4446,69 +4475,325 @@ function applyDarkModeStyle() {
     }
 }
 
-// ================= 新增：音乐播放器控制引擎 =================
+// ================= 全新：真·音乐播放器控制引擎 =================
+let playlist = [];
+let currentSongIndex = -1;
 let isPlaying = false;
+let audioEl = new Audio();
+let parsedLyrics = [];
+let isLyricsView = false;
 
-// 打开全屏播放器
+// 添加歌曲暂存变量
+let tempCoverBase64 = null;
+let tempAudioBase64 = null;
+let tempLrcText = null;
+
+// 1. 监听音乐播放，同步进度条和小组件
+audioEl.addEventListener('timeupdate', () => {
+    if (!audioEl.duration) return;
+    const current = audioEl.currentTime;
+    const total = audioEl.duration;
+    const percent = (current / total) * 100 + '%';
+    
+    // 格式化时间
+    const currStr = formatTime(current);
+    const totalStr = formatTime(total);
+
+    // 更新大播放器UI
+    document.getElementById('player-curr-time').innerText = currStr;
+    document.getElementById('player-total-time').innerText = totalStr;
+    document.getElementById('player-progress').style.width = percent;
+
+    // 同步网易云桌面小组件UI
+    document.getElementById('widget-curr-time').innerText = currStr;
+    document.getElementById('widget-total-time').innerText = '-' + formatTime(total - current);
+    document.getElementById('widget-progress').style.width = percent;
+
+    // 歌词滚动逻辑
+    if (parsedLyrics.length > 0 && isLyricsView) {
+        let activeIndex = -1;
+        for (let i = 0; i < parsedLyrics.length; i++) {
+            if (current >= parsedLyrics[i].time) activeIndex = i;
+            else break;
+        }
+        if (activeIndex !== -1) {
+            const lines = document.querySelectorAll('.lyric-line');
+            lines.forEach((line, index) => {
+                if (index === activeIndex) {
+                    if (!line.classList.contains('text-white')) {
+                        line.classList.add('text-white', 'text-lg', 'scale-110', 'font-bold');
+                        line.classList.remove('text-gray-500', 'text-sm');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' }); // 核心滚动魔法
+                    }
+                } else {
+                    line.classList.remove('text-white', 'text-lg', 'scale-110', 'font-bold');
+                    line.classList.add('text-gray-500', 'text-sm');
+                }
+            });
+        }
+    }
+});
+
+audioEl.addEventListener('ended', () => {
+    if (playlist.length > 0) playSong((currentSongIndex + 1) % playlist.length); // 自动下一首
+});
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+// 2. 界面控制
 function openMusicPlayer() {
     const player = document.getElementById('music-player-screen');
     player.classList.remove('hidden');
-    // 稍微延迟一点点执行动画，让它有从下往上滑出的感觉
-    setTimeout(() => {
-        player.classList.remove('translate-y-full');
-    }, 10);
+    setTimeout(() => player.classList.remove('translate-y-full'), 10);
 }
 
-// 关闭全屏播放器
 function closeMusicPlayer() {
     const player = document.getElementById('music-player-screen');
     player.classList.add('translate-y-full');
-    // 等往下滑的动画播完了（300毫秒），再彻底隐藏
-    setTimeout(() => {
-        player.classList.add('hidden');
-    }, 300);
+    setTimeout(() => player.classList.add('hidden'), 300);
 }
 
-// 播放/暂停控制
+// 3. 播放与暂停控制
 function togglePlay() {
-    isPlaying = !isPlaying;
+    if (playlist.length === 0) return alert("播放列表为空，请先点击播放列表的加号添加歌曲！");
+    if (currentSongIndex === -1) playSong(0);
+    else {
+        if (isPlaying) {
+            audioEl.pause();
+            isPlaying = false;
+        } else {
+            audioEl.play();
+            isPlaying = true;
+        }
+        updatePlayPauseUI();
+    }
+}
+
+function updatePlayPauseUI() {
     const icon = document.getElementById('play-icon');
+    const widgetIcon = document.getElementById('widget-play-icon');
     const record = document.getElementById('record-player');
     
     if (isPlaying) {
-        // 变成“暂停”的双竖线图标，并让唱片转起来
-        icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; 
-        icon.classList.remove('ml-1'); // 调整图标居中对齐
+        icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        icon.classList.remove('ml-1');
+        if(widgetIcon) widgetIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
         record.style.animationPlayState = 'running';
     } else {
-        // 变成“播放”的三角形图标，并让唱片停下
-        icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; 
+        icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
         icon.classList.add('ml-1');
+        if(widgetIcon) widgetIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
         record.style.animationPlayState = 'paused';
     }
 }
 
-// 打开播放列表半屏弹窗
+// 4. 播放列表管理
 function openPlaylist() {
+    renderPlaylist();
     const modal = document.getElementById('playlist-modal');
     const container = document.getElementById('playlist-container');
     modal.classList.remove('hidden');
-    // 延迟弹出，做滑出动画
-    setTimeout(() => {
-        container.classList.remove('translate-y-full');
-    }, 10);
+    setTimeout(() => container.classList.remove('translate-y-full'), 10);
 }
 
-// 关闭播放列表
 function closePlaylist() {
     const container = document.getElementById('playlist-container');
     container.classList.add('translate-y-full');
-    setTimeout(() => {
-        document.getElementById('playlist-modal').classList.add('hidden');
-    }, 300);
+    setTimeout(() => document.getElementById('playlist-modal').classList.add('hidden'), 300);
 }
 
-// 补一个让唱片旋转的 CSS 动画
+function renderPlaylist() {
+    const container = document.getElementById('playlist-items');
+    container.innerHTML = '';
+    if (playlist.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500 text-xs mt-10">播放列表空空如也，点击右上角 "+" 添加音乐吧</div>';
+        return;
+    }
+    playlist.forEach((song, idx) => {
+        const isActive = idx === currentSongIndex;
+        const div = document.createElement('div');
+        div.className = `flex items-center p-3 cursor-pointer rounded-xl transition-colors ${isActive ? 'bg-gray-800/80' : 'active:bg-gray-800/50'}`;
+        div.onclick = () => playSong(idx);
+        div.innerHTML = `
+            <span class="${isActive ? 'text-blue-400 font-bold' : 'text-gray-500'} w-6 text-center shrink-0 mr-3">${isActive ? '▶' : (idx + 1)}</span>
+            <div class="flex-1 min-w-0">
+                <div class="text-[15px] truncate ${isActive ? 'text-blue-400 font-bold' : 'text-gray-200'}">${song.title}</div>
+                <div class="text-[12px] truncate ${isActive ? 'text-blue-300' : 'text-gray-500'}">${song.artist}</div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// 5. 核心播放指令
+function playSong(index) {
+    if (index < 0 || index >= playlist.length) return;
+    currentSongIndex = index;
+    const song = playlist[index];
+    
+    // 装载音乐并播放
+    audioEl.src = song.audioSrc;
+    audioEl.play();
+    isPlaying = true;
+    updatePlayPauseUI();
+
+    const defaultCover = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+    const coverSrc = song.cover || defaultCover;
+    
+    // 更新大播放器
+    document.getElementById('player-title').innerText = song.title;
+    document.getElementById('player-artist').innerText = song.artist;
+    document.getElementById('player-cover-img').src = coverSrc;
+    
+    // 同步到桌面小组件
+    document.getElementById('music-title').innerText = song.title;
+    document.getElementById('music-artist').innerText = song.artist;
+    document.getElementById('widget-cover').src = coverSrc;
+
+    // 处理歌词
+    parseLyrics(song.lyrics);
+    
+    if(!document.getElementById('playlist-modal').classList.contains('hidden')) renderPlaylist(); // 刷新高亮
+}
+
+// 6. 歌词视图切换与解析
+function toggleLyricsView() {
+    isLyricsView = !isLyricsView;
+    const record = document.getElementById('record-player');
+    const lyricsView = document.getElementById('lyrics-view');
+    
+    if (isLyricsView) {
+        record.classList.add('opacity-0', 'pointer-events-none');
+        lyricsView.classList.remove('opacity-0', 'pointer-events-none');
+        // 切过去时强行让当前行居中一下
+        const activeLine = document.querySelector('.lyric-line.text-white');
+        if(activeLine) activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        record.classList.remove('opacity-0', 'pointer-events-none');
+        lyricsView.classList.add('opacity-0', 'pointer-events-none');
+    }
+}
+
+function parseLyrics(lrcText) {
+    parsedLyrics = [];
+    const container = document.getElementById('lyrics-content');
+    container.innerHTML = '';
+    
+    if (!lrcText || !lrcText.trim()) {
+        container.innerHTML = '<div class="text-sm">这首歌暂无歌词~</div>';
+        return;
+    }
+
+    const lines = lrcText.split('\n');
+    const regex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/;
+    
+    lines.forEach(line => {
+        const match = line.match(regex);
+        if (match) {
+            const min = parseInt(match[1], 10);
+            const sec = parseInt(match[2], 10);
+            const ms = match[3] ? parseInt(match[3], 10) : 0;
+            const text = match[4].trim();
+            if (text) {
+                const time = min * 60 + sec + ms / (match[3].length === 3 ? 1000 : 100);
+                parsedLyrics.push({ time, text });
+            }
+        }
+    });
+
+    if (parsedLyrics.length === 0) {
+        container.innerHTML = '<div class="text-sm pb-10">歌词格式未被识别哦</div>';
+    } else {
+        parsedLyrics.forEach((lyric) => {
+            const div = document.createElement('div');
+            div.className = 'lyric-line text-sm text-gray-500 transition-all duration-300 min-h-[24px]';
+            div.innerText = lyric.text;
+            container.appendChild(div);
+        });
+        // 垫底的空白，让最后一句歌词能滚到屏幕中间
+        container.innerHTML += '<div class="h-40"></div>';
+    }
+}
+
+// 7. 添加歌曲相关逻辑
+function openAddSongModal() {
+    document.getElementById('add-song-modal').classList.remove('hidden');
+    // 清空上次输入
+    document.getElementById('new-song-title').value = '';
+    document.getElementById('new-song-artist').value = '';
+    document.getElementById('new-song-audio-url').value = '';
+    document.getElementById('new-song-lrc-text').value = '';
+    document.getElementById('new-song-cover').value = '';
+    document.getElementById('new-song-audio-file').value = '';
+    document.getElementById('new-song-lrc-file').value = '';
+    tempCoverBase64 = null;
+    tempAudioBase64 = null;
+    tempLrcText = null;
+}
+
+function closeAddSongModal() {
+    document.getElementById('add-song-modal').classList.add('hidden');
+}
+
+// 监听文件上传转码
+document.getElementById('new-song-cover').addEventListener('change', e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => tempCoverBase64 = ev.target.result;
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+
+document.getElementById('new-song-audio-file').addEventListener('change', e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => tempAudioBase64 = ev.target.result;
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+
+document.getElementById('new-song-lrc-file').addEventListener('change', e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => tempLrcText = ev.target.result;
+        reader.readAsText(e.target.files[0]);
+    }
+});
+
+function saveNewSong() {
+    const title = document.getElementById('new-song-title').value.trim();
+    const artist = document.getElementById('new-song-artist').value.trim();
+    const urlAudio = document.getElementById('new-song-audio-url').value.trim();
+    const textLrc = document.getElementById('new-song-lrc-text').value.trim();
+
+    if (!title) return alert("写个歌名再提交吧！");
+    
+    const finalAudioSrc = tempAudioBase64 || urlAudio;
+    if (!finalAudioSrc) return alert("得给我喂一个本地音乐或者音乐链接我才能播放呀！");
+
+    const newSong = {
+        title: title,
+        artist: artist || '未知歌手',
+        cover: tempCoverBase64,
+        audioSrc: finalAudioSrc,
+        lyrics: tempLrcText || textLrc
+    };
+
+    playlist.push(newSong);
+    alert("✅ 歌曲已顺利放入播放列表！");
+    closeAddSongModal();
+    renderPlaylist();
+    
+    // 如果这是你的第一首歌，直接自动播放它！
+    if (playlist.length === 1) playSong(0);
+}
+
+// 让唱片旋转的动画
 const spinStyle = document.createElement('style');
 spinStyle.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
 document.head.appendChild(spinStyle);
