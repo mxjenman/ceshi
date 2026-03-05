@@ -249,21 +249,21 @@
                         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
-                        <div class="font-bold text-[16px] truncate text-white drop-shadow-sm" onclick="event.stopPropagation(); editAnyText('music-title')" id="music-title">默认文本</div>
-                        <div class="text-[13px] text-white/80 truncate drop-shadow-sm mt-0.5" onclick="event.stopPropagation(); editAnyText('music-artist')" id="music-artist">默认文本 / 默认文本</div>
+                        <div class="font-bold text-[16px] truncate text-gray-500 music-widget-text drop-shadow-sm" onclick="event.stopPropagation(); editAnyText('music-title')" id="music-title">默认文本</div>
+                        <div class="text-[13px] text-gray-400 truncate music-widget-text drop-shadow-sm mt-0.5" onclick="event.stopPropagation(); editAnyText('music-artist')" id="music-artist">默认文本 / 默认文本</div>
                     </div>
-                    <div class="text-white/60 font-bold tracking-widest mb-3">……</div>
+                    <div class="text-gray-400 music-widget-text font-bold tracking-widest mb-3">……</div>
                 </div>
                 
-                <div class="flex items-center gap-3 mb-2.5 text-[11px] text-white/80 font-medium">
+                <div class="flex items-center gap-3 mb-2.5 text-[11px] text-gray-500 music-widget-text font-medium">
                     <span>0:00</span>
-                    <div class="flex-1 h-[5px] bg-black/20 rounded-full overflow-hidden relative">
-                        <div class="w-1/4 h-full bg-white rounded-full absolute left-0 top-0"></div>
+                    <div class="flex-1 h-[5px] bg-black/10 rounded-full overflow-hidden relative">
+                        <div class="w-1/4 h-full bg-gray-400 music-widget-bg rounded-full absolute left-0 top-0"></div>
                     </div>
                     <span>-0:00</span>
                 </div>
                 
-                <div class="flex justify-between items-center px-1 text-white">
+                <div class="flex justify-between items-center px-1 text-gray-500 music-widget-text">
                     <svg class="w-[22px] h-[22px] opacity-90" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                     
                     <div class="flex gap-6 items-center">
@@ -1190,9 +1190,9 @@
             </button>
         </div>
 
-        <div class="flex-1 flex items-center justify-center p-8">
-            <div class="w-full aspect-square bg-gray-800 rounded-full border-[10px] border-black shadow-2xl flex items-center justify-center overflow-hidden" id="record-player" style="animation: spin 10s linear infinite; animation-play-state: paused;">
-                <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-[70%] h-[70%] object-cover rounded-full">
+        <div class="flex-1 flex items-center justify-center p-8" style="transform: translateY(-10px);">
+            <div class="w-[70%] aspect-square rounded-full shadow-2xl flex items-center justify-center overflow-hidden" id="record-player" style="animation: spin 10s linear infinite; animation-play-state: paused;">
+                <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover rounded-full">
             </div>
         </div>
 
@@ -4375,11 +4375,15 @@ function applyDarkModeStyle() {
 
             /* 4. 文字颜色强制反转 */
             [class*="text-black"], [class*="text-[#333]"], [class*="text-[#111]"], [class*="text-gray-800"], [class*="text-gray-700"], #wx-me-name, .tab-active { 
-                color: #e0e0e0 !important; 
+                color: #e0e0e0 !important;
             }
             [class*="text-gray-500"], [class*="text-gray-400"], [class*="text-gray-600"], [class*="text-[#576b95]"] { 
-                color: #888888 !important; 
+                color: #888888 !important;
             }
+            
+            /* 强制音乐小组件在夜间模式变成纯白色 */
+            .music-widget-text { color: #ffffff !important; }
+            .music-widget-bg { background-color: #ffffff !important; }
 
             /* 5. 所有的边框、分割线变成幽灵灰 */
             [class*="border-b"], [class*="border-t"], [class*="border-gray-100"], [class*="border-gray-200"], [class*="border-gray-300"], [class*="border-gray-500"], .wx-divider-thin, [class*="border-[#DEDEDE]"], .tweet-card {
