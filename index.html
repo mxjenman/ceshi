@@ -404,15 +404,16 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
                 <div class="p-3 bg-[#f7f7f7] border-t flex items-center gap-2 sticky bottom-0 relative">
                        <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-2 gap-3 w-[160px] z-50">
-                <div onclick="document.getElementById('wx-photo-input').click()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">照片</div>
-                <div onclick="document.getElementById('wx-camera-input').click()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相机</div>
-                <div onclick="openDescribePhotoModal()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
+                <div onclick="document.getElementById('wechat-image-input').click(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">照片</div>
+                <div onclick="document.getElementById('wechat-camera-input').click(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相机</div>
+                <div onclick="sendDescribedPhoto(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">转账</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
             </div>
-            <input type="file" id="wx-photo-input" class="hidden" accept="image/*" onchange="sendWxImage(this)">
-            <input type="file" id="wx-camera-input" class="hidden" accept="image/*" capture="camera" onchange="sendWxImage(this)">
+
+            <input type="file" id="wechat-image-input" class="hidden" accept="image/*" onchange="sendWechatImage(this)">
+            <input type="file" id="wechat-camera-input" class="hidden" accept="image/*" capture="environment" onchange="sendWechatImage(this)">
 
             <div id="placeholder-menu" class="hidden absolute bottom-[60px] right-12 bg-white border border-gray-200 shadow-lg rounded-xl p-4 w-[120px] z-50 text-center text-gray-400 text-[13px]">
                 内部留白弹窗
@@ -1300,23 +1301,6 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
         </div>
     </div>
-            <div class="flex gap-3">
-                <button onclick="closeAddSongModal()" class="w-1/3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl font-bold text-[15px] active:scale-95">取消</button>
-                <button onclick="saveNewSong()" class="flex-1 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-[15px] active:scale-95">确定添加</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="describe-photo-modal" class="fixed inset-0 bg-black/50 hidden z-[150] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
-            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">描述照片内容</h3>
-            <textarea id="describe-photo-text" class="w-full border border-gray-200 rounded-[16px] px-4 py-3 text-[14px] outline-none resize-none h-28 text-gray-700 mb-6 bg-gray-50" placeholder="假装发送了一张照片，请在此描述照片里的内容... (AI会根据描述把这当作图片看待)"></textarea>
-            <div class="flex gap-3">
-                <button onclick="closeDescribePhotoModal()" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[20px] font-bold text-black text-[15px] active:scale-95">取消</button>
-                <button onclick="sendDescribedPhoto()" class="flex-1 py-2.5 bg-black text-white rounded-[20px] font-bold text-[15px] active:scale-95">发送给TA</button>
-            </div>
-        </div>
-    </div>
 
 <script>
 /* 核心配置与状态 */
@@ -1994,47 +1978,61 @@ function toggleInventory() {
         btn.style.transform = 'rotate(0deg)';
     }
 }
-// ================= 新增：微信发图与描述照片引擎 =================
-function sendWxImage(input) {
-    if(!currentFriendId) return;
+// ===== 新增：微信发照片与描述照片功能 =====
+
+// 1. 照片和相机功能：发送真实的相册图片或相机拍照
+function sendWechatImage(input) {
+    if(!currentFriendId) {
+        alert("请先进入一个好友的聊天界面哦！");
+        input.value = '';
+        return;
+    }
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
             const base64Img = e.target.result;
-            // 存入聊天大脑并显示在屏幕上
-            chatHistory.push({role:'user', content: `<img src="${base64Img}" class="max-w-full rounded-xl mt-1 shadow-sm border border-gray-100">`});
-            renderAllMessages(true);
-            toggleInventory(); // 发送完照片自动关掉菜单
+            // 存进历史记录，你现在的 AI 代码会自动读取里面的图片进行识图
+            chatHistory.push({
+                role: 'user', 
+                content: `<img src="${base64Img}" class="max-w-[150px] rounded-xl mt-1 shadow-sm border border-gray-100">`
+            });
+            input.value = ''; // 清空选择器，防止下次选同一张图没反应
+            renderAllMessages(true); // 让屏幕画出这张图
+            triggerAI(); // 让 AI 立刻回复
         }
         reader.readAsDataURL(input.files[0]);
-        input.value = ''; // 清空它，允许用户重复发同一张图
     }
 }
 
-function openDescribePhotoModal() {
-    document.getElementById('describe-photo-modal').classList.remove('hidden');
-    document.getElementById('describe-photo-text').value = '';
-    toggleInventory(); // 关掉加号菜单
-}
-
-function closeDescribePhotoModal() {
-    document.getElementById('describe-photo-modal').classList.add('hidden');
-}
-
+// 2. 描述照片功能：AI不看图，只看你的文字描述
 function sendDescribedPhoto() {
-    if(!currentFriendId) return;
-    const text = document.getElementById('describe-photo-text').value.trim();
-    if(!text) return alert("请写点照片描述吧！");
-    
-    // 组装带有点击显示毛玻璃特效的“魔法照片”气泡！
-    // 里面藏了一句<span class="hidden">给AI读的描述，这样AI只知道图里的内容，不会去读取假图链接
-    const msgContent = `<span class="hidden">【我发送了一张照片，照片内容是：${text}】</span><div class="relative mt-1 rounded-xl overflow-hidden shadow-sm border border-gray-100 cursor-pointer transition-transform active:scale-95" style="width: 140px; height: 180px; background-image: url('https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg'); background-size: cover; background-position: center;" onclick="const ov = this.querySelector('.desc-overlay'); ov.classList.toggle('opacity-0'); ov.classList.toggle('opacity-100'); event.stopPropagation();"><div class="desc-overlay opacity-0 transition-opacity duration-300 absolute inset-0 bg-white/75 backdrop-blur-md p-3 flex items-center justify-center"><span class="text-black text-[13px] font-bold text-center leading-relaxed line-clamp-6">${text}</span></div></div>`;
-    
-    chatHistory.push({role:'user', content: msgContent});
-    renderAllMessages(true);
-    closeDescribePhotoModal();
+    if(!currentFriendId) {
+        alert("请先进入一个好友的聊天界面哦！");
+        return;
+    }
+    const desc = prompt("请输入你想发给TA的照片内容（AI会根据这段文字脑补画面）：");
+    if (desc && desc.trim() !== '') {
+        // 这里我用了一个小魔法：不用 img 标签，而是用 background-image（背景图）
+        // 这样你的 AI 识图代码就不会去读取这张统一的风景图，只会看到前面【】里的文字描述！
+        const fakeImageHtml = `【我发送了一张照片，画面内容是：${desc}】<br>
+        <div style="width:140px;height:180px;background-image:url('https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg');background-size:cover;background-position:center;" class="relative rounded-xl overflow-hidden mt-1 shadow-sm border border-gray-200">
+            <div class="absolute inset-0 flex items-center justify-center p-2 bg-black/10">
+                <div class="bg-white/85 text-black text-[12px] px-2 py-1.5 rounded-lg shadow-sm leading-tight text-center backdrop-blur-md w-full break-words">
+                    ${desc}
+                </div>
+            </div>
+        </div>`;
+        
+        chatHistory.push({
+            role: 'user', 
+            content: fakeImageHtml
+        });
+        renderAllMessages(true);
+        triggerAI(); // 让 AI 立刻回复
+    }
 }
-// ==========================================================
+// ==========================================
+
 function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
     menu.classList.toggle('hidden');
