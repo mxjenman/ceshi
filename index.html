@@ -1479,12 +1479,12 @@ function renderEmojis() {
         // 短按发表情
         div.onclick = () => {
             if(isMultiSelecting) return;
-            const imgHtml = `<img src="${item.url}" class="w-32 h-32 object-contain rounded-lg">`;
+            const imgHtml = `<img src="${item.url}" style="width: 100px; height: 100px;" class="object-contain rounded-lg">`;
             chatHistory.push({
                 role: 'user', 
                 content: `[我发送了一个表情包，它的意思是：${item.meaning}]\n${imgHtml}`
             });
-            renderAllMessages(); // 重新刷新聊天屏幕
+            renderAllMessages();
             closeEmojiPanel();
         };
 
@@ -2169,26 +2169,63 @@ function renderAllMessages(isIncremental = false) {
         if (displayContent.includes('[我发送了一个表情包，它的意思是：')) {
             displayContent = displayContent.replace(/\[我发送了一个表情包，它的意思是：.*?\]\n/, '');
         }
+        
+        // 隐藏发给AI的照片描述密码
+        if (displayContent.includes('[我发送了一张图片，图片内容是：')) {
+            displayContent = displayContent.replace(/\[我发送了一张图片，图片内容是：.*?\]\n?/, '');
+        }
 
         let bubbleHtml = '';
+        
+        // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
+        let isMedia = false;
+        let contentForCheck = displayContent.trim();
+        if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"')) {
+            isMedia = true;
+        }
+
         if (msg.role === 'user') {
-            bubbleHtml = `
-                ${checkboxHtml}
-                <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
-                    ${quoteHtml}${displayContent}
-                    <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
-                </div>
-                <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
-            `;
+            if (isMedia) {
+                // 纯图片/表情包模式（无气泡）
+                bubbleHtml = `
+                    ${checkboxHtml}
+                    <div class="chat-msg-user relative max-w-[72%] break-words" style="width: fit-content;">
+                        ${quoteHtml}${displayContent}
+                    </div>
+                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                `;
+            } else {
+                // 普通文字模式（有气泡）
+                bubbleHtml = `
+                    ${checkboxHtml}
+                    <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                        ${quoteHtml}${displayContent}
+                        <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                    </div>
+                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                `;
+            }
         } else {
-            bubbleHtml = `
-                ${checkboxHtml}
-                <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
-                <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
-                    ${quoteHtml}${displayContent}
-                    <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
-                </div>
-            `;
+            if (isMedia) {
+                // AI发图片/表情包模式（无气泡）
+                bubbleHtml = `
+                    ${checkboxHtml}
+                    <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
+                    <div class="chat-msg-ai relative max-w-[72%] break-words" style="width: fit-content;">
+                        ${quoteHtml}${displayContent}
+                    </div>
+                `;
+            } else {
+                // AI普通文字模式（有气泡）
+                bubbleHtml = `
+                    ${checkboxHtml}
+                    <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
+                    <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                        ${quoteHtml}${displayContent}
+                        <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                    </div>
+                `;
+            }
         }
         
         div.innerHTML = bubbleHtml;
@@ -3297,8 +3334,9 @@ function openSmsChat(id) {
     if (!friend.smsHistory) friend.smsHistory = [];
     smsChatHistory = friend.smsHistory;
     
-    // 修改点：把 friend.remark 改成了 friend.realName，这样顶栏就显示真名了
-    // 后面加了个 || friend.remark 是为了防止你没填真名时报错，没填就会兜底显示备注
+// 修改点：把 friend.remark 改成了 friend.realName，这样顶栏就显示真名了
+// 后面加了个 ||
+// friend.remark 是为了防止你没填真名时报错，没填就会兜底显示备注
     document.getElementById('sms-chat-name').innerHTML = `${friend.realName || friend.remark} <svg class="w-2.5 h-2.5 text-gray-400 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
     document.getElementById('sms-chat-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
     
@@ -4895,18 +4933,17 @@ applyDarkModeStyle = function() {
 
 // 处理“相册”和“相机”发送真实照片的功能
 function sendWxImage(input) {
-    if(!currentFriendId) return; // 确保你在和某个人聊天
+    if(!currentFriendId) return;
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
             const base64Img = e.target.result;
-            // 把真实的图片发送到屏幕上（代码自带了让AI识图的设定）
-            chatHistory.push({role:'user', content: `<img src="${base64Img}" class="max-w-full rounded-xl mt-1 shadow-sm border border-gray-100">`});
-            renderAllMessages(true); // 刷新屏幕，把图显示出来
-            toggleInventory(); // 发完自动关掉加号小菜单
+            chatHistory.push({role:'user', content: `<img src="${base64Img}" style="max-width: 120px; max-height: 160px; object-fit: cover;" class="rounded-xl shadow-sm border border-gray-100">`});
+            renderAllMessages(true);
+            toggleInventory();
         }
         reader.readAsDataURL(input.files[0]);
-        input.value = ''; // 顺手清空一下，防止下次选同一张图选不上
+        input.value = '';
     }
 }
 
@@ -4915,15 +4952,11 @@ function describeWxPhoto() {
     if(!currentFriendId) return;
     const desc = prompt("请输入您想假装发送的照片内容描述：\n（例如：一只在晒太阳的小猫）");
     if(desc && desc.trim() !== "") {
-        // 清理一下特殊符号防报错
         const safeDesc = desc.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        
-        // 【核心魔法】：这段代码前面用文字告诉AI“图片里有什么”，后面用背景图（巧妙避开了AI的视觉接口）把你要的那张默认网图展示出来，并且把你的文字浮在图片上！
-        const content = `[我发送了一张图片，图片内容是：${safeDesc}]<div style="background-image: url('https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg'); background-size: cover; background-position: center; width: 150px; height: 200px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-top: 5px; border: 1px solid #eee;"><div style="background: rgba(255,255,255,0.8); padding: 6px 10px; border-radius: 8px; font-size: 13px; color: #333; max-width: 85%; text-align: center; line-height: 1.4; word-break: break-all; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">${safeDesc}</div></div>`;
-        
+        const content = `[我发送了一张图片，图片内容是：${safeDesc}]\n<div class="desc-photo-container" style="position: relative; width: 120px; height: 160px; border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid #eee;" onclick="const overlay = this.querySelector('.desc-overlay'); const img = this.querySelector('.desc-img'); if(overlay.style.opacity === '0') { overlay.style.opacity = '1'; img.style.filter = 'blur(6px)'; } else { overlay.style.opacity = '0'; img.style.filter = 'none'; }"><img class="desc-img" src="https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg" style="width: 100%; height: 100%; object-fit: cover; transition: filter 0.3s;"><div class="desc-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 10px; opacity: 0; transition: opacity 0.3s;"><span style="color: white; font-size: 13px; text-align: center; line-height: 1.4; word-break: break-all;">${safeDesc}</span></div></div>`;
         chatHistory.push({role:'user', content: content});
         renderAllMessages(true);
-        toggleInventory(); // 发完自动关掉加号小菜单
+        toggleInventory();
     }
 }
 // =========================================================================
