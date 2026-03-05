@@ -143,11 +143,17 @@
             font-size: 12px; color: #666; margin-bottom: 6px; border-radius: 4px;
         }
         .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd; }
+        
+        /* 👇这是新加的：隐藏左右滑动的滚动条，让界面更像真手机 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
 
-    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center">
+    <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
+        
+        <div class="min-w-full h-full flex flex-col items-center p-6 snap-center relative">
 
         <div class="w-full flex flex-col" style="transform: translateY(-35px);">
             <div class="widget-card mb-12 mt-4">
@@ -259,10 +265,22 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div> <div class="min-w-full h-full flex flex-col items-center justify-center p-6 snap-center relative">
+            
+            <div class="bg-white p-4 pb-8 shadow-[0_15px_35px_rgba(0,0,0,0.15)] transform rotate-2 w-[260px] transition-all active:scale-95 cursor-default mt-[-100px]">
+                
+                <div class="w-full h-[260px] bg-[#e0e0e0] flex items-center justify-center cursor-pointer bg-cover bg-center" 
+                     onclick="changeAnyImage(this)" 
+                     style="background-image: url('https://images.unsplash.com/photo-1524285854898-31ea6d9f75f5?w=500');">
+                </div>
+                
+                <div id="polaroid-text-1" class="mt-6 text-center text-gray-800 text-[18px] font-bold cursor-pointer tracking-widest" onclick="editAnyText('polaroid-text-1')">
+                    定格美好瞬间
+                </div>
+                
+            </div>
 
-
-    <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
+        </div> </div> <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
             <button onclick="closeChat()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
