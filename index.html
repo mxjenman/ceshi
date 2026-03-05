@@ -4296,11 +4296,19 @@ function applyDarkModeStyle() {
 
             /* 7. 桌面组件 (夜间模式毛玻璃) */
             .widget-card, .left-widget, .glass-card { 
-                background: rgba(80, 80, 80, 0.35) !important; /* 带一点灰的透明底色 */
+                background: rgba(80, 80, 80, 0.35) !important; 
                 backdrop-filter: blur(12px) !important; 
                 -webkit-backdrop-filter: blur(12px) !important;
                 border: 1px solid rgba(255, 255, 255, 0.05) !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important; 
+            }
+
+            /* 👇这是新加的：专门让时间框和文本圆圈在夜间模式变成毛玻璃 */
+            .left-widget > div:nth-child(2) > div {
+                background: rgba(80, 80, 80, 0.35) !important; /* 带灰的透明底色 */
+                backdrop-filter: blur(12px) !important; /* 毛玻璃模糊 */
+                -webkit-backdrop-filter: blur(12px) !important; /* 兼容苹果 */
+                border: 1px solid rgba(255, 255, 255, 0.15) !important; /* 换成淡淡的半透明边框，代替原本死板的灰色线 */
             }
             #mock-msg-1, #badge-char, #badge-user { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
             #mock-msg-2 { background-color: #3a3a3a !important; color: #e0e0e0 !important; }
