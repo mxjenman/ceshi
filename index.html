@@ -147,18 +147,14 @@
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
 
-    <style>
-        /* 隐藏滑动条的小魔法，让滑动看起来更像手机原生 */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-    <div id="home-screen" class="flex-1 flex flex-col w-full h-full relative overflow-hidden pt-6">
-        
-        <div class="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
-            
-            <div class="w-full h-full flex-shrink-0 snap-start flex flex-col items-center px-6">
-                <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-            <div class="widget-card mb-12 mt-4">
+    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center relative overflow-hidden">
+
+        <div class="w-full flex-1 relative overflow-hidden" id="desktop-swiper">
+            <div class="h-full flex transition-transform duration-300 w-[200%]" id="desktop-wrapper" style="transform: translateX(0%);">
+                
+                <div class="w-1/2 h-full flex flex-col">
+                    <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+                        <div class="widget-card mb-12 mt-4">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
@@ -241,34 +237,15 @@
                         <span id="mock-status-2" class="text-[9px] text-gray-400 mb-0 whitespace-nowrap cursor-pointer" onclick="editAnyText('mock-status-2')">未读</span>
                         <div id="mock-msg-2" class="bg-black shadow-sm rounded-full px-4 py-0.5 text-[13px] text-white tracking-wider w-fit max-w-[75%] break-words cursor-pointer" onclick="editAnyText('mock-msg-2')">文本文本文本文本文本</div>
                     </div>
-                </div>
+                 </div>
             </div>
         </div>
-
-                </div>
-            </div>
-            <div class="w-full h-full flex-shrink-0 snap-start flex flex-col items-center justify-center relative px-6 pb-20">
-                <div class="relative w-[300px] h-[380px] -mt-20">
-                    
-                    <div class="absolute left-[-10px] top-[20px] w-[150px] bg-white p-3 pb-8 shadow-[0_4px_15px_rgba(0,0,0,0.15)] transform -rotate-[8deg] z-10 transition-transform active:scale-95">
-                        <div class="w-full aspect-square bg-[#a3a3a3] cursor-pointer bg-cover bg-center border border-gray-100" onclick="changeAnyImage(this)"></div>
-                        <div id="polaroid-text-1" class="text-black font-bold text-center mt-3 text-[13px] leading-tight cursor-pointer" onclick="editAnyText('polaroid-text-1')">文本文本文本文<br>文本文本文本</div>
+                </div> <div class="w-1/2 h-full relative">
+                    <div class="absolute bottom-[8%] right-[5%] bg-white p-[10px_10px_20px_10px] shadow-[0_8px_20px_rgba(0,0,0,0.15)] w-[190px] flex flex-col gap-[12px] rotate-[5deg]">
+                        <div class="w-full aspect-square bg-[#9ca3af] bg-cover bg-center cursor-pointer" onclick="changeAnyImage(this)"></div>
+                        <div id="polaroid-text-1" class="text-center text-[16px] font-bold text-black leading-[1.4] cursor-pointer" onclick="editAnyText('polaroid-text-1')">文本文本文本文<br>文本文本文本</div>
                     </div>
-                    
-                    <div class="absolute right-[-10px] top-[-10px] w-[130px] bg-white p-2.5 pb-6 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transform rotate-[12deg] z-10 transition-transform active:scale-95">
-                        <div class="w-full aspect-square bg-[#a3a3a3] cursor-pointer bg-cover bg-center border border-gray-100" onclick="changeAnyImage(this)"></div>
-                        <div id="polaroid-text-2" class="text-black font-bold text-center mt-2.5 text-[12px] leading-tight cursor-pointer" onclick="editAnyText('polaroid-text-2')">文本文本文本</div>
-                    </div>
-                    
-                    <div class="absolute left-[35px] top-[130px] w-[170px] bg-white p-3 pb-10 shadow-[0_8px_25px_rgba(0,0,0,0.2)] transform rotate-[4deg] z-20 transition-transform active:scale-95">
-                        <div class="w-full aspect-square bg-[#a3a3a3] cursor-pointer bg-cover bg-center border border-gray-100" onclick="changeAnyImage(this)"></div>
-                        <div id="polaroid-text-3" class="text-black font-bold text-center mt-4 text-[14px] leading-[1.3] cursor-pointer" onclick="editAnyText('polaroid-text-3')">文本文本文本文<br>本本文本文本</div>
-                    </div>
-                    
-                </div>
-            </div>
-            </div>
-        <div class="glass-card w-[calc(100%-3rem)] mx-auto p-4 flex justify-between items-center mb-8 shrink-0 relative z-50">
+                </div> </div> </div> <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4 z-50 shrink-0" style="transform: translateY(20px);">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
@@ -4359,6 +4336,55 @@ function applyDarkModeStyle() {
     } else {
         styleTag.innerHTML = '';
     }
+}
+// ===== 新增：桌面左右滑动功能代码 =====
+let currentDesktopPage = 0;
+let startX = 0;
+let diffX = 0;
+const desktopWrapper = document.getElementById('desktop-wrapper');
+const desktopSwiper = document.getElementById('desktop-swiper');
+
+if(desktopSwiper) {
+    // 当手指按下时
+    desktopSwiper.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        desktopWrapper.style.transition = 'none'; // 滑动时取消动画，让其跟手
+    });
+
+    // 当手指滑动时
+    desktopSwiper.addEventListener('touchmove', (e) => {
+        diffX = e.touches[0].clientX - startX;
+        let percent = (diffX / window.innerWidth) * 50; 
+        let currentPos = (currentDesktopPage === 0) ? percent : -50 + percent;
+        
+        // 限制一下边界，别滑出屏幕了
+        if(currentPos > 10) currentPos = 10;
+        if(currentPos < -60) currentPos = -60;
+        
+        desktopWrapper.style.transform = `translateX(${currentPos}%)`;
+    });
+
+    // 当手指松开时
+    desktopSwiper.addEventListener('touchend', (e) => {
+        desktopWrapper.style.transition = 'transform 0.3s ease-out'; // 恢复平滑动画
+        
+        // 如果向左滑，就翻到第二页
+        if (diffX < -40 && currentDesktopPage === 0) {
+            currentDesktopPage = 1;
+        } 
+        // 如果向右滑，就翻回第一页
+        else if (diffX > 40 && currentDesktopPage === 1) {
+            currentDesktopPage = 0;
+        }
+        
+        // 定位到正确的页面
+        if (currentDesktopPage === 0) {
+            desktopWrapper.style.transform = `translateX(0%)`;
+        } else {
+            desktopWrapper.style.transform = `translateX(-50%)`;
+        }
+        diffX = 0; // 重置距离
+    });
 }
 </script>
 </body>
