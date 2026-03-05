@@ -1252,20 +1252,21 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <input id="new-song-title" type="text" placeholder="歌曲名称 (必填)" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 mb-3 outline-none text-[14px]">
             <input id="new-song-artist" type="text" placeholder="歌手名称" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 mb-3 outline-none text-[14px]">
             
+
             <div class="mb-3 bg-black/20 p-3 rounded-xl border border-white/5">
-                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">1. 封面图片</label>
-                <input type="file" id="new-song-cover" accept="image/*" class="text-[11px] w-full text-gray-400">
+                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">1. 封面图片 (放开所有格式限制)</label>
+                <input type="file" id="new-song-cover" class="text-[11px] w-full text-gray-400">
             </div>
             
             <div class="mb-3 bg-black/20 p-3 rounded-xl border border-white/5">
-                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">2. 音乐源 (选本地 或 填链接)</label>
-                <input type="file" id="new-song-audio-file" accept="audio/*" class="text-[11px] w-full text-gray-400 mb-2">
+                <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">2. 音乐源 (放开所有格式限制)</label>
+                <input type="file" id="new-song-audio-file" class="text-[11px] w-full text-gray-400 mb-2">
                 <input id="new-song-audio-url" type="text" placeholder="或填写音乐URL链接..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 outline-none text-[12px]">
             </div>
 
             <div class="mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
                 <label class="block text-[12px] text-gray-300 mb-1.5 font-bold">3. 歌词 (支持LRC时间轴)</label>
-                <input type="file" id="new-song-lrc-file" accept=".lrc,.txt" class="text-[11px] w-full text-gray-400 mb-2">
+                <input type="file" id="new-song-lrc-file" class="text-[11px] w-full text-gray-400 mb-2">
                 <textarea id="new-song-lrc-text" placeholder="或直接粘贴LRC歌词文本..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 outline-none h-16 text-[12px] resize-none"></textarea>
             </div>
 
@@ -4740,18 +4741,26 @@ function closeAddSongModal() {
     document.getElementById('add-song-modal').classList.add('hidden');
 }
 
-// 监听文件上传 (修复大文件上传卡顿或失败的问题)
+// 监听文件上传 (完全不限制格式，且使用本地直链防卡死)
 document.getElementById('new-song-cover').addEventListener('change', e => {
     if (e.target.files[0]) {
-        // 使用本地直链，封面瞬间加载
         tempCoverBase64 = URL.createObjectURL(e.target.files[0]);
     }
 });
 
 document.getElementById('new-song-audio-file').addEventListener('change', e => {
     if (e.target.files[0]) {
-        // 【核心修复】抛弃笨重的转码，直接打通本地文件的光速通道，秒传！
+        // 直接读取本地文件路径，彻底解决大文件转换卡死、失败的问题！
         tempAudioBase64 = URL.createObjectURL(e.target.files[0]);
+    }
+});
+
+document.getElementById('new-song-lrc-file').addEventListener('change', e => {
+    if (e.target.files[0]) {
+        // 歌词文件非常小，依然保留文本读取功能以便解析
+        const reader = new FileReader();
+        reader.onload = ev => tempLrcText = ev.target.result;
+        reader.readAsText(e.target.files[0]);
     }
 });
 
