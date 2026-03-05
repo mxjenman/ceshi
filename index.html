@@ -14,10 +14,6 @@
     <style id="custom-style">
         body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
-        /* 新增：精确瞄准上面和左边的小组件，开启通透白毛玻璃 */
-        #home-screen > .glass-card, #home-screen .flex.gap-4 > .glass-card:first-child { background: rgba(255, 255, 255, 0.35) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; }
-        /* 新增：微信“我”页面消除色块，全页底色统一 */
-        #wechat-tab-me .bg-white, #wechat-tab-me .wx-me-header { background-color: transparent !important; border: none !important; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
                 /* 气泡样式保留名字，颜色和外观用后面的新代码控制 */
@@ -29,10 +25,17 @@
             width:100%;
             border-radius:28px;
             padding:20px;
-            background:linear-gradient(135deg,#ffffff,#f3f4f6);
+            background: rgba(255, 255, 255, 0.6); /* 带一点白的透明底色 */
+            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
+            -webkit-backdrop-filter: blur(12px); /* 兼容苹果手机 */
             box-shadow:0 8px 20px rgba(0,0,0,0.08);
             position:relative;
             transition: all 0.3s ease;
+        }
+        .left-widget {
+            background: rgba(255, 255, 255, 0.6); /* 带一点白的透明底色 */
+            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
+            -webkit-backdrop-filter: blur(12px); /* 兼容苹果手机 */
         }
         .widget-avatar{
             width:60px;
@@ -162,7 +165,7 @@
             </div>
 
             <div class="flex w-full px-1 gap-5 mt-2 justify-between items-start z-10">
-                <div class="w-[160px] h-[160px] rounded-[24px] bg-white p-2.5 flex flex-col relative transition-transform active:scale-95 cursor-default">
+<div class="left-widget w-[160px] h-[160px] rounded-[24px] p-2.5 flex flex-col relative transition-transform active:scale-95 cursor-default">
                     <div class="flex-1 bg-[#5c5c5c] rounded-[16px] flex items-center justify-center text-black text-[28px] font-black mb-2.5 shadow-sm overflow-hidden relative cursor-pointer" onclick="changeAnyImage(this)">
                         <span class="relative z-10 tracking-widest font-sans pointer-events-none">照片</span>
                     </div>
@@ -4236,8 +4239,8 @@ function applyDarkModeStyle() {
                 background-color: transparent !important;
             }
 
-            /* 修复微信主页/我页面底部的突兀色块：让原本占位的白块变透明融入背景 */
-            #wechat-tab-me .flex-1.bg-white, #wechat-tab-messages.bg-white {
+            /* 修复微信主页/我页面底部的突兀色块：让整个页面颜色完全统一 */
+            #wechat-tab-me, #wechat-tab-me .bg-white, #wechat-tab-me .wx-me-header, #wechat-tab-me .wx-menu-item, #wechat-tab-messages.bg-white {
                 background-color: transparent !important;
             }
             
@@ -4291,20 +4294,16 @@ function applyDarkModeStyle() {
             .bg-white.border.border-gray-300.rounded-2xl { background-color: #2c2c2c !important; border-color: #444 !important; }
             #sms-input { background-color: transparent !important; }
 
-            /* 7. 桌面组件 */
-            .widget-card, .glass-card { background: linear-gradient(135deg, #1e1e1e, #121212) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important; }
-            /* 新增：单独让上面和左边的小组件变成夜间灰透明毛玻璃 */
-            #home-screen > .glass-card, #home-screen .flex.gap-4 > .glass-card:first-child { 
-                background: rgba(45, 45, 45, 0.45) !important; 
-                backdrop-filter: blur(16px) !important; 
-                -webkit-backdrop-filter: blur(16px) !important; 
-                box-shadow: none !important; 
+            /* 7. 桌面组件 (夜间模式毛玻璃) */
+            .widget-card, .left-widget, .glass-card { 
+                background: rgba(80, 80, 80, 0.35) !important; /* 带一点灰的透明底色 */
+                backdrop-filter: blur(12px) !important; 
+                -webkit-backdrop-filter: blur(12px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important; 
             }
             #mock-msg-1, #badge-char, #badge-user { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
             #mock-msg-2 { background-color: #3a3a3a !important; color: #e0e0e0 !important; }
-
-            /* 补充：让微信“我”页面在夜间也保持透明统一，不突兀 */
-            #wechat-tab-me .bg-white, #wechat-tab-me .wx-me-header { background-color: transparent !important; }
 
             /* 8. 聊天气泡 */
             .chat-msg-ai { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
