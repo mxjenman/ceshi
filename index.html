@@ -403,17 +403,17 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
         </div>
                 <div class="p-3 bg-[#f7f7f7] border-t flex items-center gap-2 sticky bottom-0 relative">
-                       <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-2 gap-3 w-[160px] z-50">
-                <div onclick="document.getElementById('wechat-image-input').click(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">照片</div>
-                <div onclick="document.getElementById('wechat-camera-input').click(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">相机</div>
-                <div onclick="sendDescribedPhoto(); toggleInventory();" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
+            <div id="inventory-menu" class="hidden absolute bottom-[60px] left-3 bg-white border border-gray-200 shadow-lg rounded-xl p-3 grid grid-cols-2 gap-3 w-[160px] z-50">
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200" onclick="document.getElementById('wx-photo-input').click()">照片</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200" onclick="document.getElementById('wx-camera-input').click()">相机</div>
+                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200" onclick="sendDescribedImage()">描述照片</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">转账</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
             </div>
 
-            <input type="file" id="wechat-image-input" class="hidden" accept="image/*" onchange="sendWechatImage(this)">
-            <input type="file" id="wechat-camera-input" class="hidden" accept="image/*" capture="environment" onchange="sendWechatImage(this)">
+            <input type="file" id="wx-photo-input" class="hidden" accept="image/*" onchange="sendWxImage(this)">
+            <input type="file" id="wx-camera-input" class="hidden" accept="image/*" capture="environment" onchange="sendWxImage(this)">
 
             <div id="placeholder-menu" class="hidden absolute bottom-[60px] right-12 bg-white border border-gray-200 shadow-lg rounded-xl p-4 w-[120px] z-50 text-center text-gray-400 text-[13px]">
                 内部留白弹窗
@@ -1885,6 +1885,10 @@ function renderFriendList() {
                 let lastContent = f.chatHistory[f.chatHistory.length - 1].content;
                 // 把图片代码替换成干净的 [图片] 两个字
                 lastMsg = lastContent.replace(/<img[^>]*>/g, '[图片]');
+                
+                // ===== 新增：把描述照片产生的多余样式代码清理干净，防止外面列表变形 =====
+                lastMsg = lastMsg.replace(/<[^>]+>/g, '');
+                
                 // 如果是引用消息，去掉引用的前缀，只显示回复的字
                 if (lastMsg.startsWith('[引用:')) {
                     lastMsg = lastMsg.substring(lastMsg.indexOf(']\n') + 2);
@@ -1978,60 +1982,6 @@ function toggleInventory() {
         btn.style.transform = 'rotate(0deg)';
     }
 }
-// ===== 新增：微信发照片与描述照片功能 =====
-
-// 1. 照片和相机功能：发送真实的相册图片或相机拍照
-function sendWechatImage(input) {
-    if(!currentFriendId) {
-        alert("请先进入一个好友的聊天界面哦！");
-        input.value = '';
-        return;
-    }
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const base64Img = e.target.result;
-            // 存进历史记录，你现在的 AI 代码会自动读取里面的图片进行识图
-            chatHistory.push({
-                role: 'user', 
-                content: `<img src="${base64Img}" class="max-w-[150px] rounded-xl mt-1 shadow-sm border border-gray-100">`
-            });
-            input.value = ''; // 清空选择器，防止下次选同一张图没反应
-            renderAllMessages(true); // 让屏幕画出这张图
-            triggerAI(); // 让 AI 立刻回复
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// 2. 描述照片功能：AI不看图，只看你的文字描述
-function sendDescribedPhoto() {
-    if(!currentFriendId) {
-        alert("请先进入一个好友的聊天界面哦！");
-        return;
-    }
-    const desc = prompt("请输入你想发给TA的照片内容（AI会根据这段文字脑补画面）：");
-    if (desc && desc.trim() !== '') {
-        // 这里我用了一个小魔法：不用 img 标签，而是用 background-image（背景图）
-        // 这样你的 AI 识图代码就不会去读取这张统一的风景图，只会看到前面【】里的文字描述！
-        const fakeImageHtml = `【我发送了一张照片，画面内容是：${desc}】<br>
-        <div style="width:140px;height:180px;background-image:url('https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg');background-size:cover;background-position:center;" class="relative rounded-xl overflow-hidden mt-1 shadow-sm border border-gray-200">
-            <div class="absolute inset-0 flex items-center justify-center p-2 bg-black/10">
-                <div class="bg-white/85 text-black text-[12px] px-2 py-1.5 rounded-lg shadow-sm leading-tight text-center backdrop-blur-md w-full break-words">
-                    ${desc}
-                </div>
-            </div>
-        </div>`;
-        
-        chatHistory.push({
-            role: 'user', 
-            content: fakeImageHtml
-        });
-        renderAllMessages(true);
-        triggerAI(); // 让 AI 立刻回复
-    }
-}
-// ==========================================
 
 function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
@@ -2329,7 +2279,50 @@ function deleteSelectedMessages() {
     indices.forEach(idx => { chatHistory.splice(idx, 1); }); // 从历史记录连根拔起
     cancelMultiSelect();
 }
+// ===== 新增：微信发送图片与描述照片功能 =====
+function sendWxImage(input) {
+    if(!currentFriendId) return alert("请先进入一个聊天！");
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const base64Img = e.target.result;
+            // 推送图片到聊天记录
+            chatHistory.push({
+                role: 'user', 
+                content: `<img src="${base64Img}" class="max-w-[70%] rounded-xl mt-1 shadow-sm border border-gray-100 cursor-pointer">`
+            });
+            renderAllMessages(true);
+            toggleInventory(); // 发完收起菜单
+        }
+        reader.readAsDataURL(input.files[0]);
+        input.value = ''; // 清空，允许重复发同一张
+    }
+}
 
+function sendDescribedImage() {
+    if(!currentFriendId) return alert("请先进入一个聊天！");
+    const desc = prompt("请输入你想描述的图片内容（AI只会读取这些文字）：");
+    if (desc && desc.trim() !== '') {
+        // 巧妙的地方：我们用 div 设置背景图来显示假图片，因为底层的 AI 识图代码只认 <img> 标签。
+        // 这样既能在界面上显示好看的图片，又能完美骗过 AI，让 AI 只读外面的文字！
+        const fakeImgHtml = `
+            <div style="position: relative; width: 180px; height: 130px; border-radius: 12px; overflow: hidden; background-image: url('https://i.postimg.cc/7PgPb5kb/IMG-3254.jpg'); background-size: cover; background-position: center; margin-top: 5px;">
+                <div style="position: absolute; inset: 0; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; padding: 10px;">
+                    <span style="color: #111; font-size: 13px; font-weight: bold; text-align: center;">${desc}</span>
+                </div>
+            </div>
+        `;
+        // 给 AI 看的纯文本提示
+        const aiPrompt = `【我发送了一张照片，照片内容是：${desc}】`;
+        
+        chatHistory.push({
+            role: 'user', 
+            content: `${aiPrompt}${fakeImgHtml}`
+        });
+        renderAllMessages(true);
+        toggleInventory();
+    }
+}
 function sendUserMsg(){
     if(!currentFriendId) return;
     const input = document.getElementById('chat-input');
