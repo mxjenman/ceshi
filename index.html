@@ -2529,6 +2529,15 @@ TimeChecklist:
         // 【修复】微信使用真正的多模态格式读取微信的历史记录
         let formattedMessages = [{role:'system', content:finalSystemMessage}];
         chatHistory.slice(-5).forEach(msg => {
+            
+            // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+            if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
+                // 把后面的排版代码一刀切掉，只保留前面的纯文字递给 AI
+                let textOnly = msg.content.split('\n<div')[0];
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 这一条处理完毕，直接跳过后面的识图步骤
+            }
+
             const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
             if (imgMatch) {
                 const base64Url = imgMatch[1];
@@ -2543,6 +2552,10 @@ TimeChecklist:
                         { type: "image_url", image_url: { url: base64Url } }
                     ]
                 });
+            } else {
+                formattedMessages.push({ role: msg.role, content: msg.content });
+            }
+        });
             } else {
                 formattedMessages.push({ role: msg.role, content: msg.content });
             }
