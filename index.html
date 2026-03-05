@@ -4740,12 +4740,18 @@ function closeAddSongModal() {
     document.getElementById('add-song-modal').classList.add('hidden');
 }
 
-// 监听文件上传转码
+// 监听文件上传 (修复大文件上传卡顿或失败的问题)
 document.getElementById('new-song-cover').addEventListener('change', e => {
     if (e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = ev => tempCoverBase64 = ev.target.result;
-        reader.readAsDataURL(e.target.files[0]);
+        // 使用本地直链，封面瞬间加载
+        tempCoverBase64 = URL.createObjectURL(e.target.files[0]);
+    }
+});
+
+document.getElementById('new-song-audio-file').addEventListener('change', e => {
+    if (e.target.files[0]) {
+        // 【核心修复】抛弃笨重的转码，直接打通本地文件的光速通道，秒传！
+        tempAudioBase64 = URL.createObjectURL(e.target.files[0]);
     }
 });
 
