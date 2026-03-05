@@ -142,19 +142,21 @@
             background: rgba(0,0,0,0.05); border-left: 3px solid #ccc; padding: 4px 8px;
             font-size: 12px; color: #666; margin-bottom: 6px; border-radius: 4px;
         }
-        .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd; }
+        .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd;
+        }
+        
+        /* 隐藏左右滑动的自带滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
 
-    <div id="home-screen" class="flex-1 p-6 flex flex-col items-center relative overflow-hidden">
+    <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
-        <div class="w-full flex-1 relative overflow-hidden" id="desktop-swiper">
-            <div class="h-full flex transition-transform duration-300 w-[200%]" id="desktop-wrapper" style="transform: translateX(0%);">
-                
-                <div class="w-1/2 h-full flex flex-col">
-                    <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-                        <div class="widget-card mb-12 mt-4">
+        <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
+            <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+            <div class="widget-card mb-12 mt-4">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
@@ -240,12 +242,45 @@
                  </div>
             </div>
         </div>
-<div class="w-1/2 h-full relative">
-    <div class="absolute bottom-[8%] right-[5%] -translate-y-[200px] -translate-x-[30px] bg-white p-[10px_10px_20px_10px] shadow-[0_8px_20px_rgba(0,0,0,0.15)] w-[190px] flex flex-col gap-[12px] rotate-[5deg]">
-        <div class="w-full aspect-square bg-[#9ca3af] bg-cover bg-center cursor-pointer" onclick="changeAnyImage(this)"></div>
-        <div id="polaroid-text-1" class="text-left text-[16px] font-bold text-black leading-[1.4] cursor-pointer" onclick="editAnyText('polaroid-text-1')">文本文本文本文<br>文本文本文本</div>
-    </div>
-</div> </div> </div> <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4 z-50 shrink-0" style="transform: translateY(20px);">
+        </div> <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
+            <div class="w-full mt-4 rounded-[28px] p-5 relative overflow-hidden shadow-lg" style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px solid rgba(255,255,255,0.2);">
+                <div class="flex gap-4 items-center mb-5">
+                    <div class="w-[60px] h-[60px] bg-gray-300 rounded-[14px] flex-shrink-0 overflow-hidden shadow-md">
+                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 min-w-0 flex flex-col justify-center">
+                        <div class="font-bold text-[17px] truncate text-white drop-shadow-sm mb-1" onclick="editAnyText('music-title')" id="music-title">默认文本</div>
+                        <div class="text-[14px] text-white/80 truncate drop-shadow-sm" onclick="editAnyText('music-artist')" id="music-artist">默认文本 / 默认文本</div>
+                    </div>
+                    <div class="text-white/60 font-bold tracking-widest mb-4">……</div>
+                </div>
+                
+                <div class="flex items-center gap-3 mb-4 text-[11px] text-white/80 font-medium">
+                    <span>0:00</span>
+                    <div class="flex-1 h-[6px] bg-black/20 rounded-full overflow-hidden relative">
+                        <div class="w-1/4 h-full bg-white rounded-full absolute left-0 top-0"></div>
+                    </div>
+                    <span>-0:00</span>
+                </div>
+                
+                <div class="flex justify-between items-center px-1 text-white">
+                    <svg class="w-[26px] h-[26px] opacity-90" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    
+                    <div class="flex gap-7 items-center">
+                        <svg class="w-8 h-8 opacity-100" fill="currentColor" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+                        <svg class="w-[42px] h-[42px]" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="w-8 h-8 opacity-100" fill="currentColor" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                    </div>
+                    
+                    <svg class="w-[26px] h-[26px] opacity-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 15l-4 5h8l-4-5z" fill="currentColor" stroke="none"></path>
+                        <path d="M12 11a7 7 0 0 0-6 4"></path>
+                        <path d="M12 6a12 12 0 0 0-10 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </div> </div> <div class="px-6 pb-6 w-full z-20">
+        <div class="glass-card w-full p-4 flex justify-between items-center relative">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
@@ -4336,55 +4371,6 @@ function applyDarkModeStyle() {
     } else {
         styleTag.innerHTML = '';
     }
-}
-// ===== 新增：桌面左右滑动功能代码 =====
-let currentDesktopPage = 0;
-let startX = 0;
-let diffX = 0;
-const desktopWrapper = document.getElementById('desktop-wrapper');
-const desktopSwiper = document.getElementById('desktop-swiper');
-
-if(desktopSwiper) {
-    // 当手指按下时
-    desktopSwiper.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        desktopWrapper.style.transition = 'none'; // 滑动时取消动画，让其跟手
-    });
-
-    // 当手指滑动时
-    desktopSwiper.addEventListener('touchmove', (e) => {
-        diffX = e.touches[0].clientX - startX;
-        let percent = (diffX / window.innerWidth) * 50; 
-        let currentPos = (currentDesktopPage === 0) ? percent : -50 + percent;
-        
-        // 限制一下边界，别滑出屏幕了
-        if(currentPos > 10) currentPos = 10;
-        if(currentPos < -60) currentPos = -60;
-        
-        desktopWrapper.style.transform = `translateX(${currentPos}%)`;
-    });
-
-    // 当手指松开时
-    desktopSwiper.addEventListener('touchend', (e) => {
-        desktopWrapper.style.transition = 'transform 0.3s ease-out'; // 恢复平滑动画
-        
-        // 如果向左滑，就翻到第二页
-        if (diffX < -40 && currentDesktopPage === 0) {
-            currentDesktopPage = 1;
-        } 
-        // 如果向右滑，就翻回第一页
-        else if (diffX > 40 && currentDesktopPage === 1) {
-            currentDesktopPage = 0;
-        }
-        
-        // 定位到正确的页面
-        if (currentDesktopPage === 0) {
-            desktopWrapper.style.transform = `translateX(0%)`;
-        } else {
-            desktopWrapper.style.transform = `translateX(-50%)`;
-        }
-        diffX = 0; // 重置距离
-    });
 }
 </script>
 </body>
