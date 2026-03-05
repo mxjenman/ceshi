@@ -99,7 +99,31 @@
         .wx-menu-item:last-child { border-bottom: none; }
         .wx-chevron { color: #d1d1d1; font-size: 14px; font-family: serif; display: none; } 
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
-        .slide-hidden { transform: translateX(100%); }
+        .slide-hidden { transform: translateX(100%);
+        }
+        /* 隐藏滑动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 拍立得照片样式 */
+        .polaroid {
+            background: white;
+            padding: 8px 8px 32px 8px; /* 上左右窄，下面留宽写字 */
+            border-radius: 4px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            position: absolute;
+            transition: transform 0.2s;
+        }
+        .polaroid-text {
+            position: absolute;
+            bottom: 6px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            color: #333;
+            font-weight: bold;
+        }
                 .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%;
         }
         
@@ -143,19 +167,16 @@
             font-size: 12px; color: #666; margin-bottom: 6px; border-radius: 4px;
         }
         .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd; }
-        
-        /* 👇这是新加的：隐藏左右滑动的滚动条，让界面更像真手机 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
 
-    <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
+    <div id="home-screen" class="flex-1 flex flex-col relative w-full h-full overflow-hidden">
         
-        <div class="min-w-full h-full flex flex-col items-center p-6 snap-center relative">
-
-        <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+        <div class="w-full h-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-[100px]">
+            
+            <div class="w-full h-full shrink-0 snap-center flex flex-col p-6 items-center">
+                <div class="w-full flex flex-col" style="transform: translateY(-35px);">
             <div class="widget-card mb-12 mt-4">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
@@ -242,8 +263,32 @@
                 </div>
             </div>
         </div>
+        </div> <div class="w-full h-full shrink-0 snap-center flex flex-col p-6 items-center justify-center relative">
+            <div class="relative w-full max-w-[320px] h-[350px] flex items-center justify-center" style="transform: translateY(-60px);">
+                
+                <div class="polaroid w-[140px] h-[170px] z-10" style="transform: rotate(-12deg) translateX(-60px) translateY(20px);">
+                    <div class="w-full h-[120px] overflow-hidden cursor-pointer bg-gray-100" onclick="changeAnyImage(this)">
+                        <img src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="pointer-events-none w-full h-full object-cover">
+                    </div>
+                    <div id="polaroid-text-1" class="polaroid-text cursor-pointer" onclick="editAnyText('polaroid-text-1')">夏天与你</div>
+                </div>
 
-        <div class="mt-auto glass-card w-full p-4 flex justify-between items-center mb-4" style="transform: translateY(20px);">
+                <div class="polaroid w-[140px] h-[170px] z-10" style="transform: rotate(15deg) translateX(60px) translateY(30px);">
+                    <div class="w-full h-[120px] overflow-hidden cursor-pointer bg-gray-100" onclick="changeAnyImage(this)">
+                        <img src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="pointer-events-none w-full h-full object-cover">
+                    </div>
+                    <div id="polaroid-text-2" class="polaroid-text cursor-pointer" onclick="editAnyText('polaroid-text-2')">一起看海</div>
+                </div>
+
+                <div class="polaroid w-[160px] h-[190px] z-20" style="transform: rotate(-2deg) translateY(-20px); box-shadow: 0 10px 25px rgba(0,0,0,0.25);">
+                    <div class="w-full h-[140px] overflow-hidden cursor-pointer bg-gray-100" onclick="changeAnyImage(this)">
+                        <img src="https://i.postimg.cc/XvxCSB82/IMG-3174.png" class="pointer-events-none w-full h-full object-cover">
+                    </div>
+                    <div id="polaroid-text-3" class="polaroid-text cursor-pointer" onclick="editAnyText('polaroid-text-3')">最好的我们</div>
+                </div>
+
+            </div>
+        </div> </div> <div class="absolute bottom-8 left-6 right-6 glass-card p-4 flex justify-between items-center z-50 shadow-xl">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
@@ -265,22 +310,10 @@
                 </div>
             </div>
         </div>
-        </div> <div class="min-w-full h-full flex flex-col items-center justify-center p-6 snap-center relative">
-            
-            <div class="bg-white p-4 pb-8 shadow-[0_15px_35px_rgba(0,0,0,0.15)] transform rotate-2 w-[260px] transition-all active:scale-95 cursor-default mt-[-100px]">
-                
-                <div class="w-full h-[260px] bg-[#e0e0e0] flex items-center justify-center cursor-pointer bg-cover bg-center" 
-                     onclick="changeAnyImage(this)" 
-                     style="background-image: url('https://images.unsplash.com/photo-1524285854898-31ea6d9f75f5?w=500');">
-                </div>
-                
-                <div id="polaroid-text-1" class="mt-6 text-center text-gray-800 text-[18px] font-bold cursor-pointer tracking-widest" onclick="editAnyText('polaroid-text-1')">
-                    定格美好瞬间
-                </div>
-                
-            </div>
+    </div>
 
-        </div> </div> <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
+
+    <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
             <button onclick="closeChat()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
