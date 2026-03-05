@@ -1127,10 +1127,10 @@ let config = {
     customCss: '',
     temperature: 1.0,  // 新增：AI回复的随机性参数
     fontSize: 14,      // 新增：默认字体大小
-    fontFamily: '',    // 新增：字体名称
-    fontSrc: ''        // 新增：字体的链接或文件数据
-    globalChatBg: localStorage.getItem('globalChatBg_data') || '', // 新增：全局聊天背景
-};
+        fontFamily: '',    // 新增：字体名称
+        fontSrc: '',       // 新增：字体的链接或文件数据
+        globalChatBg: localStorage.getItem('globalChatBg_data') || '', // 新增：全局聊天背景
+    };
 // 新增：用来存储保存过的字体预设
 let fontPresets = JSON.parse(localStorage.getItem('fontPresets_data')) || {};
 
@@ -2932,6 +2932,11 @@ function openAppearanceApp() {
         const cleanUrl = bodyBg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
         document.getElementById('preview-wallpaper').src = cleanUrl;
         tempAppearance.wallpaper = cleanUrl;
+    } else {
+        document.getElementById('preview-wallpaper').src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+        document.getElementById('preview-wallpaper').style.backgroundColor = '#d1d5db';
+    }
+
     if (config.globalChatBg) {
         document.getElementById('preview-global-chat-bg').src = config.globalChatBg;
         document.getElementById('preview-global-chat-bg').style.backgroundColor = 'transparent';
