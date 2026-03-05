@@ -2530,10 +2530,6 @@ TimeChecklist:
         let formattedMessages = [{role:'system', content:finalSystemMessage}];
         chatHistory.slice(-5).forEach(msg => {
             
-        // 【修复】微信使用真正的多模态格式读取微信的历史记录
-        let formattedMessages = [{role:'system', content:finalSystemMessage}];
-        chatHistory.slice(-5).forEach(msg => {
-            
             // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
             if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
                 // 把后面的排版代码一刀切掉，只保留前面的纯文字递给 AI
@@ -2547,7 +2543,7 @@ TimeChecklist:
                 const base64Url = imgMatch[1];
                 let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
  
-                // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
+               // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
                 if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
                 
                 formattedMessages.push({
