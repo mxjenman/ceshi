@@ -316,7 +316,13 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </svg>
             </button>
             <div id="wechat-title" class="flex-1 text-center font-bold text-[17px]">好友</div>
-            <div class="w-6 text-2xl flex justify-center cursor-pointer" onclick="openAddFriendModal()">＋</div>
+            <div class="relative">
+                <div class="w-6 text-2xl flex justify-center cursor-pointer" onclick="toggleAddMenu(event)">＋</div>
+                <div id="add-menu-dropdown" class="hidden absolute right-2 top-10 bg-white border border-gray-200 shadow-xl rounded-xl w-32 z-50 overflow-hidden text-[14px]">
+                    <div class="px-4 py-3 border-b border-gray-100 cursor-pointer active:bg-gray-100 text-black text-center font-bold" onclick="openAddFriendModal(); toggleAddMenu();">添加好友</div>
+                    <div class="px-4 py-3 cursor-pointer active:bg-gray-100 text-black text-center font-bold" onclick="openCreateGroupModal(); toggleAddMenu();">创建群聊</div>
+                </div>
+            </div>
         </div>
 
         <div id="wechat-content" class="flex-1 overflow-y-auto">
@@ -514,8 +520,12 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                     <span class="text-[14px] text-[#333]">条对话自动总结</span>
                 </div>
 
-                <div class="text-[14px] text-[#333] mb-2 font-bold">AI 当前记住的事：</div>
-                <div id="memory-blocks-container" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2">
+                <div class="flex justify-between items-center mb-2 mt-2">
+                    <div class="text-[14px] text-[#333] font-bold">AI 当前记住的事：</div>
+                    <button onclick="openMountMemoryModal()" class="text-[12px] bg-gray-100 text-black px-3 py-1 rounded-lg font-bold active:scale-95">挂载关联记忆</button>
+                </div>
+                
+<div id="memory-blocks-container" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2">
                     </div>
             </div>
             
@@ -669,24 +679,9 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div class="w-6"></div>
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-            <div class="bg-white rounded-[16px] p-4 shadow-sm">
-                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的备注</label>
-                <input id="cs-remark" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4">
-                
-                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的真名</label>
-                <input id="cs-realname" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4">
-                
-                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的设定 (AI Persona)</label>
-                <textarea id="cs-persona" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 bg-gray-50"></textarea>
+            <div id="cs-dynamic-container" class="flex flex-col gap-4">
             </div>
-            
-            <div class="bg-white rounded-[16px] p-4 shadow-sm">
-                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">我的人设 (User Persona)</label>
-                <p class="text-[11px] text-gray-400 mb-2">告诉AI你是谁，留空则默认不加干涉。</p>
-                <textarea id="cs-user-persona" placeholder="例如：我是他从小一起长大的青梅竹马，性格傲娇..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-24 text-gray-700 bg-gray-50"></textarea>
-            </div>
-            
-            <button onclick="saveCharacterSettings()" class="w-full py-3 bg-black text-white rounded-[16px] font-bold text-[16px] mt-2 mb-6 shadow-md active:scale-95 transition-transform">保存更改</button>
+            <button onclick="saveCharacterSettings()" class="w-full py-3 bg-black text-white rounded-[16px] font-bold text-[16px] mt-2 mb-6 shadow-md active:scale-95 transition-transform shrink-0">保存更改</button>
         </div>
     </div>
     <div id="friend-action-modal" class="fixed inset-0 hidden z-[150] flex items-center justify-center">
@@ -727,7 +722,31 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
         </div>
     </div>
+    <div id="create-group-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">创建群聊</h3>
+            <input id="group-name-input" type="text" placeholder="给群聊起个名字吧" class="w-full border border-gray-500 rounded-full px-4 py-2 text-[14px] outline-none text-gray-700 mb-4">
+            <div class="text-[12px] text-gray-500 mb-2 font-bold">选择群成员 (最多5人)：</div>
+            <div id="group-member-list" class="max-h-[200px] overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeCreateGroupModal()" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
+                <button onclick="saveGroupChat()" class="flex-1 py-2.5 bg-black text-white rounded-[30px] font-bold text-[15px] active:scale-95 shadow-sm">确定创建</button>
+            </div>
+        </div>
+    </div>
 
+    <div id="mount-memory-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 id="mount-modal-title" class="font-bold text-[#333] mb-4 text-center text-[16px]">挂载记忆</h3>
+            <div id="mount-list-container" class="max-h-[300px] overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeMountMemoryModal()" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
+                <button onclick="saveMountMemory()" class="flex-1 py-2.5 bg-black text-white rounded-[30px] font-bold text-[15px] active:scale-95 shadow-sm">保存挂载</button>
+            </div>
+        </div>
+    </div>
     <div id="moments-compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
         <div class="h-14 flex items-center justify-between px-4">
             <button onclick="closeMomentsCompose()" class="text-gray-700 text-[16px]">取消</button>
@@ -2217,11 +2236,53 @@ function openCharacterSettings() {
     const friend = friendList.find(f => f.id === currentFriendId);
     if(!friend) return;
     
-    // 把当前记住的信息填入输入框
-    document.getElementById('cs-remark').value = friend.remark || '';
-    document.getElementById('cs-realname').value = friend.realName || '';
-    document.getElementById('cs-persona').value = friend.persona || '';
-    document.getElementById('cs-user-persona').value = friend.userPersona || '';
+    const container = document.getElementById('cs-dynamic-container');
+    container.innerHTML = '';
+    
+    if(friend.isGroup) {
+        let html = `
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">群聊名称</label>
+                <input id="cs-remark" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-2" value="${friend.remark || ''}">
+            </div>
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <h3 class="font-bold text-[#333] mb-3 text-[14px]">群成员独立人设 (此修改不影响单聊)</h3>
+        `;
+        
+        if (friend.members) {
+            friend.members.forEach(mId => {
+                const member = friendList.find(f => f.id === mId);
+                if(member) {
+                    html += `
+                        <label class="block text-[#333] font-bold mb-1 text-[13px]">${member.remark} 的人设</label>
+                        <textarea id="cs-persona-${mId}" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none resize-none h-24 text-gray-700 bg-gray-50 mb-4">${friend.groupPersonas[mId] || ''}</textarea>
+                    `;
+                }
+            });
+        }
+        
+        html += `</div>`;
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = `
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的备注</label>
+                <input id="cs-remark" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4" value="${friend.remark || ''}">
+                
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的真名</label>
+                <input id="cs-realname" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-4" value="${friend.realName || ''}">
+                
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">TA的设定 (AI Persona)</label>
+                <textarea id="cs-persona" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-32 text-gray-700 bg-gray-50">${friend.persona || ''}</textarea>
+            </div>
+            
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">我的人设 (User Persona)</label>
+                <p class="text-[11px] text-gray-400 mb-2">告诉AI你是谁，留空则默认不加干涉。</p>
+                <textarea id="cs-user-persona" placeholder="例如：我是他从小一起长大的青梅竹马，性格傲娇..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-24 text-gray-700 bg-gray-50">${friend.userPersona || ''}</textarea>
+            </div>
+        `;
+    }
     
     document.getElementById('character-settings-page').classList.remove('slide-hidden');
 }
@@ -2235,24 +2296,31 @@ function saveCharacterSettings() {
     const friend = friendList.find(f => f.id === currentFriendId);
     if(!friend) return;
     
-    const newRemark = document.getElementById('cs-remark').value.trim();
-    const newRealName = document.getElementById('cs-realname').value.trim();
-    const newPersona = document.getElementById('cs-persona').value.trim();
-    
-    if(!newRemark || !newRealName || !newPersona) {
-        return alert("备注、真名和TA的设定不能为空哦！");
+    if(friend.isGroup) {
+        const newRemark = document.getElementById('cs-remark').value.trim();
+        if(!newRemark) return alert("群聊名称不能为空哦！");
+        friend.remark = newRemark;
+        
+        friend.members.forEach(mId => {
+            const pInput = document.getElementById(`cs-persona-${mId}`);
+            if(pInput) friend.groupPersonas[mId] = pInput.value.trim();
+        });
+    } else {
+        const newRemark = document.getElementById('cs-remark').value.trim();
+        const newRealName = document.getElementById('cs-realname').value.trim();
+        const newPersona = document.getElementById('cs-persona').value.trim();
+        if(!newRemark || !newRealName || !newPersona) return alert("备注、真名和TA的设定不能为空哦！");
+        
+        friend.remark = newRemark;
+        friend.realName = newRealName;
+        friend.persona = newPersona;
+        friend.userPersona = document.getElementById('cs-user-persona').value.trim();
     }
     
-    // 更新记忆
-    friend.remark = newRemark;
-    friend.realName = newRealName;
-    friend.persona = newPersona;
-    friend.userPersona = document.getElementById('cs-user-persona').value.trim();
-    
-    // 同步更新外面看到的备注名字
     document.getElementById('fi-name').innerText = friend.remark;
     document.getElementById('chat-detail-title').innerText = friend.remark;
-    renderFriendList(); // 刷新微信好友列表界面
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    renderFriendList(); // 刷新外面列表的名字
     
     closeCharacterSettings();
     alert("设定保存成功↖(^ω^)↗");
@@ -5557,6 +5625,164 @@ function updateDateWidgetDisplay() {
     }
 
     daysEl.innerText = diffDays;
+}
+// ================= 新增：群聊和记忆挂载核心逻辑 =================
+let selectedGroupMembers = [];
+
+function toggleAddMenu(e) {
+    if(e) e.stopPropagation();
+    document.getElementById('add-menu-dropdown').classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('add-menu-dropdown');
+    if(menu && !menu.classList.contains('hidden') && !e.target.closest('.relative')) {
+        menu.classList.add('hidden');
+    }
+});
+
+function openCreateGroupModal() {
+    const friends = friendList.filter(f => !f.isGroup);
+    if(friends.length === 0) return alert("还没有单人角色，先去添加角色吧！");
+    
+    const listContainer = document.getElementById('group-member-list');
+    listContainer.innerHTML = '';
+    selectedGroupMembers = [];
+    document.getElementById('group-name-input').value = '';
+    
+    friends.forEach(f => {
+        listContainer.innerHTML += `
+            <label class="flex items-center justify-between p-3 border-b border-gray-100 cursor-pointer active:bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-[10px] object-cover">
+                    <span class="font-bold text-[14px] text-gray-800">${f.remark}</span>
+                </div>
+                <input type="checkbox" class="w-5 h-5 accent-black" value="${f.id}" onchange="toggleGroupMember(this)">
+            </label>
+        `;
+    });
+    document.getElementById('create-group-modal').classList.remove('hidden');
+}
+
+function closeCreateGroupModal() {
+    document.getElementById('create-group-modal').classList.add('hidden');
+}
+
+function toggleGroupMember(checkbox) {
+    if(checkbox.checked) {
+        if(selectedGroupMembers.length >= 5) {
+            checkbox.checked = false;
+            alert("最多只能选择5人哦！");
+            return;
+        }
+        selectedGroupMembers.push(checkbox.value);
+    } else {
+        selectedGroupMembers = selectedGroupMembers.filter(id => id !== checkbox.value);
+    }
+}
+
+function saveGroupChat() {
+    const groupName = document.getElementById('group-name-input').value.trim();
+    if(!groupName) return alert("请输入群聊名称！");
+    if(selectedGroupMembers.length === 0) return alert("请至少选择一个群成员！");
+
+    // 初始化时复制一份单人设定过来，之后群聊里的修改和单人不互通
+    let groupPersonas = {};
+    selectedGroupMembers.forEach(id => {
+        const friend = friendList.find(f => f.id === id);
+        if(friend) {
+            groupPersonas[id] = friend.persona; 
+        }
+    });
+
+    const newGroup = {
+        id: 'g_' + Date.now(),
+        isGroup: true,
+        remark: groupName,
+        realName: groupName,
+        members: selectedGroupMembers,
+        groupPersonas: groupPersonas,
+        chatHistory: [],
+        avatar: "https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg", // 给群聊随机弄了个默认头像
+        desc: "群聊",
+        memoryList: [],
+        mountedSingles: [] 
+    };
+    
+    friendList.unshift(newGroup); // 排在最前面
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    closeCreateGroupModal();
+    renderFriendList();
+}
+
+function openMountMemoryModal() {
+    if(!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    const container = document.getElementById('mount-list-container');
+    container.innerHTML = '';
+    
+    if(friend.isGroup) {
+        document.getElementById('mount-modal-title').innerText = "挂载单人记忆到本群";
+        if(!friend.mountedSingles) friend.mountedSingles = [];
+        
+        friend.members.forEach(mId => {
+            const member = friendList.find(f => f.id === mId);
+            if(member) {
+                const isChecked = friend.mountedSingles.includes(mId) ? 'checked' : '';
+                container.innerHTML += `
+                    <label class="flex items-center justify-between p-3 border-b border-gray-100 cursor-pointer">
+                        <span class="font-bold text-[14px] text-gray-800">${member.remark}</span>
+                        <input type="checkbox" class="w-5 h-5 accent-black mount-checkbox" value="${mId}" ${isChecked}>
+                    </label>
+                `;
+            }
+        });
+        if(friend.members.length === 0) container.innerHTML = '<div class="p-3 text-gray-400 text-sm">群里还没有成员呢</div>';
+    } else {
+        document.getElementById('mount-modal-title').innerText = "挂载群聊记忆到单聊";
+        if(!friend.mountedGroups) friend.mountedGroups = [];
+        
+        const groupsInvolved = friendList.filter(f => f.isGroup && f.members.includes(friend.id));
+        
+        groupsInvolved.forEach(g => {
+            const isChecked = friend.mountedGroups.includes(g.id) ? 'checked' : '';
+            container.innerHTML += `
+                <label class="flex items-center justify-between p-3 border-b border-gray-100 cursor-pointer">
+                    <span class="font-bold text-[14px] text-gray-800">${g.remark}</span>
+                    <input type="checkbox" class="w-5 h-5 accent-black mount-checkbox" value="${g.id}" ${isChecked}>
+                </label>
+            `;
+        });
+        
+        if(groupsInvolved.length === 0) container.innerHTML = '<div class="p-3 text-center text-gray-400 text-sm mt-4">该角色还没有加入任何群聊</div>';
+    }
+    
+    document.getElementById('mount-memory-modal').classList.remove('hidden');
+}
+
+function closeMountMemoryModal() {
+    document.getElementById('mount-memory-modal').classList.add('hidden');
+}
+
+function saveMountMemory() {
+    if(!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(!friend) return;
+    
+    const checkboxes = document.querySelectorAll('.mount-checkbox');
+    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    if(friend.isGroup) {
+        friend.mountedSingles = selectedIds;
+    } else {
+        friend.mountedGroups = selectedIds;
+    }
+    
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    closeMountMemoryModal();
+    alert("✅ 记忆挂载成功！此后聊天将会带上你勾选的关联记忆。");
 }
 </script>
 </body>
