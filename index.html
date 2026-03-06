@@ -299,7 +299,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                     <img id="icon-appearance" src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
                 </div>
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('查手机')">
+            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openCheckPhoneApp()">
                 <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
                     <img id="icon-placeholder4" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                 </div>
@@ -1305,6 +1305,36 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 <button onclick="closeAddSongModal()" class="w-1/3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl font-bold text-[15px] active:scale-95">取消</button>
                 <button onclick="saveNewSong()" class="flex-1 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-[15px] active:scale-95">确定添加</button>
             </div>
+        </div>
+    </div>
+    <div id="check-phone-app-screen" class="page-layer slide-hidden flex flex-col z-[90] bg-[#f2f2f6]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeCheckPhoneApp()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">查手机 (选择角色)</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" id="check-phone-friend-list">
+            </div>
+    </div>
+
+    <div id="character-phone-screen" class="page-layer slide-hidden flex flex-col z-[100] bg-[#f2f2f6]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeCharacterPhone()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div id="character-phone-title" class="flex-1 text-center font-bold text-[17px]">TA的手机</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center p-6 bg-[#f2f2f6]">
+            <div class="w-20 h-20 bg-gray-200 rounded-full mb-6 flex items-center justify-center text-3xl shadow-inner">📱</div>
+            <div class="text-gray-600 font-bold mb-3 text-center text-lg">正在连接 TA 的手机...</div>
+            <div class="text-[13px] text-gray-400 text-center leading-relaxed">壳子已经搭好啦！<br>生成角色手机内容的功能我们后续再一起做哦！</div>
         </div>
     </div>
 
@@ -5045,6 +5075,68 @@ function describeWxPhoto() {
     }
 }
 // =========================================================================
+
+// ================= 新增：查手机功能核心逻辑 =================
+
+// 1. 打开“查手机”应用并渲染好友列表
+function openCheckPhoneApp() {
+    renderCheckPhoneFriendList();
+    document.getElementById('check-phone-app-screen').classList.remove('slide-hidden');
+}
+
+// 2. 关闭“查手机”应用
+function closeCheckPhoneApp() {
+    document.getElementById('check-phone-app-screen').classList.add('slide-hidden');
+}
+
+// 3. 把微信好友列表“复刻”到查手机界面里
+function renderCheckPhoneFriendList() {
+    const container = document.getElementById('check-phone-friend-list');
+    container.innerHTML = '';
+    
+    if(friendList.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">暂无好友，请先去微信添加角色哦</div>';
+        return;
+    }
+    
+    // 按照微信一样的逻辑：置顶的好友排在最前面
+    const sortedFriends = [...friendList].sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0;
+    });
+
+    // 循环生成每个好友的卡片
+    sortedFriends.forEach(f => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-3 p-3 bg-white rounded-[16px] shadow-sm cursor-pointer active:scale-95 transition-transform border border-gray-50";
+        // 点击这个好友，就把TA的数据传给下一个页面
+        div.onclick = () => openCharacterPhone(f);
+        
+        div.innerHTML = `
+            <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-[12px] object-cover flex-shrink-0 border border-gray-100">
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                <div class="font-bold text-[16px] text-[#333] truncate">${f.remark}</div>
+                <div class="text-[12px] text-gray-400 truncate mt-1">点击悄悄查看 TA 的手机设备...</div>
+            </div>
+            <div class="text-gray-300 text-xl font-light pl-2 pr-1">›</div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// 4. 打开选中角色的专属手机界面
+function openCharacterPhone(friend) {
+    // 把顶部的标题改成TA的名字
+    document.getElementById('character-phone-title').innerText = `${friend.remark} 的手机`;
+    // 滑出界面
+    document.getElementById('character-phone-screen').classList.remove('slide-hidden');
+}
+
+// 5. 关闭角色的手机界面，退回到列表
+function closeCharacterPhone() {
+    document.getElementById('character-phone-screen').classList.add('slide-hidden');
+}
 </script>
 </body>
 </html>
