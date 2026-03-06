@@ -1345,42 +1345,59 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
             </div>
 
-            <div class="grid grid-cols-4 gap-x-2 gap-y-6 place-items-center mt-2">
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('微信')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-wechat" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+            <div class="flex w-full px-[20px] mt-2 gap-4 items-stretch">
+                
+                <div class="flex-1 bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[30px] p-4 flex flex-col justify-between shadow-sm cursor-pointer" onclick="editAnyText('new-widget-text')">
+                    <div class="w-[42px] h-[42px] rounded-full overflow-hidden border-[2px] border-white shadow-sm self-start flex-shrink-0 bg-gray-300">
+                        <img id="char-phone-left-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-full h-full object-cover">
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">微信</span>
+                    
+                    <div id="new-widget-text" class="text-center text-[13px] font-bold text-[#333] leading-snug my-2 break-words">
+                        我一直在<br>看着你哦
+                    </div>
+
+                    <div class="w-[42px] h-[42px] rounded-full overflow-hidden border-[2px] border-white shadow-sm self-end flex-shrink-0 bg-gray-300">
+                        <img id="char-phone-right-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
+                    </div>
                 </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('备忘录')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-notes" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+
+                <div class="grid grid-cols-2 gap-x-5 gap-y-6 place-items-center w-[140px] flex-shrink-0">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('微信')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-wechat" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">微信</span>
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">备忘录</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('相册')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-album" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('备忘录')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-notes" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">备忘录</span>
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">相册</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('日记')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-diary" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('相册')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-album" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">相册</span>
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">日记</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('浏览器')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-browser" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('日记')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-diary" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">日记</span>
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">浏览器</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('购物')">
-                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
-                        <img id="char-icon-shop" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('浏览器')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-browser" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">浏览器</span>
                     </div>
-                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">购物</span>
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('购物')">
+                        <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                            <img id="char-icon-shop" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                        </div>
+                        <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">购物</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -5235,6 +5252,16 @@ function openCharacterPhone(friend) {
     const widgetAvatar = document.getElementById('char-phone-widget-avatar');
     if(widgetAvatar) {
         widgetAvatar.src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    }
+    
+    // ====== 新增：同步新组件左上角和右下角的双人头像 ======
+    const leftAvatar = document.getElementById('char-phone-left-avatar');
+    if(leftAvatar) {
+        leftAvatar.src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    }
+    const rightAvatar = document.getElementById('char-phone-right-avatar');
+    if(rightAvatar) {
+        rightAvatar.src = userProfile.avatar || 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';
     }
     // =======================================================
 
