@@ -1333,6 +1333,15 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 relative z-10">
+            
+            <div class="w-full flex justify-center mt-2 mb-10">
+                <div class="bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[40px] p-1.5 flex items-center shadow-sm w-fit min-w-[220px] max-w-[90%] cursor-pointer" onclick="editAnyText('char-phone-widget-text')">
+                    <div class="w-[52px] h-[52px] rounded-full overflow-hidden border-[2.5px] border-white flex-shrink-0 bg-gray-300 shadow-sm flex items-center justify-center">
+                        <img id="char-phone-widget-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-full h-full object-cover">
+                    </div>
+                    <div id="char-phone-widget-text" class="ml-4 mr-6 text-[18px] font-bold text-[#333] tracking-wide">文本文本文本文本</div>
+                </div>
+            </div>
             <div class="grid grid-cols-4 gap-x-2 gap-y-6 place-items-center mt-2">
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('微信')">
                     <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
@@ -5214,10 +5223,18 @@ let tempCharAppearance = { wallpaper: '', icons: {} };
 let currentCharEditingIconId = '';
 
 // 4. 打开选中角色的专属手机界面（加强版）
+
 function openCharacterPhone(friend) {
     currentPhoneFriendId = friend.id;
     document.getElementById('character-phone-title').innerText = `${friend.remark} 的手机`;
     
+    // ====== 新增：让胶囊小组件的头像自动变成该角色的头像 ======
+    const widgetAvatar = document.getElementById('char-phone-widget-avatar');
+    if(widgetAvatar) {
+        widgetAvatar.src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    }
+    // =======================================================
+
     // 加载这台手机专属的壁纸
     const screen = document.getElementById('character-phone-screen');
     if (friend.phoneBg) {
