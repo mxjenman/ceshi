@@ -1334,14 +1334,17 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         
         <div class="flex-1 overflow-y-auto p-4 relative z-10">
             
-            <div class="w-full flex justify-center mt-2 mb-10">
-                <div class="bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[40px] p-1.5 flex items-center shadow-sm w-fit min-w-[220px] max-w-[90%] cursor-pointer" onclick="editAnyText('char-phone-widget-text')">
-                    <div class="w-[52px] h-[52px] rounded-full overflow-hidden border-[2.5px] border-white flex-shrink-0 bg-gray-300 shadow-sm flex items-center justify-center">
+            <div class="w-full px-[20px] mt-2 mb-10">
+                <div class="bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[40px] p-1.5 flex items-center shadow-sm w-full">
+                    <div class="w-[52px] h-[52px] rounded-full overflow-hidden border-[2.5px] border-white flex-shrink-0 bg-gray-300 shadow-sm flex items-center justify-center cursor-pointer active:scale-95 transition-transform" onclick="generatePhoneThoughts()">
                         <img id="char-phone-widget-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-full h-full object-cover">
                     </div>
-                    <div id="char-phone-widget-text" class="ml-4 mr-6 text-[18px] font-bold text-[#333] tracking-wide">文本文本文本文本</div>
+                    <div class="ml-3 mr-4 flex-1">
+                        <div id="char-phone-widget-text" class="text-[13px] font-bold text-[#333] tracking-wide leading-tight break-words" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all;">点击头像生成TA的小心思吧</div>
+                    </div>
                 </div>
             </div>
+
             <div class="grid grid-cols-4 gap-x-2 gap-y-6 place-items-center mt-2">
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('微信')">
                     <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
@@ -5373,6 +5376,61 @@ function saveCharAppearance() {
     
     alert("✅ TA的手机外观已保存！每个角色都有专属手机啦！");
     closeCharAppearance();
+}
+
+// ================= 新增：点击头像获取内心OS功能 =================
+async function generatePhoneThoughts() {
+    if (!currentPhoneFriendId) return;
+    if (!config.apiKey) return alert("请先在设置中填写 API Key！");
+
+    const friend = friendList.find(f => f.id === currentPhoneFriendId);
+    if (!friend) return;
+
+    // 让文字先变成正在加载的状态，并带闪烁的省略号
+    const textEl = document.getElementById('char-phone-widget-text');
+    textEl.innerHTML = '正在偷听TA的心声<span class="animate-pulse">...</span>';
+
+    try {
+        // 专门给AI设计的提示词，让它知道自己被偷看手机了
+        const prompt = `你是${friend.realName}。你的设定是：${friend.persona}。\n【当前情境】：用户现在正在偷偷翻看你的手机！\n【任务】：用第一人称写出你此刻内心的真实想法（可以是傲娇、害羞、生气、紧张等符合你人设的反应）。\n【强制要求】：字数严格控制在30字以内！不要说废话，不要带任何格式或表情符号，直接输出纯文本内心想法。`;
+
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'user', content: prompt}],
+                temperature: 0.8
+            })
+        });
+
+        const data = await response.json();
+        let reply = data.choices[0].message.content.trim();
+        
+        // 双重保险：强制截断文字，确保绝对不超过30个字
+        if(reply.length > 30) reply = reply.substring(0, 30) + "...";
+
+        // 开始打字机效果：清空文字，准备一个个蹦出来，并加上闪烁的竖线光标
+        textEl.innerHTML = '<span id="typing-content"></span><span class="animate-pulse font-bold ml-[1px]">|</span>';
+        const contentSpan = document.getElementById('typing-content');
+
+        let index = 0;
+        function typeChar() {
+            if (index < reply.length) {
+                contentSpan.innerText += reply.charAt(index);
+                index++;
+                // 调整这里的数字可以改变打字速度，80毫秒打一个字
+                setTimeout(typeChar, 80); 
+            } else {
+                // 打字结束，去掉竖线光标，只留下最终文字
+                textEl.innerHTML = reply;
+            }
+        }
+        typeChar();
+
+    } catch(e) {
+        textEl.innerText = "读取失败，请检查网络或API是否正常";
+    }
 }
 </script>
 </body>
