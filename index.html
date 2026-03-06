@@ -1065,10 +1065,17 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                         <option value="">选择预设</option>
                     </select>
                 </div>
+
                 <div class="flex gap-2">
                     <button onclick="saveFontPreset()" class="flex-1 bg-gray-100 text-black py-1.5 rounded text-sm font-bold">保存预设</button>
                     <button onclick="deleteFontPreset()" class="flex-1 bg-red-50 text-red-500 py-1.5 rounded text-sm font-bold">删除预设</button>
                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">后台通知测试</h3>
+                <p class="text-[11px] text-gray-400 mb-3 leading-tight">点击下方按钮后，请立刻将本网页退到手机后台（或切到桌面），等待10秒，测试是否能收到系统弹窗。</p>
+                <button onclick="testBackgroundNotification()" class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-bold active:scale-95 transition-transform">测试后台消息推送</button>
             </div>
 
         </div>
@@ -1356,15 +1363,34 @@ function requestNotificationPermission() {
 function sendSystemNotification(title, body) {
     // 只有在允许通知，并且页面不在用户眼前（被切走或遮挡）时，才发系统推送
     if ("Notification" in window && Notification.permission === "granted") {
-        if (document.hidden) {
-            // 过滤掉HTML代码，只显示纯文字
-            let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
-            new Notification(title, { 
-                body: cleanBody,
-                icon: 'https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg' 
-            });
+            if (document.hidden) {
+                // 过滤掉HTML代码，只显示纯文字
+                let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
+                new Notification(title, { 
+                    body: cleanBody,
+                    icon: 'https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg' 
+                });
+            }
         }
     }
+}
+
+// --- 新增：专门用来测试后台弹窗的函数 ---
+function testBackgroundNotification() {
+    // 第一步：先在前台弹个提示，告诉用户接下来该怎么做
+    alert("即将开始测试！\n\n请在点击“确定”后，立刻把这个网页退到手机后台（比如切回桌面，或者打开其他APP）。\n\n10秒钟后，系统会尝试给你发一条推送！");
+    
+    // 第二步：开始10秒倒计时 (10000毫秒 = 10秒)
+    setTimeout(() => {
+        // 判断10秒后，用户是不是乖乖把网页切到了后台
+        if (document.hidden) {
+            // 如果确实在后台，就发真正的系统通知弹窗
+            sendSystemNotification("✅ 测试成功", "太棒了！你成功收到了来自后台的系统推送通知！");
+        } else {
+            // 如果用户还在看着这个网页没退出去，就给他个提醒
+            alert("你没有切到后台哦！\n系统推送只有在网页处于后台或者锁屏时才会弹出来，请重新测试~");
+        }
+    }, 10000); 
 }
 // ===================================================
 
