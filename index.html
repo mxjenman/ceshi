@@ -1340,7 +1340,33 @@ let friendList = [];
 let currentFriendId = null;
 let isMultiSelecting = false;  // 记住是否正在多选
 let selectedMsgIndices = new Set(); // 记住多选了哪些消息
-let currentQuoteMsg = null; // 记住正在引用哪句话
+let currentQuoteMsg = null;
+// 记住正在引用哪句话
+
+// ================= 新增：系统通知模块 =================
+function requestNotificationPermission() {
+    // 询问用户是否允许发送通知
+    if ("Notification" in window) {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+    }
+}
+
+function sendSystemNotification(title, body) {
+    // 只有在允许通知，并且页面不在用户眼前（被切走或遮挡）时，才发系统推送
+    if ("Notification" in window && Notification.permission === "granted") {
+        if (document.hidden) {
+            // 过滤掉HTML代码，只显示纯文字
+            let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
+            new Notification(title, { 
+                body: cleanBody,
+                icon: 'https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg' 
+            });
+        }
+    }
+}
+// ===================================================
 
 // 弹窗魔法工具：负责在手指按下的地方显示黑色弹窗
 function showContextMenu(e, items, targetElement) {
@@ -2582,8 +2608,11 @@ TimeChecklist:
                 max_tokens:800
             })
         });
-        const data=await response.json();
+                const data=await response.json();
         const reply=data.choices[0].message.content;
+        
+        // 触发系统通知（把好友的名字和回复内容弹出来）
+        sendSystemNotification(friend.remark || friend.realName || "AI 好友", reply);
         
         // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
@@ -3306,7 +3335,8 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-window.onload = () => { switchWechatTab('messages'); syncProfileToAI(); renderFriendList(); applyDarkModeStyle(); };
+window.onload = () => { switchWechatTab('messages'); syncProfileToAI();
+renderFriendList(); applyDarkModeStyle(); requestNotificationPermission(); };
 
 // ================= 新增：短信(iMessage)功能模块 =================
 let currentSmsFriendId = null;
@@ -3518,6 +3548,9 @@ async function triggerSmsAI() {
         });
         const data=await response.json();
         const reply=data.choices[0].message.content;
+        
+        // 触发短信系统通知
+        sendSystemNotification(friend.realName || friend.remark || "新短信", reply);
         
         let newMessages = [];
         const textLines = reply.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -4364,6 +4397,9 @@ async function executeProactiveMessage(friend, type) {
         });
         const data = await response.json();
         const reply = data.choices[0].message.content.trim();
+        
+        // 触发主动寻找你的系统通知
+        sendSystemNotification(friend.remark || friend.realName || "AI 好友", reply);
         
         if (type === 'sms') {
             if(!friend.smsHistory) friend.smsHistory = [];
