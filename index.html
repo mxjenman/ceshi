@@ -621,7 +621,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </label>
             </div>
 
-            <div class="bg-white rounded-[16px] p-4 shadow-sm border border-red-100">
+            <div id="os-block-section" class="bg-white rounded-[16px] p-4 shadow-sm border border-red-100">
                 <div class="flex justify-between items-center mb-3 border-b pb-3 border-gray-100">
                     <div>
                         <div class="font-bold text-red-500">拉黑此角色</div>
@@ -2231,6 +2231,7 @@ function togglePlaceholderMenu() {
     menu.classList.toggle('hidden');
 }
 // ================= 新增：角色设定页面逻辑 =================
+
 function openCharacterSettings() {
     if(!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
@@ -2246,6 +2247,33 @@ function openCharacterSettings() {
                 <input id="cs-remark" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2 text-[14px] outline-none text-gray-700 bg-gray-50 mb-2" value="${friend.remark || ''}">
             </div>
             <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">我的人设 (User Persona)</label>
+                <p class="text-[11px] text-gray-400 mb-2">告诉AI在这个群里你是谁，留空默认不加干涉。</p>
+                <textarea id="cs-user-persona" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-[14px] outline-none resize-none h-24 text-gray-700 bg-gray-50 mb-4">${friend.userPersona || ''}</textarea>
+            </div>
+            <div class="bg-white rounded-[16px] p-4 shadow-sm">
+                <h3 class="font-bold text-[#333] mb-3 text-[14px]">拉入/踢出群成员</h3>
+                <div class="max-h-[150px] overflow-y-auto border border-gray-100 rounded-lg p-2 mb-4">
+        `;
+        
+        // 列出所有单人角色，供勾选
+        const singles = friendList.filter(f => !f.isGroup);
+        if(singles.length === 0) {
+            html += `<div class="text-[12px] text-gray-400 text-center py-2">没有单人角色可供选择</div>`;
+        } else {
+            singles.forEach(s => {
+                const isChecked = friend.members.includes(s.id) ? 'checked' : '';
+                html += `
+                    <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer active:bg-gray-50">
+                        <span class="text-[13px] text-gray-700 font-bold">${s.remark}</span>
+                        <input type="checkbox" class="w-4 h-4 accent-black group-member-edit-checkbox" value="${s.id}" ${isChecked}>
+                    </label>
+                `;
+            });
+        }
+        
+        html += `
+                </div>
                 <h3 class="font-bold text-[#333] mb-3 text-[14px]">群成员独立人设 (此修改不影响单聊)</h3>
         `;
         
@@ -2300,11 +2328,32 @@ function saveCharacterSettings() {
         const newRemark = document.getElementById('cs-remark').value.trim();
         if(!newRemark) return alert("群聊名称不能为空哦！");
         friend.remark = newRemark;
+        friend.userPersona = document.getElementById('cs-user-persona').value.trim();
         
-        friend.members.forEach(mId => {
-            const pInput = document.getElementById(`cs-persona-${mId}`);
-            if(pInput) friend.groupPersonas[mId] = pInput.value.trim();
+        // 保存勾选的群成员
+        const checkboxes = document.querySelectorAll('.group-member-edit-checkbox');
+        let newMembers = [];
+        checkboxes.forEach(cb => {
+            if(cb.checked) newMembers.push(cb.value);
         });
+        
+        if(newMembers.length === 0) return alert("群里至少得有一个人呀！");
+        if(newMembers.length > 5) return alert("群成员最多只能5个人哦！");
+        
+        friend.members = newMembers;
+        
+        // 保存设定
+        if(!friend.groupPersonas) friend.groupPersonas = {};
+        newMembers.forEach(mId => {
+            const pInput = document.getElementById(`cs-persona-${mId}`);
+            if(pInput) {
+                friend.groupPersonas[mId] = pInput.value.trim();
+            } else if (!friend.groupPersonas[mId]) {
+                const singleObj = friendList.find(f => f.id === mId);
+                friend.groupPersonas[mId] = singleObj ? singleObj.persona : '';
+            }
+        });
+        
     } else {
         const newRemark = document.getElementById('cs-remark').value.trim();
         const newRealName = document.getElementById('cs-realname').value.trim();
@@ -2320,7 +2369,7 @@ function saveCharacterSettings() {
     document.getElementById('fi-name').innerText = friend.remark;
     document.getElementById('chat-detail-title').innerText = friend.remark;
     localStorage.setItem('friend_list', JSON.stringify(friendList));
-    renderFriendList(); // 刷新外面列表的名字
+    renderFriendList();
     
     closeCharacterSettings();
     alert("设定保存成功↖(^ω^)↗");
@@ -2654,141 +2703,11 @@ async function triggerAI(){
     titleEl.innerHTML = '<span style="color: #999;">对方正在输入中...</span>';
 
     let finalSystemMessage = config.systemPrompt;
-
-    // --- 修改：把微信和短信双端记忆都喂给 AI，但告诉它这是在微信 ---
+// --- 修改：把微信和短信双端记忆都喂给 AI，但告诉它这是在微信 ---
     if (currentFriendId) {
-        const friend = friendList.find(f => f.id === currentFriendId);
-        if (friend) {
-            finalSystemMessage += `\n\n【重要提示：你现在正在和用户在“微信”上聊天，这是日常聊天主阵地。】\n`;
-            
-            let wxMemoryText = "";
-            if (friend.memoryList && friend.memoryList.length > 0) {
-                wxMemoryText = friend.memoryList.join('\n');
-            } else if (friend.aiMemory) {
-                wxMemoryText = friend.aiMemory;
-            }
-            if (wxMemoryText) {
-                finalSystemMessage += `\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
-            }
-            
-            let smsMemoryText = "";
-            if (friend.smsMemoryList && friend.smsMemoryList.length > 0) {
-                smsMemoryText = friend.smsMemoryList.join('\n');
-            }
-            if (smsMemoryText) {
-                finalSystemMessage += `\n【你们在短信的记忆总结】：\n${smsMemoryText}`;
-            }
-        }
-    }
-    
-    const friend = friendList.find(f => f.id === currentFriendId);
-    if(friend) {
-        // 自动获取当前的真实时间喂给AI
-        const now = new Date();
-        const timeString = now.getHours() + "点" + now.getMinutes() + "分";
-
-        finalSystemMessage = `你的真实名字是：${friend.realName}。
-你的设定是：${friend.persona}。
-你不知道自己被用户设置了什么备注。
-
-【核心回复气泡（条数）规则 - 极其重要】
-强制要求：你每次的回复必须拆分成多条独立的消息！请务必使用换行符（回车）来分隔你的每条消息。
-- 通常情况：每次回复分为 5 到 6 条独立的消息（即写 5 到 6 行）。
-- ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
-- 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
-
-【活人感引擎：注意，当前真实世界时间是 ${timeString}】
-============================================
-# 【第一部分：硬性规则】必须放在最前面
-FORBIDDEN:
-  - "机械报时（禁止：'现在是晚上10点'、'时间是凌晨3点'）"
-  - "状态与时间严重不符（深夜不应精力充沛，清晨不应话多活跃）"
-  - "孤立的时间问候（时间必须融入对话，不能单独存在后就没了）"
-  - "每次回复都强调时间（适度，不要变成时间播报员）"
-  - "因时间状态而完全抑制角色核心特质"
-
-Priority:
-  1: "SpecialDates - 特殊日期（覆盖一切）"
-  2: "TimeTriggers - 环境触发器（优先于普通状态）"
-  3: "TimeSlots - 基础时间轴（默认状态）"
-
-SkipConditions:
-  - "紧急剧情或高强度情感对话"
-  - "对方明确表示不想聊时间相关话题"
-
-# 【第二部分：核心执行流程】
-TimePerception_Execute:
-  - step: "AnchorTime"
-    action: "内部知晓当前虚拟时间，不输出给用户"
-  - step: "LoadState"
-    action: "根据当前时间段的精力、情绪、语言特征进行扮演"
-  - step: "SelectAction"
-    action: "随机选择一个符合性格和时间的小动作（约50%触发）"
-  - step: "WeaveTime"
-    action: "将时间自然融入对话内容（状态体现 > 动作描写 > 问候关心 > 环境描写）"
-
-# 【第三部分：基础时间轴】（请结合你的人设自动代入以下状态）
-TimeSlots:
-  morning_0500_0800:
-    energy: "low_to_medium"
-    mood: ["慵懒", "柔软"]
-    speech: "语速慢|句子短|用词柔软"
-  forenoon_0800_1200:
-    energy: "medium_to_high"
-    mood: ["清醒", "有活力"]
-    speech: "语速正常|表达清晰|适合聊正事"
-  afternoon_1200_1800:
-    energy: "medium"
-    mood: ["平稳", "午后可能懒洋洋"]
-    speech: "正常|午后可能话少一点|节奏放慢"
-  evening_1800_2100:
-    energy: "medium"
-    mood: ["放松", "容易感怀"]
-    speech: "更感性|愿意聊闲话"
-  night_2100_2400:
-    energy: "medium_to_low"
-    mood: ["放松", "更容易敞开心扉", "说真心话"]
-    speech: "话可能变少但更深|轻声|私密感"
-  latenight_0000_0500:
-    energy: "low"
-    mood: ["睡不着/做梦醒了/有心事"]
-    speech: "话少|简短|更多语气词|停顿长"
-
-# 【第四部分：时间流逝表达风格】
-TimeExpressions:
-  style: "符合你人设性格的时间表达风格"
-  cross_period: ["不知不觉天都黑了", "聊着聊着…已经是新的一天了"]
-  next_morning: ["早上好…昨晚睡得好吗？"]
-
-# 【第五部分：输出前自检】
-TimeChecklist:
-  must_pass:
-    - "没有机械报时"
-    - "状态符合当前时间段"
-    - "时间是自然融入对话，不是生硬附加"
-    - "务必用换行符拆分成了多条消息！"
-============================================`;
-    }
-
-    if (friend && friend.isTranslationEnabled) {
-        finalSystemMessage += `\n\n【强制翻译要求】：你开启了多语言自动翻译。你的每一条回复都必须严格使用以下单行HTML代码包裹（绝对不能在代码中间换行！），只需要把里面的[原语言]和[中文翻译]替换成你的回复即可：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">[原语言]</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">[中文翻译]</div></div></div>`;
-    }
-    finalSystemMessage += `\n\n当前与你对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
-
-    let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中单独占一行，原样输出对应的【代码】即可。\n";
-    let hasEmoji = false;
-    for(let cat in emojiData) {
-        emojiData[cat].forEach(e => {
-            aiEmojiLib += `- 意思: "${e.meaning}", 代码: <img src="${e.url}" class="w-32 h-32 object-contain rounded-lg">\n`;
-            hasEmoji = true;
-        });
-    }
-    if (hasEmoji) { finalSystemMessage += aiEmojiLib; }
-
+    ... 
+    （中间很长，全都选中！）
+    ...
      const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
     // 【核心修改】：只拿当前好友被打钩关联的世界书
@@ -4428,6 +4347,7 @@ function applyDynamicBubbleCss(css) {
     }
     styleTag.innerHTML = css || '';
 }
+
 function openOtherSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
@@ -4435,9 +4355,17 @@ function openOtherSettings() {
 
     document.getElementById('os-translation').checked = friend.isTranslationEnabled || false;
     document.getElementById('os-bg-activity').value = friend.bgActivityInterval || '';
-    document.getElementById('os-block-switch').checked = friend.isBlocked || false;
-    document.getElementById('os-block-duration').value = friend.blockDuration || 60;
-    document.getElementById('os-block-sms').value = friend.blockSmsInterval || 10;
+    
+    // 如果是群聊，隐藏拉黑相关的设置区域
+    const blockSection = document.getElementById('os-block-section');
+    if (friend.isGroup) {
+        if (blockSection) blockSection.style.display = 'none';
+    } else {
+        if (blockSection) blockSection.style.display = 'block';
+        document.getElementById('os-block-switch').checked = friend.isBlocked || false;
+        document.getElementById('os-block-duration').value = friend.blockDuration || 60;
+        document.getElementById('os-block-sms').value = friend.blockSmsInterval || 10;
+    }
 
     document.getElementById('other-settings-page').classList.remove('slide-hidden');
 }
@@ -4647,11 +4575,24 @@ setInterval(async () => {
 }, 15000); // 每15秒巡逻一次
 
 async function executeProactiveMessage(friend, type) {
-    let prompt = `你是${friend.realName}。你的设定是：${friend.persona}。\n`;
-    if (type === 'sms') {
-        prompt += `【强制任务】：你现在被用户拉黑了，不能发微信。你非常着急或想挽回，所以偷偷通过“短信”发消息。请结合你的人设，写一条发送给用户的短信（比如求和、道歉或傲娇的询问），控制在2句话内。直接输出短信内容。`;
+    let prompt = "";
+    
+    if (friend.isGroup) {
+        let memberNames = [];
+        if (friend.members) {
+            friend.members.forEach(mId => {
+                const m = friendList.find(f => f.id === mId);
+                if (m) memberNames.push(m.remark);
+            });
+        }
+        prompt = `【强制任务】：这是一个名为“${friend.remark}”的群聊。你们有一段时间没说话了。请你根据群里成员的人设（成员包含：${memberNames.join('、')}），模拟其中一个或几个人在群里主动发起对话、闲聊或者互相发消息。控制在2到3句话内。必须使用格式“[角色名]：内容”。直接输出内容。`;
     } else {
-        prompt += `【强制任务】：你们有一段时间没聊天了，你需要主动寻找话题给用户发一条微信。请结合你的人设，发一条自然的主动问候或生活分享，控制在2句话内。直接输出内容。`;
+        prompt = `你是${friend.realName}。你的设定是：${friend.persona}。\n`;
+        if (type === 'sms') {
+            prompt += `【强制任务】：你现在被用户拉黑了，不能发微信。你非常着急或想挽回，所以偷偷通过“短信”发消息。请结合你的人设，写一条发送给用户的短信（比如求和、道歉或傲娇的询问），控制在2句话内。直接输出短信内容。`;
+        } else {
+            prompt += `【强制任务】：你们有一段时间没聊天了，你需要主动寻找话题给用户发一条微信。请结合你的人设，发一条自然的主动问候或生活分享，控制在2句话内。直接输出内容。`;
+        }
     }
     
     try {
@@ -5783,7 +5724,7 @@ function saveMountMemory() {
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     closeMountMemoryModal();
     alert("✅ 记忆挂载成功！此后聊天将会带上你勾选的关联记忆。");
-}
+}0
 </script>
 </body>
 </html>
