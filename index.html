@@ -1321,8 +1321,8 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
     </div>
 
-    <div id="character-phone-screen" class="page-layer slide-hidden flex flex-col z-[100] bg-[#f2f2f6]">
-        <div class="h-12 bg-white flex items-center px-4 border-b shrink-0">
+    <div id="character-phone-screen" class="page-layer slide-hidden flex flex-col z-[100] bg-[#f2f2f6] bg-cover bg-center transition-all duration-300">
+        <div class="h-12 bg-white/80 backdrop-blur-md flex items-center px-4 border-b shrink-0 z-20">
             <button onclick="closeCharacterPhone()" class="back-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1332,68 +1332,92 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div class="w-6"></div>
         </div>
         
-        <div class="flex-1 overflow-y-auto p-4">
+        <div class="flex-1 overflow-y-auto p-4 relative z-10">
             <div class="grid grid-cols-4 gap-x-2 gap-y-6 place-items-center mt-2">
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('微信')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-wechat" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">微信</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">微信</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('备忘录')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-notes" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">备忘录</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">备忘录</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('相册')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-album" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">相册</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">相册</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('日记')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-diary" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">日记</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">日记</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('浏览器')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-browser" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">浏览器</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">浏览器</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('购物')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-shop" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">购物</span>
+                    <span class="text-[12px] text-gray-800 font-bold mt-1 drop-shadow-md">购物</span>
                 </div>
             </div>
         </div>
 
-        <div class="w-full px-4 pb-8 pt-2">
-            <div class="bg-white/60 backdrop-blur-lg rounded-[24px] p-4 flex justify-between items-center shadow-sm border border-white/50">
+        <div class="w-full px-4 pb-8 pt-2 relative z-10">
+            <div class="bg-white/60 backdrop-blur-lg rounded-[28px] p-4 flex justify-between items-center shadow-sm border border-white/50 h-[90px]">
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('音乐')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-music" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">音乐</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('外观设置')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openCharAppearance()">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-appearance" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">外观设置</span>
                 </div>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('钱包')">
-                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    <div class="app-icon w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0 bg-transparent">
+                        <img id="char-icon-wallet" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
-                    <span class="text-[12px] text-gray-700 font-bold mt-1">钱包</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="char-appearance-screen" class="page-layer slide-hidden flex flex-col z-[110] bg-[#f2f2f6]">
+        <div class="h-12 bg-white flex items-center px-4 border-b shrink-0">
+            <button onclick="closeCharAppearance()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">TA的手机外观</div>
+            <button onclick="saveCharAppearance()" class="text-black font-bold text-[15px] w-12 text-right">保存</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5">
+            <h3 class="text-gray-500 text-xs font-bold mb-2 ml-2 uppercase">更改壁纸</h3>
+            <div class="bg-white rounded-xl p-4 mb-6 shadow-sm flex flex-col items-center">
+                <div class="w-32 h-48 border-4 border-gray-100 rounded-xl mb-3 overflow-hidden shadow-inner bg-gray-200">
+                    <img id="preview-char-wallpaper" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover">
+                </div>
+                <button onclick="document.getElementById('char-wallpaper-input').click()" class="bg-gray-100 text-black px-6 py-2 rounded-full text-[14px] font-bold">选择图片</button>
+                <input type="file" id="char-wallpaper-input" class="hidden" accept="image/*" onchange="handleCharWallpaperSelect(this)">
+            </div>
+
+            <h3 class="text-gray-500 text-xs font-bold mb-2 ml-2 uppercase">更改图标 (点击更换)</h3>
+            <div class="bg-white rounded-xl p-4 mb-6 shadow-sm grid grid-cols-4 gap-4 place-items-center" id="char-icon-edit-grid">
+                </div>
+            <input type="file" id="char-icon-file-input" class="hidden" accept="image/*" onchange="handleCharIconSelect(this)">
         </div>
     </div>
 
@@ -5184,17 +5208,154 @@ function renderCheckPhoneFriendList() {
     });
 }
 
-// 4. 打开选中角色的专属手机界面
+// ================= 查手机专属：桌面与外观逻辑 =================
+let currentPhoneFriendId = null;
+let tempCharAppearance = { wallpaper: '', icons: {} };
+let currentCharEditingIconId = '';
+
+// 4. 打开选中角色的专属手机界面（加强版）
 function openCharacterPhone(friend) {
-    // 把顶部的标题改成TA的名字
+    currentPhoneFriendId = friend.id;
     document.getElementById('character-phone-title').innerText = `${friend.remark} 的手机`;
-    // 滑出界面
+    
+    // 加载这台手机专属的壁纸
+    const screen = document.getElementById('character-phone-screen');
+    if (friend.phoneBg) {
+        screen.style.backgroundImage = `url(${friend.phoneBg})`;
+        screen.style.backgroundColor = 'transparent';
+    } else {
+        screen.style.backgroundImage = 'none';
+        screen.style.backgroundColor = '#f2f2f6';
+    }
+
+    // 加载这台手机专属的图标
+    const iconsToLoad = ['wechat', 'notes', 'album', 'diary', 'browser', 'shop', 'music', 'appearance', 'wallet'];
+    iconsToLoad.forEach(name => {
+        const imgEl = document.getElementById(`char-icon-${name}`);
+        if (imgEl) {
+            if (friend.phoneIcons && friend.phoneIcons[name]) {
+                imgEl.src = friend.phoneIcons[name];
+                imgEl.style.backgroundColor = 'transparent';
+            } else {
+                imgEl.src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+                imgEl.style.backgroundColor = '#5c5c5c';
+            }
+        }
+    });
+
     document.getElementById('character-phone-screen').classList.remove('slide-hidden');
 }
 
-// 5. 关闭角色的手机界面，退回到列表
+// 5. 关闭角色的手机界面
 function closeCharacterPhone() {
     document.getElementById('character-phone-screen').classList.add('slide-hidden');
+    currentPhoneFriendId = null;
+}
+
+// 打开 TA 的手机外观设置
+function openCharAppearance() {
+    if (!currentPhoneFriendId) return;
+    const friend = friendList.find(f => f.id === currentPhoneFriendId);
+    if (!friend) return;
+
+    tempCharAppearance.wallpaper = friend.phoneBg || '';
+    tempCharAppearance.icons = friend.phoneIcons ? { ...friend.phoneIcons } : {};
+
+    // 显示当前壁纸
+    if (tempCharAppearance.wallpaper) {
+        document.getElementById('preview-char-wallpaper').src = tempCharAppearance.wallpaper;
+        document.getElementById('preview-char-wallpaper').style.backgroundColor = 'transparent';
+    } else {
+        document.getElementById('preview-char-wallpaper').src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+        document.getElementById('preview-char-wallpaper').style.backgroundColor = '#e5e7eb';
+    }
+
+    // 显示当前图标列表
+    const iconGrid = document.getElementById('char-icon-edit-grid');
+    iconGrid.innerHTML = '';
+    const charIconsList = [
+        { id: 'wechat', name: '微信' }, { id: 'notes', name: '备忘录' },
+        { id: 'album', name: '相册' }, { id: 'diary', name: '日记' },
+        { id: 'browser', name: '浏览器' }, { id: 'shop', name: '购物' },
+        { id: 'music', name: '音乐' }, { id: 'appearance', name: '外观设置' },
+        { id: 'wallet', name: '钱包' }
+    ];
+
+    charIconsList.forEach(icon => {
+        const currentSrc = tempCharAppearance.icons[icon.id] || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+        const bgColor = currentSrc.includes('data:image/gif') ? 'bg-[#5c5c5c]' : 'bg-transparent';
+        
+        iconGrid.innerHTML += `
+            <div class="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="triggerCharIconEdit('${icon.id}')">
+                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200">
+                    <img id="preview-char-${icon.id}" src="${currentSrc}" class="w-full h-full object-cover ${bgColor}">
+                </div>
+                <span class="text-[10px] text-gray-500">${icon.name}</span>
+            </div>
+        `;
+    });
+
+    document.getElementById('char-appearance-screen').classList.remove('slide-hidden');
+}
+
+// 关闭外观设置
+function closeCharAppearance() {
+    document.getElementById('char-appearance-screen').classList.add('slide-hidden');
+}
+
+// 选中新壁纸
+function handleCharWallpaperSelect(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const result = e.target.result;
+            document.getElementById('preview-char-wallpaper').src = result;
+            document.getElementById('preview-char-wallpaper').style.backgroundColor = 'transparent';
+            tempCharAppearance.wallpaper = result;
+        }
+        reader.readAsDataURL(input.files[0]);
+        input.value = '';
+    }
+}
+
+// 唤起更换图标
+function triggerCharIconEdit(iconId) {
+    currentCharEditingIconId = iconId;
+    document.getElementById('char-icon-file-input').click();
+}
+
+// 选中新图标
+function handleCharIconSelect(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const result = e.target.result;
+            document.getElementById(`preview-char-${currentCharEditingIconId}`).src = result;
+            document.getElementById(`preview-char-${currentCharEditingIconId}`).classList.remove('bg-[#5c5c5c]');
+            tempCharAppearance.icons[currentCharEditingIconId] = result;
+        }
+        reader.readAsDataURL(input.files[0]);
+        input.value = '';
+    }
+}
+
+// 保存所有修改并应用
+function saveCharAppearance() {
+    if (!currentPhoneFriendId) return;
+    const friend = friendList.find(f => f.id === currentPhoneFriendId);
+    if (!friend) return;
+
+    // 把临时保存的壁纸和图标彻底存入大脑
+    friend.phoneBg = tempCharAppearance.wallpaper;
+    friend.phoneIcons = { ...tempCharAppearance.icons };
+    
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    
+    // 重新刷新一遍手机屏幕，让它长出新的样子
+    openCharacterPhone(friend);
+    
+    alert("✅ TA的手机外观已保存！每个角色都有专属手机啦！");
+    closeCharAppearance();
 }
 </script>
 </body>
