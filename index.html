@@ -765,6 +765,15 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
             
             <input type="file" id="moments-image-input" class="hidden" accept="image/*" onchange="previewMomentsImage(this)">
+
+            <div class="mt-4 border-t border-gray-100 pt-4">
+                <div class="flex justify-between items-center cursor-pointer" onclick="toggleMomentsFriends()">
+                    <span class="text-[15px] font-bold text-[#333]">@ 提醒谁看 (AI会自动评论)</span>
+                    <span id="moments-friends-toggle-icon" class="text-gray-400 transform transition-transform">▼</span>
+                </div>
+                <div id="moments-friends-list" class="hidden mt-3 max-h-[180px] overflow-y-auto border border-gray-100 rounded-xl p-2 flex flex-col gap-1">
+                    </div>
+            </div>
         </div>
     </div>
 
@@ -3301,15 +3310,51 @@ function changeAnyImage(el) {
 }
 
 // ===== 新增：朋友圈发布逻辑 =====
-function openMomentsCompose() {
-    document.getElementById('moments-compose-screen').classList.remove('hidden');
-    validateMomentsContent();
+
+function openMomentsCompose() { 
+    document.getElementById('moments-compose-screen').classList.remove('hidden'); 
+    validateMomentsContent(); 
+    renderMomentsFriendsList(); // 新增：每次打开都刷新好友列表
+}
+function closeMomentsCompose() { 
+    document.getElementById('moments-compose-screen').classList.add('hidden'); 
+    document.getElementById('moments-post-text').value = ''; 
+    clearMomentsImage(); 
 }
 
-function closeMomentsCompose() {
-    document.getElementById('moments-compose-screen').classList.add('hidden');
-    document.getElementById('moments-post-text').value = '';
-    clearMomentsImage();
+// 新增：渲染可以选中评论的好友列表
+function renderMomentsFriendsList() {
+    const container = document.getElementById('moments-friends-list');
+    container.innerHTML = '';
+    if(friendList.length === 0) {
+        container.innerHTML = '<div class="text-xs text-gray-400 text-center py-2">暂无好友</div>';
+        return;
+    }
+    friendList.forEach(f => {
+        if (f.isGroup) return; // 排除群聊
+        container.innerHTML += `
+            <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer active:bg-gray-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-7 h-7 rounded-md object-cover border border-gray-100">
+                    <span class="text-[14px] text-gray-800 font-medium">${f.remark}</span>
+                </div>
+                <input type="checkbox" class="w-4 h-4 accent-[#07c160] moment-friend-checkbox" value="${f.id}">
+            </label>
+        `;
+    });
+}
+
+// 新增：折叠/展开好友列表
+function toggleMomentsFriends() {
+    const list = document.getElementById('moments-friends-list');
+    const icon = document.getElementById('moments-friends-toggle-icon');
+    if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        list.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+    }
 }
 
 function validateMomentsContent() {
@@ -3348,37 +3393,220 @@ function submitMomentsPost(){
     const text = document.getElementById('moments-post-text').value.trim();
     const hasImg = !document.getElementById('moments-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? document.getElementById('moments-preview-img').src : null;
-    
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    
+
+    // 收集打勾选中的好友
+    const checkboxes = document.querySelectorAll('.moment-friend-checkbox:checked');
+    const selectedFriendIds = Array.from(checkboxes).map(cb => cb.value);
+
     const feed = document.getElementById('moments-feed');
-    
-    // 修改：如果有“暂时没有动态”的提示，就把它删掉
     const emptyHint = document.getElementById('moments-empty-hint');
     if (emptyHint) emptyHint.remove();
 
     const div = document.createElement('div');
     div.className = "flex gap-3 border-b pb-6 animate-in";
     
+    // 给每条动态生成一个唯一ID，用于控制单独的点赞和评论
+    const postId = 'moment_' + Date.now();
+
     let imgHtml = imgSrc ? `<img src="${imgSrc}" class="mt-2 max-w-[80%] max-h-48 object-cover cursor-pointer">` : '';
-    let textHtml = text ? `<div class="text-black mt-1 text-[15px]">${text}</div>` : '';
-    
+    let textHtml = text ? `<div class="text-black mt-1 text-[15px] leading-relaxed">${text}</div>` : '';
+
     div.innerHTML = `
-        <img src="${userProfile.avatar}" class="w-10 h-10 rounded">
+        <img src="${userProfile.avatar}" class="w-10 h-10 rounded-lg object-cover">
         <div class="flex-1">
             <div class="text-[#576b95] font-bold text-[15px]">${userProfile.name}</div>
             ${textHtml}
             ${imgHtml}
-            <div class="flex justify-between items-center mt-2">
-                <span class="text-xs text-gray-400">${timeStr}</span>
-                <span class="bg-[#f7f7f7] px-2 py-0.5 rounded text-[#576b95] text-xs font-bold tracking-widest cursor-pointer">..</span>
+            <div class="flex justify-between items-center mt-2 relative">
+                <span class="text-[13px] text-gray-400">${timeStr}</span>
+                
+                <div class="bg-[#f7f7f7] px-2 py-0.5 rounded text-[#576b95] text-xs font-bold tracking-widest cursor-pointer active:bg-gray-200" onclick="toggleMomentAction(event, '${postId}')">..</div>
+                
+                <div id="action_${postId}" class="hidden absolute right-10 top-[-5px] bg-[#4c4c4c] text-white rounded-[6px] flex items-center shadow-lg overflow-hidden z-10 transition-all text-[13px]">
+                    <div class="px-5 py-2.5 font-bold border-r border-gray-600 cursor-pointer active:bg-gray-600 flex items-center gap-1" onclick="likeMoment('${postId}')"><span class="text-lg leading-none mt-[-2px]">♡</span> 赞</div>
+                    <div class="px-5 py-2.5 font-bold cursor-pointer active:bg-gray-600 flex items-center gap-1" onclick="replyToMoment('${postId}')"><span>💬</span> 评论</div>
+                </div>
+            </div>
+
+            <div id="interaction_${postId}" class="bg-[#f3f3f5] mt-2.5 rounded-[4px] p-2.5 text-[14px] hidden flex-col gap-1 relative before:content-[''] before:absolute before:w-0 before:h-0 before:border-l-[6px] before:border-l-transparent before:border-r-[6px] before:border-r-transparent before:border-b-[6px] before:border-b-[#f3f3f5] before:top-[-6px] before:left-3">
+                <div id="likes_${postId}" class="text-[#576b95] font-bold hidden border-b border-gray-200 pb-1.5 mb-1 text-[13px] items-center gap-1">
+                    <span class="text-sm mt-[-2px]">♡</span> <span id="likes_list_${postId}"></span>
+                </div>
+                <div id="comments_${postId}" class="flex flex-col gap-1.5 hidden">
+                </div>
             </div>
         </div>
     `;
-    
     feed.prepend(div);
     closeMomentsCompose();
+    
+    // 如果勾选了好友，马上呼叫 AI 识图并评论
+    if (selectedFriendIds.length > 0) {
+        generateMomentComments(postId, text, imgSrc, selectedFriendIds);
+    }
+}
+
+
+// ========================================================
+// ==== 新增：朋友圈点赞、评论互动、AI视觉评论 大礼包 ====
+// ========================================================
+
+// 1. 点击屏幕其他地方时，关闭所有打开的点赞黑色菜单
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('[id^="action_moment_"]').forEach(el => el.classList.add('hidden'));
+});
+
+// 2. 弹出或隐藏黑色菜单
+function toggleMomentAction(e, postId) {
+    e.stopPropagation();
+    // 先把别的菜单关掉
+    document.querySelectorAll('[id^="action_moment_"]').forEach(el => {
+        if (el.id !== `action_${postId}`) el.classList.add('hidden');
+    });
+    const menu = document.getElementById(`action_${postId}`);
+    menu.classList.toggle('hidden');
+}
+
+// 3. 点赞 / 取消赞功能
+function likeMoment(postId) {
+    const actionMenu = document.getElementById(`action_${postId}`);
+    actionMenu.classList.add('hidden'); // 点完关闭黑框
+    
+    const interArea = document.getElementById(`interaction_${postId}`);
+    const likesArea = document.getElementById(`likes_${postId}`);
+    const likesList = document.getElementById(`likes_list_${postId}`);
+    
+    interArea.classList.remove('hidden');
+    interArea.classList.add('flex');
+    likesArea.classList.remove('hidden');
+    likesArea.classList.add('flex');
+    
+    // 逻辑：如果我的名字在里面，就拿掉；如果不在，就加进去
+    if (likesList.innerText.includes(userProfile.name)) {
+        let currentLikes = likesList.innerText.split(', ').filter(name => name !== userProfile.name && name.trim() !== '');
+        likesList.innerText = currentLikes.join(', ');
+        
+        // 如果取消赞后没人赞了，就把赞这栏隐藏
+        if (!likesList.innerText) {
+            likesArea.classList.add('hidden');
+            likesArea.classList.remove('flex');
+            // 如果同时评论区也没东西，整个灰框都藏起来
+            if (document.getElementById(`comments_${postId}`).children.length === 0) {
+                interArea.classList.add('hidden');
+                interArea.classList.remove('flex');
+            }
+        }
+    } else {
+        likesList.innerText = likesList.innerText ? likesList.innerText + ', ' + userProfile.name : userProfile.name;
+    }
+}
+
+// 4. 用户主动发起评论
+function replyToMoment(postId, replyTargetName = null) {
+    const actionMenu = document.getElementById(`action_${postId}`);
+    if(actionMenu) actionMenu.classList.add('hidden');
+    
+    const promptText = replyTargetName ? `回复 ${replyTargetName}：` : "评论：";
+    const comment = prompt(promptText);
+    if (comment && comment.trim()) {
+        addCommentToMoment(postId, userProfile.name, comment.trim(), replyTargetName);
+    }
+}
+
+// 5. 向页面添加一行评论的底层函数（支持互相回复）
+function addCommentToMoment(postId, commenterName, text, replyTargetName = null) {
+    const interArea = document.getElementById(`interaction_${postId}`);
+    const commentsArea = document.getElementById(`comments_${postId}`);
+    
+    interArea.classList.remove('hidden');
+    interArea.classList.add('flex');
+    commentsArea.classList.remove('hidden');
+    
+    const div = document.createElement('div');
+    div.className = "text-[14px]";
+    
+    // 排版：如果是回复某人，显示 A 回复 B ；否则直接显示 A
+    if (replyTargetName) {
+        div.innerHTML = `<span class="text-[#576b95] font-bold cursor-pointer active:opacity-50">${commenterName}</span> <span class="text-[#333]">回复</span> <span class="text-[#576b95] font-bold cursor-pointer active:opacity-50">${replyTargetName}</span>: <span class="text-[#333]">${text}</span>`;
+    } else {
+        div.innerHTML = `<span class="text-[#576b95] font-bold cursor-pointer active:opacity-50">${commenterName}</span>: <span class="text-[#333]">${text}</span>`;
+    }
+    
+    // 为这行评论加上点击事件：点它就可以回复它！
+    div.onclick = (e) => {
+        e.stopPropagation();
+        if (commenterName !== userProfile.name && text !== "思考中...") {
+            replyToMoment(postId, commenterName);
+        }
+    };
+    
+    commentsArea.appendChild(div);
+    return div; // 把这个元素返回出去，方便AI思考完毕后删除替换它
+}
+
+// 6. 核心：AI 大脑自动读取朋友圈图文并生成神评论
+async function generateMomentComments(postId, postText, postImgSrc, friendIds) {
+    if(!config.apiKey) return;
+    
+    for (let fId of friendIds) {
+        const friend = friendList.find(f => f.id === fId);
+        if (!friend) continue;
+        
+        // 专门给朋友圈评论制定的 Prompt（剧本）
+        let finalSystemMessage = config.systemPrompt + `\n\n你的真实名字是：${friend.realName}。\n你的设定是：${friend.persona}。\n\n当前用户发布了一条微信朋友圈动态。你需要根据他发的图片和文字进行评价。\n【极其重要的任务】：作为TA的朋友，请写一句朋友圈的评论留言！\n- 评论必须简短，通常只写一两句话，极度符合你的人设风格（比如傲娇的就损他，黏人的就夸他）。\n- 绝对不能带任何前缀（千万千万不要写“某某：”、“评论：”等字眼），只输出纯文本内容！`;
+        
+        let formattedMessages = [{role:'system', content:finalSystemMessage}];
+        
+        // 处理给 AI 的问题内容
+        let contentForUser = [];
+        if (postText) {
+            contentForUser.push({ type: "text", text: `用户发的朋友圈文字内容：“${postText}”\n请给出你的评论：` });
+        } else {
+            contentForUser.push({ type: "text", text: `用户发布了一张无字朋友圈图片，请看看图片并给出你的评论：` });
+        }
+        
+        // 如果有图片，传给视觉大模型（跟短信微信发图一样的 API 原理）
+        if (postImgSrc) {
+            contentForUser.push({ type: "image_url", image_url: { url: postImgSrc } });
+        }
+        
+        formattedMessages.push({ role: 'user', content: contentForUser });
+        
+        // 互动细节：在 AI 生成之前，先显示“思考中...”
+        const loadingDiv = addCommentToMoment(postId, friend.remark, "思考中...");
+        
+        try {
+            const response = await fetch(`${config.baseUrl}/chat/completions`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
+                body:JSON.stringify({
+                    model: config.model,
+                    messages: formattedMessages,
+                    temperature: parseFloat(config.temperature),
+                    max_tokens: 150
+                })
+            });
+            const data=await response.json();
+            let reply = data.choices[0].message.content.trim();
+            // 防止有些 AI 犯傻非要加“评论：”前缀，手动帮它切掉
+            reply = reply.replace(/^评论[：:]\s*/, '').replace(/^.*?[：:]\s*/, '');
+            
+            // 拿到结果后，删掉“思考中”，换上真实评论
+            loadingDiv.remove();
+            addCommentToMoment(postId, friend.remark, reply);
+            
+            // 触发系统弹窗，让你切到后台也能收到！
+            if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+                sendSystemNotification("朋友圈互动", `${friend.remark} 评论了你的朋友圈: ${reply}`);
+            }
+
+        } catch(e) {
+            console.error("AI 朋友圈生成出错:", e);
+            loadingDiv.remove();
+        }
+    }
 }
 // ===== 新增：全屏设置功能 =====
 
