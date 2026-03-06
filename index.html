@@ -1569,9 +1569,22 @@ function testBackgroundNotification() {
 }
 
 function sendSystemNotification(title, body) {
-    // 只有在允许通知，并且页面不在用户眼前（被切走或遮挡）时，才发系统推送
+    // 只有在允许通知时，才发系统推送
     if ("Notification" in window && Notification.permission === "granted") {
-        if (document.hidden) {
+        
+        // 1. 判断你现在有没有打开微信聊天界面
+        const isWeChatOpen = !document.getElementById('chat-detail-page').classList.contains('slide-hidden');
+        const currentChatName = document.getElementById('chat-detail-title').innerText;
+        
+        // 2. 判断你现在有没有打开短信聊天界面
+        const isSmsOpen = !document.getElementById('sms-chat-view').classList.contains('hidden');
+        const currentSmsName = document.getElementById('sms-chat-name').innerText;
+
+        // 3. 判断你是不是正在直勾勾地盯着这个发消息的人的聊天框
+        const isLookingAtThisPerson = (isWeChatOpen && currentChatName.includes(title)) || (isSmsOpen && currentSmsName.includes(title));
+
+        // 4. 终极修改：只要手机切到了后台，或者你没有在看TA的聊天框（比如你在主屏幕、朋友圈、设置页面，甚至在跟别人聊天），统统给你发系统弹窗！
+        if (document.hidden || !isLookingAtThisPerson) {
             // 过滤掉HTML代码，只显示纯文字
             let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
             new Notification(title, { 
