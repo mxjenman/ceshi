@@ -1065,17 +1065,16 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                         <option value="">选择预设</option>
                     </select>
                 </div>
-
                 <div class="flex gap-2">
                     <button onclick="saveFontPreset()" class="flex-1 bg-gray-100 text-black py-1.5 rounded text-sm font-bold">保存预设</button>
                     <button onclick="deleteFontPreset()" class="flex-1 bg-red-50 text-red-500 py-1.5 rounded text-sm font-bold">删除预设</button>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
-                <h3 class="font-bold text-[15px] mb-3 text-gray-800">后台通知测试</h3>
-                <p class="text-[11px] text-gray-400 mb-3 leading-tight">点击下方按钮后，请立刻将本网页退到手机后台（或切到桌面），等待10秒，测试是否能收到系统弹窗。</p>
-                <button onclick="testBackgroundNotification()" class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-bold active:scale-95 transition-transform">测试后台消息推送</button>
+                
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <button onclick="testBackgroundNotification()" class="w-full bg-blue-50 text-blue-500 py-2.5 rounded-lg text-[14px] font-bold active:scale-95 transition-transform border border-blue-100">
+                        🔔 测试后台推送功能
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -1345,15 +1344,14 @@ let userProfile = {
 let chatHistory = [];
 let friendList = [];
 let currentFriendId = null;
-
-let isMultiSelecting = false;
-// 记住是否正在多选
+let isMultiSelecting = false;  // 记住是否正在多选
 let selectedMsgIndices = new Set(); // 记住多选了哪些消息
 let currentQuoteMsg = null;
 // 记住正在引用哪句话
 
-// ================= 新增：系统通知模块 =================
+// // ================= 新增：系统通知模块 =================
 function requestNotificationPermission() {
+    // 询问用户是否允许发送通知
     if ("Notification" in window) {
         if (Notification.permission !== "granted" && Notification.permission !== "denied") {
             Notification.requestPermission();
@@ -1361,9 +1359,25 @@ function requestNotificationPermission() {
     }
 }
 
+// 新增：测试后台推送的功能
+function testBackgroundNotification() {
+    // 1. 按钮被点击时才去请求权限，这样手机就不会卡死了
+    requestNotificationPermission();
+    
+    // 2. 弹出前台提示，证明前台功能没坏
+    alert("前台功能正常！\n\n请在点击【确定】后，立刻把这个网页切到后台（退到手机主屏幕，或者切换到别的APP）。\n\n10秒后，你的手机将会收到一条系统后台推送！");
+    
+    // 3. 设定 10 秒（10000毫秒）后发送推送
+    setTimeout(() => {
+        sendSystemNotification("后台测试成功 收到啦！", "太棒了！你的后台推送功能完全正常，可以在切出网页时收到消息了！");
+    }, 10000); 
+}
+
 function sendSystemNotification(title, body) {
+    // 只有在允许通知，并且页面不在用户眼前（被切走或遮挡）时，才发系统推送
     if ("Notification" in window && Notification.permission === "granted") {
         if (document.hidden) {
+            // 过滤掉HTML代码，只显示纯文字
             let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
             new Notification(title, { 
                 body: cleanBody,
@@ -1371,20 +1385,6 @@ function sendSystemNotification(title, body) {
             });
         }
     }
-}
-
-// --- 新增：专门用来测试后台弹窗的函数 ---
-function testBackgroundNotification() {
-    alert("即将开始测试！\n\n因为苹果系统的限制，网页在后台倒数10秒会被强制“冻结休眠”。\n\n所以我们换个测试方法：\n点击【确定】后，请立刻把网页滑到后台（切回桌面）。\n在你滑出去的【那一瞬间】，系统就会立刻发推送！");
-
-    // 监听“网页被切到后台”的动作，一检测到退到后台，赶在被冻结前立刻发通知！
-    document.addEventListener('visibilitychange', function testPush() {
-        if (document.hidden) {
-            sendSystemNotification("✅ 测试成功", "太棒了！你一退出来就收到了推送！这证明通知功能是完全正常的。");
-            // 测试成功后就把这个监听器去掉，免得以后每次切后台都弹窗
-            document.removeEventListener('visibilitychange', testPush);
-        }
-    });
 }
 // ===================================================
 
@@ -3355,8 +3355,13 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-window.onload = () => { switchWechatTab('messages'); syncProfileToAI();
-renderFriendList(); applyDarkModeStyle(); requestNotificationPermission(); };
+window.onload = () => { 
+    switchWechatTab('messages'); 
+    syncProfileToAI();
+    renderFriendList(); 
+    applyDarkModeStyle(); 
+    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
+};
 
 // ================= 新增：短信(iMessage)功能模块 =================
 let currentSmsFriendId = null;
