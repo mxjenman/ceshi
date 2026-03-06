@@ -1858,6 +1858,7 @@ function saveFriend() {
     document.getElementById('friend-realname').value = '';
     document.getElementById('friend-persona').value = '';
 }
+
 function renderFriendList() {
     const container = document.getElementById('friend-list-container');
     const hint = document.getElementById('empty-friend-hint');
@@ -1866,14 +1867,12 @@ function renderFriendList() {
         hint.classList.remove('hidden');
     } else {
         hint.classList.add('hidden');
-        
         // 1. 把列表排个序，被置顶的好友排在最上面
         const sortedFriends = [...friendList].sort((a, b) => {
             if (a.isPinned && !b.isPinned) return -1;
             if (!a.isPinned && b.isPinned) return 1;
             return 0;
         });
-
         sortedFriends.forEach(f => {
             const div = document.createElement('div');
             // 置顶的好友背景稍微带点浅灰，区分普通好友
@@ -1881,10 +1880,18 @@ function renderFriendList() {
             
             // 2. 提取最后一条聊天记录用于展示
             let lastMsg = '暂无聊天记录';
+  
             if (f.chatHistory && f.chatHistory.length > 0) {
                 let lastContent = f.chatHistory[f.chatHistory.length - 1].content;
-                // 把图片代码替换成干净的 [图片] 两个字
-                lastMsg = lastContent.replace(/<img[^>]*>/g, '[图片]');
+                
+                // 【新增修复】优先把“描述照片”的超长代码变成干净的 [图片]
+                if (lastContent.includes('<div class="desc-photo-container"')) {
+                    lastMsg = '[图片]';
+                } else {
+                    // 把真实的图片代码替换成干净的 [图片] 两个字
+                    lastMsg = lastContent.replace(/<img[^>]*>/g, '[图片]');
+                }
+                
                 // 如果是引用消息，去掉引用的前缀，只显示回复的字
                 if (lastMsg.startsWith('[引用:')) {
                     lastMsg = lastMsg.substring(lastMsg.indexOf(']\n') + 2);
@@ -1918,10 +1925,9 @@ function renderFriendList() {
                 pressTimer = setTimeout(() => {
                     div.setAttribute('data-longpressed', 'true');
                     // 呼出正中间的小弹窗，并把这个好友的 ID 传过去
-                    openFriendActionModal(f.id); 
+                    openFriendActionModal(f.id);
                 }, 500); // 500毫秒算作长按
             };
-            
             const cancelPress = () => clearTimeout(pressTimer);
             
             // 绑定所有触摸和鼠标按压事件
@@ -2242,7 +2248,7 @@ function renderAllMessages(isIncremental = false) {
                     { label: '删除', action: () => { 
                         chatHistory.splice(index, 1); // 彻底从大脑抹除
                         renderAllMessages();
-                    }},
+                     }},
                     { label: '编辑', action: () => { 
                         let rawText = chatHistory[index].content;
                         if (rawText.startsWith('[引用:')) rawText = rawText.substring(rawText.indexOf(']\n') + 2);
@@ -2252,9 +2258,14 @@ function renderAllMessages(isIncremental = false) {
                             chatHistory[index].content = prefix + res;
                             renderAllMessages();
                         }
-                    }},
+                     }},
                     { label: '引用', action: () => { 
-                        let quoteContent = displayContent.replace(/<img[^>]*>/g, '[图片]'); 
+                        let quoteContent = displayContent;
+                        // 【新增修复】拦截描述照片的恶心代码，直接变图片
+                        if (quoteContent.includes('<div class="desc-photo-container"')) {
+                            quoteContent = '[图片]';
+                        }
+                        quoteContent = quoteContent.replace(/<img[^>]*>/g, '[图片]');
                         currentQuoteMsg = quoteContent;
                         document.getElementById('chat-input').placeholder = `引用: ${quoteContent.substring(0,8)}...`;
                         document.getElementById('chat-input').focus();
@@ -2267,7 +2278,7 @@ function renderAllMessages(isIncremental = false) {
                         document.getElementById('multi-select-bar').style.display = 'flex';
                         renderAllMessages();
                     }}
-                ], bubble); // 传入气泡元素，让尖尖指在正中间
+                ], bubble);
             }, 500);
         };
         const cancelMsgPress = () => clearTimeout(pressTimer);
@@ -2532,8 +2543,11 @@ TimeChecklist:
             
             // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
             if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
-                // 把后面的排版代码一刀切掉，只保留前面的纯文字递给 AI
+                // 把后面的排版代码一刀切掉，只保留前面的纯文字
                 let textOnly = msg.content.split('\n<div')[0];
+                // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
+                textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
+                
                 formattedMessages.push({ role: msg.role, content: textOnly });
                 return; // 这一条处理完毕，直接跳过后面的识图步骤
             }
