@@ -1569,22 +1569,9 @@ function testBackgroundNotification() {
 }
 
 function sendSystemNotification(title, body) {
-    // 只有在允许通知时，才发系统推送
+    // 只有在允许通知，并且页面不在用户眼前（被切走或遮挡）时，才发系统推送
     if ("Notification" in window && Notification.permission === "granted") {
-        
-        // 1. 判断你现在有没有打开微信聊天界面
-        const isWeChatOpen = !document.getElementById('chat-detail-page').classList.contains('slide-hidden');
-        const currentChatName = document.getElementById('chat-detail-title').innerText;
-        
-        // 2. 判断你现在有没有打开短信聊天界面
-        const isSmsOpen = !document.getElementById('sms-chat-view').classList.contains('hidden');
-        const currentSmsName = document.getElementById('sms-chat-name').innerText;
-
-        // 3. 判断你是不是正在直勾勾地盯着这个发消息的人的聊天框
-        const isLookingAtThisPerson = (isWeChatOpen && currentChatName.includes(title)) || (isSmsOpen && currentSmsName.includes(title));
-
-        // 4. 终极修改：只要手机切到了后台，或者你没有在看TA的聊天框（比如你在主屏幕、朋友圈、设置页面，甚至在跟别人聊天），统统给你发系统弹窗！
-        if (document.hidden || !isLookingAtThisPerson) {
+        if (document.hidden) {
             // 过滤掉HTML代码，只显示纯文字
             let cleanBody = body.replace(/<[^>]+>/g, '[图片/表情包]');
             new Notification(title, { 
@@ -2946,12 +2933,10 @@ TimeChecklist:
                 max_tokens:800
             })
         });
-                const data=await response.json();
+
+        const data=await response.json();
         const reply=data.choices[0].message.content;
-        
-        // 触发系统通知（把好友的名字和回复内容弹出来）
-        sendSystemNotification(friend.remark || friend.realName || "AI 好友", reply);
-        
+
         // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
         const images = reply.match(imgRegex);
@@ -2959,7 +2944,6 @@ TimeChecklist:
 
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
-
         // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -2982,20 +2966,25 @@ TimeChecklist:
         
         // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
         let msgIndex = 0;
-function showNextMsg() {
-    if (msgIndex < newMessages.length) {
-        // 拿走当前的一条消息，放到聊天记录里
-        chatHistory.push(newMessages[msgIndex]);
-        renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
-        msgIndex++;
-        // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
-        setTimeout(showNextMsg, 1200);
+        function showNextMsg() {
+            if (msgIndex < newMessages.length) {
+                // 拿走当前的一条消息，放到聊天记录里
+                const currentMsg = newMessages[msgIndex];
+                chatHistory.push(currentMsg);
+                renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
+                
+                // 【修改重点】：在每发一条气泡时，只要界面在后台，就发一次系统弹窗！
+                sendSystemNotification(friend.remark || friend.realName || "AI 好友", currentMsg.content);
+
+                msgIndex++;
+                // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
+                setTimeout(showNextMsg, 1200);
             } else {
                 // 消息全发完了，恢复原来的备注名字和发送按钮
                 titleEl.innerText = originalTitle;
                 if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
 
-                                // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
+                // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
                 checkAndTriggerAutoSummary();
                 // 自动根据这轮对话生成TA的心声！
                 generateInnerVoiceForLastMsg(currentFriendId, reply);
@@ -3889,24 +3878,27 @@ async function triggerSmsAI() {
                 max_tokens:800
             })
         });
+
         const data=await response.json();
         const reply=data.choices[0].message.content;
-        
-        // 触发短信系统通知
-        sendSystemNotification(friend.realName || friend.remark || "新短信", reply);
-        
+
         let newMessages = [];
         const textLines = reply.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         textLines.forEach(line => newMessages.push({role:'assistant', content: line}));
         if (newMessages.length === 0) newMessages.push({role:'assistant', content: reply});
-        
+
         let msgIndex = 0;
         function showNextMsg() {
             if (msgIndex < newMessages.length) {
-                smsChatHistory.push(newMessages[msgIndex]);
+                const currentMsg = newMessages[msgIndex];
+                smsChatHistory.push(currentMsg);
                 renderSmsMessages(true);
+                
+                // 【修改重点】：在每发一条短信气泡时，只要界面在后台，就发一次系统弹窗！
+                sendSystemNotification(friend.realName || friend.remark || "新短信", currentMsg.content);
+
                 msgIndex++;
-                setTimeout(showNextMsg, 1200); 
+                setTimeout(showNextMsg, 1200);
             } else {
                 titleEl.innerHTML = originalTitleHtml;
                 checkAndTriggerSmsAutoSummary();
