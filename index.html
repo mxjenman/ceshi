@@ -1347,13 +1347,18 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
 
             <div class="flex w-full px-[20px] mt-2 gap-4 items-stretch">
                 
-                <div class="flex-1 bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[30px] p-4 flex flex-col justify-between shadow-sm cursor-pointer" onclick="editAnyText('new-widget-text')">
+                <div class="flex-1 bg-[#e5e5eab3] backdrop-blur-md border border-white/50 rounded-[30px] p-4 flex flex-col justify-between shadow-sm mb-[22px]">
                     <div class="w-[42px] h-[42px] rounded-full overflow-hidden border-[2px] border-white shadow-sm self-start flex-shrink-0 bg-gray-300">
                         <img id="char-phone-left-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-full h-full object-cover">
                     </div>
                     
-                    <div id="new-widget-text" class="text-center text-[13px] font-bold text-[#333] leading-snug my-2 break-words">
-                        我一直在<br>看着你哦
+                    <div class="flex flex-col items-center justify-center my-2 cursor-pointer active:scale-95 transition-transform" onclick="openDateWidgetModal()">
+                        <div id="date-widget-title" class="text-[11px] text-gray-500 font-bold mb-0.5">在一起已经</div>
+                        <div class="flex items-baseline gap-1">
+                            <span id="date-widget-days" class="text-[26px] font-black text-[#333] tracking-tighter leading-none">0</span>
+                            <span class="text-[10px] text-gray-500 font-bold">天</span>
+                        </div>
+                        <div id="date-widget-target" class="text-[9px] text-gray-400 mt-1 font-medium bg-white/50 px-2 py-0.5 rounded-full border border-white/60 shadow-sm">2024-01-01</div>
                     </div>
 
                     <div class="w-[42px] h-[42px] rounded-full overflow-hidden border-[2px] border-white shadow-sm self-end flex-shrink-0 bg-gray-300">
@@ -1447,6 +1452,35 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div class="bg-white rounded-xl p-4 mb-6 shadow-sm grid grid-cols-4 gap-4 place-items-center" id="char-icon-edit-grid">
                 </div>
             <input type="file" id="char-icon-file-input" class="hidden" accept="image/*" onchange="handleCharIconSelect(this)">
+        </div>
+    </div>
+    <div id="date-widget-modal" class="fixed inset-0 hidden z-[150] flex items-center justify-center p-6 bg-black/40 transition-opacity">
+        <div class="bg-white/90 backdrop-blur-xl rounded-[24px] w-full max-w-xs p-6 shadow-2xl relative border border-white/50 animate-in">
+            <h3 class="font-bold mb-4 text-center text-[16px] text-[#333]">设置纪念日/倒数日</h3>
+            
+            <div class="mb-3">
+                <label class="block text-[12px] text-gray-500 mb-1.5 font-bold">标题 (例如: 在一起已经 / 距离生日还有)</label>
+                <input id="dw-title-input" type="text" class="w-full bg-gray-100 rounded-xl px-4 py-2.5 outline-none text-[14px]" placeholder="在一起已经">
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-[12px] text-gray-500 mb-1.5 font-bold">目标日期</label>
+                <input id="dw-date-input" type="date" class="w-full bg-gray-100 rounded-xl px-4 py-2.5 outline-none text-[14px]">
+            </div>
+
+            <div class="mb-6 flex gap-4 text-[14px]">
+                <label class="flex items-center gap-1.5 cursor-pointer text-gray-700">
+                    <input type="radio" name="dw-mode" value="up" class="accent-black" checked> 正数 (如恋爱天数)
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-gray-700">
+                    <input type="radio" name="dw-mode" value="down" class="accent-black"> 倒数 (如倒计天数)
+                </label>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeDateWidgetModal()" class="w-1/3 py-2.5 border border-gray-300 rounded-xl font-bold text-[14px] active:scale-95 text-gray-600">取消</button>
+                <button onclick="saveDateWidget()" class="flex-1 py-2.5 bg-black text-white rounded-xl font-bold text-[14px] active:scale-95">确定保存</button>
+            </div>
         </div>
     </div>
 
@@ -5246,7 +5280,8 @@ let currentCharEditingIconId = '';
 
 function openCharacterPhone(friend) {
     currentPhoneFriendId = friend.id;
-    document.getElementById('character-phone-title').innerText = `${friend.remark} 的手机`;
+        updateDateWidgetDisplay();
+document.getElementById('character-phone-title').innerText = `${friend.remark} 的手机`;
     
     // ====== 新增：让胶囊小组件的头像自动变成该角色的头像 ======
     const widgetAvatar = document.getElementById('char-phone-widget-avatar');
@@ -5458,6 +5493,70 @@ async function generatePhoneThoughts() {
     } catch(e) {
         textEl.innerText = "读取失败，请检查网络或API是否正常";
     }
+}
+// ================= 新增：倒数日小组件魔法核心 =================
+let dateWidgetConfig = JSON.parse(localStorage.getItem('dateWidgetConfig')) || {
+    title: '在一起已经',
+    targetDate: '2024-01-01',
+    mode: 'up' 
+};
+
+function openDateWidgetModal() {
+    document.getElementById('dw-title-input').value = dateWidgetConfig.title;
+    document.getElementById('dw-date-input').value = dateWidgetConfig.targetDate;
+    if(dateWidgetConfig.mode === 'down') {
+        document.querySelector('input[name="dw-mode"][value="down"]').checked = true;
+    } else {
+        document.querySelector('input[name="dw-mode"][value="up"]').checked = true;
+    }
+    document.getElementById('date-widget-modal').classList.remove('hidden');
+}
+
+function closeDateWidgetModal() {
+    document.getElementById('date-widget-modal').classList.add('hidden');
+}
+
+function saveDateWidget() {
+    const title = document.getElementById('dw-title-input').value.trim();
+    const dateStr = document.getElementById('dw-date-input').value;
+    const mode = document.querySelector('input[name="dw-mode"]:checked').value;
+
+    if(!title || !dateStr) return alert("请填写完整的标题和日期哦！");
+
+    dateWidgetConfig = { title, targetDate: dateStr, mode };
+    localStorage.setItem('dateWidgetConfig', JSON.stringify(dateWidgetConfig));
+    
+    updateDateWidgetDisplay();
+    closeDateWidgetModal();
+}
+
+function updateDateWidgetDisplay() {
+    const titleEl = document.getElementById('date-widget-title');
+    const daysEl = document.getElementById('date-widget-days');
+    const targetEl = document.getElementById('date-widget-target');
+    
+    if(!titleEl || !daysEl || !targetEl) return;
+
+    titleEl.innerText = dateWidgetConfig.title;
+    targetEl.innerText = dateWidgetConfig.targetDate;
+
+    // 开始算日子
+    const target = new Date(dateWidgetConfig.targetDate);
+    target.setHours(0,0,0,0);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+
+    const diffTime = now.getTime() - target.getTime();
+    let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if(dateWidgetConfig.mode === 'down') {
+        diffDays = -diffDays; // 倒数日模式：目标减去今天
+        if(diffDays < 0) diffDays = 0; // 日子过去了就显示0
+    } else {
+        if(diffDays < 0) diffDays = 0; // 还没到纪念日就显示0
+    }
+
+    daysEl.innerText = diffDays;
 }
 </script>
 </body>
