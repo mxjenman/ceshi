@@ -1375,14 +1375,16 @@ function sendSystemNotification(title, body) {
 
 // --- 新增：专门用来测试后台弹窗的函数 ---
 function testBackgroundNotification() {
-    alert("即将开始测试！\n\n请在点击“确定”后，立刻把这个网页退到手机后台（比如切回桌面，或者打开其他APP）。\n\n10秒钟后，系统会尝试给你发一条推送！");
-    setTimeout(() => {
+    alert("即将开始测试！\n\n因为苹果系统的限制，网页在后台倒数10秒会被强制“冻结休眠”。\n\n所以我们换个测试方法：\n点击【确定】后，请立刻把网页滑到后台（切回桌面）。\n在你滑出去的【那一瞬间】，系统就会立刻发推送！");
+
+    // 监听“网页被切到后台”的动作，一检测到退到后台，赶在被冻结前立刻发通知！
+    document.addEventListener('visibilitychange', function testPush() {
         if (document.hidden) {
-            sendSystemNotification("✅ 测试成功", "太棒了！你成功收到了来自后台的系统推送通知！");
-        } else {
-            alert("你没有切到后台哦！\n系统推送只有在网页处于后台或者锁屏时才会弹出来，请重新测试~");
+            sendSystemNotification("✅ 测试成功", "太棒了！你一退出来就收到了推送！这证明通知功能是完全正常的。");
+            // 测试成功后就把这个监听器去掉，免得以后每次切后台都弹窗
+            document.removeEventListener('visibilitychange', testPush);
         }
-    }, 10000); 
+    });
 }
 // ===================================================
 
