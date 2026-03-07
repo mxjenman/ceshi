@@ -211,11 +211,11 @@
                         </div>
                         <span class="text-xs text-gray-600 font-bold drop-shadow-md">世界书</span>
                     </div>
-                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder(2)">
+                    <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openRecordApp()">
                         <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                             <img id="icon-placeholder2" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                         </div>
-                        <span class="text-xs text-gray-600 font-bold drop-shadow-md">占位2</span>
+                        <span class="text-xs text-gray-600 font-bold drop-shadow-md">记录</span>
                     </div>
                     <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openForum()">
                         <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
@@ -924,6 +924,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
         </div>
     </div>
+
     <div id="placeholder-screen" class="fixed inset-0 bg-[#f0f0f0] hidden flex flex-col z-[80]">
         <div class="h-12 bg-white flex items-center px-4 border-b">
             <button onclick="closePlaceholder()" class="back-icon">
@@ -935,6 +936,62 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div class="w-6"></div>
         </div>
         <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
+    </div>
+
+    <div id="record-app-screen" class="fixed inset-0 bg-[#f7f7f7] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b">
+            <button onclick="closeRecordApp()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px]">记录</div>
+            <div class="w-6"></div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            
+            <div class="bg-white rounded-2xl p-4 shadow-sm">
+                <h3 class="font-bold text-[15px] mb-3 text-gray-800">体重记录 (公斤)</h3>
+                <div class="flex gap-2 mb-4">
+                    <input id="weight-input" type="number" placeholder="输入今日体重" class="flex-1 border border-gray-200 rounded-xl px-3 py-2 outline-none text-[14px]">
+                    <button onclick="addWeightRecord()" class="bg-black text-white px-4 py-2 rounded-xl font-bold text-[14px] active:scale-95">添加</button>
+                </div>
+                <div class="w-full h-36 border border-gray-100 rounded-xl bg-gray-50 relative overflow-hidden flex items-center justify-center">
+                    <canvas id="weight-chart" class="w-full h-full"></canvas>
+                    <span id="weight-empty-hint" class="absolute text-gray-400 text-xs hidden">暂无体重数据，快去添加吧！</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-5">
+                
+                <div>
+                    <h3 class="font-bold text-[13px] text-gray-800 mb-1">今日步数</h3>
+                    <div class="flex gap-2">
+                        <input id="steps-input" type="number" placeholder="例如: 8000" class="flex-1 border-b border-gray-200 py-1 outline-none text-[14px]">
+                        <button onclick="saveDailyRecord('steps')" class="text-blue-500 font-bold text-[13px] px-2 active:scale-95">保存</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-[13px] text-gray-800 mb-1">运动时间 (分钟)</h3>
+                    <div class="flex gap-2">
+                        <input id="exercise-input" type="number" placeholder="例如: 30" class="flex-1 border-b border-gray-200 py-1 outline-none text-[14px]">
+                        <button onclick="saveDailyRecord('exercise')" class="text-blue-500 font-bold text-[13px] px-2 active:scale-95">保存</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-[13px] text-gray-800 mb-1">睡眠时间 (小时)</h3>
+                    <div class="flex gap-2">
+                        <input id="sleep-input" type="number" placeholder="例如: 8" class="flex-1 border-b border-gray-200 py-1 outline-none text-[14px]">
+                        <button onclick="saveDailyRecord('sleep')" class="text-blue-500 font-bold text-[13px] px-2 active:scale-95">保存</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
     </div>
 
     <div id="sms-app-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[50]">
@@ -6654,6 +6711,116 @@ setInterval(() => {
         }
     });
 }, 30000); // 30000毫秒 = 每30秒在后台偷偷检查一次
+// ================= 新增：记录APP的核心逻辑和图表绘制 =================
+// 每次打开都会从手机浏览器的记忆里提取保存的数据
+let weightRecords = JSON.parse(localStorage.getItem('record_weights')) || [];
+
+function openRecordApp() {
+    document.getElementById('record-app-screen').classList.remove('hidden');
+    // 把之前存的步数、睡眠时间填回到输入框里
+    document.getElementById('steps-input').value = localStorage.getItem('record_steps') || '';
+    document.getElementById('exercise-input').value = localStorage.getItem('record_exercise') || '';
+    document.getElementById('sleep-input').value = localStorage.getItem('record_sleep') || '';
+    
+    // 打开时自动画图
+    drawWeightChart();
+}
+
+function closeRecordApp() {
+    document.getElementById('record-app-screen').classList.add('hidden');
+}
+
+function addWeightRecord() {
+    const val = document.getElementById('weight-input').value;
+    if (!val || val <= 0) {
+        alert("请输入正确的体重数字哦！");
+        return;
+    }
+    weightRecords.push(parseFloat(val));
+    localStorage.setItem('record_weights', JSON.stringify(weightRecords)); // 永久保存
+    document.getElementById('weight-input').value = ''; // 清空输入框方便下次输入
+    drawWeightChart(); // 重新画出最新的折线图
+    alert("✅ 体重记录成功！");
+}
+
+function saveDailyRecord(type) {
+    const val = document.getElementById(type + '-input').value;
+    if (!val) {
+        alert("请输入内容后再保存哦！");
+        return;
+    }
+    localStorage.setItem('record_' + type, val); // 永久保存这个数据
+    alert("✅ 保存成功！");
+}
+
+// 自动画出体重变化折线图的魔法引擎
+function drawWeightChart() {
+    const canvas = document.getElementById('weight-chart');
+    const hint = document.getElementById('weight-empty-hint');
+    
+    if (weightRecords.length === 0) {
+        hint.classList.remove('hidden');
+        canvas.style.display = 'none';
+        return;
+    }
+    
+    hint.classList.add('hidden');
+    canvas.style.display = 'block';
+
+    // 让画出来的线条在手机上高清不模糊
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    ctx.scale(2, 2);
+
+    const w = rect.width;
+    const h = rect.height;
+    const padding = 25; // 边距留白
+
+    // 清空以前的画
+    ctx.clearRect(0, 0, w, h);
+
+    // 智能计算最高和最低体重，让曲线充满整个框
+    const maxW = Math.max(...weightRecords) + 2;
+    const minW = Math.max(0, Math.min(...weightRecords) - 2);
+    const range = maxW - minW || 1; // 防止只有一个点时算不出来
+
+    // 1. 先画黑色的连线
+    ctx.beginPath();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+
+    weightRecords.forEach((weight, index) => {
+        // 计算每个点在屏幕上的X轴和Y轴位置
+        const x = padding + (index / Math.max(1, weightRecords.length - 1)) * (w - padding * 2);
+        const y = h - padding - ((weight - minW) / range) * (h - padding * 2);
+        
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // 2. 在每个转折点画个漂亮的小圆白点，并写上具体的体重数字
+    weightRecords.forEach((weight, index) => {
+        const x = padding + (index / Math.max(1, weightRecords.length - 1)) * (w - padding * 2);
+        const y = h - padding - ((weight - minW) / range) * (h - padding * 2);
+        
+        // 画白底黑边的圆圈
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 在点点的上面写上文字
+        ctx.fillStyle = '#333333';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(weight, x, y - 10);
+    });
+}
 </script>
 </body>
 </html>
