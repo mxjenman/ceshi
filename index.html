@@ -3385,7 +3385,6 @@ async function triggerAI(){
         const now = new Date();
         const timeString = now.getHours() + "点" + now.getMinutes() + "分";
 
-        let personaPrompt = '';
         if (friend.isGroup) {
             personaPrompt = `你当前在一个群聊中，群名是：${friend.remark}。`;
             if (friend.userPersona) {
@@ -3408,7 +3407,7 @@ async function triggerAI(){
                 personaPrompt += `\n当前用户（我）的人设是：${friend.userPersona}。`;
             }
         }
-
+        
         finalSystemMessage += `\n\n${personaPrompt}
 
 【核心回复气泡（条数）规则 - 极其重要】
@@ -3417,6 +3416,15 @@ async function triggerAI(){
 - ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
 - 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
 - 【严厉警告】：绝对不允许在回复中带上任何序号、排版前缀或行号（千万不要写“Line 1:”、“1.”、“消息1”等字眼）！只允许输出纯文本，用换行符（回车）隔开即可！
+
+【新增：心声合并生成规则 - 为节省API额度，请务必执行！】
+为了减少调用次数，你必须在此次回复的最末尾，另起一行，用 <inner_voice>你的真实内心想法</inner_voice> 的格式，写下你此刻内心的真实想法（限30字以内）。
+例如：
+第一句话
+第二句话
+<inner_voice>他今天怎么这么可爱，好想抱抱他。</inner_voice>
+注意：<inner_voice> 标签必须放在你所有回复内容的最后！绝对不要漏掉！
+`;
 
 【活人感引擎：注意，当前真实世界时间是 ${timeString}】
 ============================================
@@ -3646,6 +3654,16 @@ TimeChecklist:
         const data=await response.json();
         let reply=data.choices[0].message.content;
 
+        // ==== 新增：提取并剥离合并生成的心声 ====
+        let innerVoiceMatch = reply.match(/<inner_voice>([\s\S]*?)<\/inner_voice>/);
+        let generatedInnerVoice = "（此轮未捕捉到心声）";
+        if (innerVoiceMatch) {
+            generatedInnerVoice = innerVoiceMatch[1].trim();
+            // 把心声代码从对话中删掉，防止暴露给用户，并清空可能多出来的换行
+            reply = reply.replace(/<inner_voice>[\s\S]*?<\/inner_voice>/g, '').trim();
+        }
+        // ===================================
+
         // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
         let extraMessages = [];
         let needsFullRender = false;
@@ -3712,12 +3730,21 @@ TimeChecklist:
             });
         }
         
-        // 3. 兜底
-        if (!textOnly && (!images || images.length === 0)) {
-            newMessages.push({role:'assistant', content: reply});
+        // ==== 新增：把刚才合并提取到的心声，悄悄挂载给最后一条 AI 的文字消息 ====
+        if (newMessages.length > 0) {
+            for (let i = newMessages.length - 1; i >= 0; i--) {
+                if (newMessages[i].role === 'assistant' && !newMessages[i].content.startsWith('[系统消息:')) {
+                    newMessages[i].innerVoice = generatedInnerVoice;
+                    break;
+                }
+            }
         }
-        
-        // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
+        // ==========================================================
+
+        if (newMessages.length === 0) {
+            newMessages.push({role:'assistant', content: reply, innerVoice: generatedInnerVoice});
+        }
+
         let msgIndex = 0;
         function showNextMsg() {
             if (msgIndex < newMessages.length) {
@@ -3735,12 +3762,19 @@ TimeChecklist:
             } else {
                 // 消息全发完了，恢复原来的备注名字和发送按钮
                 titleEl.innerText = originalTitle;
-                if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
-
+                if(btn) {
+                    btn.style.opacity="1";
+                    btn.style.pointerEvents="auto";
+                }
+                
                 // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
                 checkAndTriggerAutoSummary();
-                // 自动根据这轮对话生成TA的心声！
-                generateInnerVoiceForLastMsg(currentFriendId, reply);
+                
+                // 【重要修改】：不再调用单独生成心声的函数！我们已经一次性生成过了！
+                // generateInnerVoiceForLastMsg(currentFriendId, reply);
+                
+                // 把本地数据存一下，防止心声丢了
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
             }
         }
         showNextMsg(); // 启动一条条发送！
