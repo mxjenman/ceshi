@@ -824,7 +824,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div id="view-profile" class="hidden">
                 <div class="relative">
                     <img id="profile-bg" class="profile-banner" src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800" onclick="editProfilePart('bg')">
-                    <img id="profile-avatar" class="profile-avatar-main" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="editProfilePart('avatar')">
+                    <img id="profile-avatar" class="profile-avatar-main" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeForumAvatar()">
                 </div>
                 <div class="px-4 mt-2">
                     <div class="flex justify-between items-start">
@@ -2540,6 +2540,7 @@ Daddy参考：乖宝宝、摸头、怎么了，嗯？
     个性签名: ${userProfile.bio}
     当前状态: ${userProfile.status}`;
 }
+
 function changeAvatar(side){
     const input=document.createElement('input');
     input.type='file'; input.accept='image/*';
@@ -2549,7 +2550,7 @@ function changeAvatar(side){
         reader.onload=ev=>{ 
             const newSrc = ev.target.result;
             document.getElementById(`avatar-${side}`).src=newSrc; 
-            updateGlobalAvatar(newSrc);
+            // 移除了全局同步，让桌面头像独立
         };
         reader.readAsDataURL(file);
     };
@@ -2557,7 +2558,8 @@ function changeAvatar(side){
 }
 function updateGlobalAvatar(src) {
     userProfile.avatar = src;
-    const ids = ['wx-moments-avatar', 'wx-me-avatar', 'profile-avatar', 'compose-avatar-sync', 'avatar-left', 'avatar-right'];
+    // 只保留微信相关的头像同步，去掉论坛和桌面小组件
+    const ids = ['wx-moments-avatar', 'wx-me-avatar'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.src = src;
@@ -3866,16 +3868,38 @@ function submitPost(){
     closeCompose();
 }
 
+// 新增：专门用来修改论坛头像的函数，不波及微信
+function changeForumAvatar() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const newSrc = ev.target.result;
+            const el1 = document.getElementById('profile-avatar');
+            if (el1) el1.src = newSrc;
+            const el2 = document.getElementById('compose-avatar-sync');
+            if (el2) el2.src = newSrc;
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
 function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     const squareFeed = document.getElementById('forum-feed');
     const profileFeed = document.getElementById('profile-posts-feed');
     const hint = document.getElementById('empty-hint');
     if(hint) hint.remove();
-    
+
     const createNode = () => {
         const div = document.createElement('div');
         div.className = "tweet-card flex gap-3 animate-in";
-        const avatarUrl = isUserPost ? userProfile.avatar : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+
+        // 修改：论坛发帖使用独立的论坛头像，不再去读取微信头像
+        const forumAvatarSrc = document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
         
         const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
         const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
