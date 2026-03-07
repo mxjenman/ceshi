@@ -2372,7 +2372,7 @@ function renderFriendList() {
 
 function switchWechatTab(tab) {
     const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '好友', moments: '朋友圈', me: '' };
+    const titles = { messages: '好友', moments: '朋友圈', me: '我' };
     tabs.forEach(t => {
         document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
         document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
@@ -2386,10 +2386,22 @@ function switchWechatTab(tab) {
     document.getElementById('wx-me-id').innerText = userProfile.handle;
 
     const wechatHeader = document.getElementById('wechat-header');
-    if(tab === 'moments' || tab === 'me') {
-        wechatHeader.classList.add('hidden');
+    const backBtn = wechatHeader.querySelector('.back-icon');
+    const addBtn = wechatHeader.querySelector('.relative');
+
+    if(tab === 'moments') {
+        wechatHeader.classList.add('hidden'); // 朋友圈继续隐藏顶栏
     } else {
-        wechatHeader.classList.remove('hidden');
+        wechatHeader.classList.remove('hidden'); // 好友 和 我 界面显示顶栏
+        
+        // 如果是主页(我)，隐藏返回键和右上角的加号，保持标题纯净居中
+        if(tab === 'me') {
+            backBtn.style.visibility = 'hidden';
+            if(addBtn) addBtn.style.visibility = 'hidden';
+        } else {
+            backBtn.style.visibility = 'visible';
+            if(addBtn) addBtn.style.visibility = 'visible';
+        }
     }
 }
 
