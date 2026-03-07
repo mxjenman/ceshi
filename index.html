@@ -430,7 +430,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 <div onclick="describeWxPhoto()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">描述照片</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音</div>
                 <div onclick="openTransferModal()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">转账</div>
-                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
+                <div onclick="regenerateLastMessage()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
             </div>
 
             <div id="placeholder-menu" class="hidden absolute bottom-[60px] right-12 bg-white border border-gray-200 shadow-lg rounded-xl p-4 w-[120px] z-50 text-center text-gray-400 text-[13px]">
@@ -2406,6 +2406,66 @@ function toggleInventory() {
         btn.style.transform = 'rotate(0deg)';
     }
 }
+
+// ================= 新增：重回功能（重新生成回答） =================
+function regenerateLastMessage() {
+    if (!currentFriendId) return;
+    if (chatHistory.length === 0) {
+        alert("还没有聊天记录呢！");
+        return;
+    }
+    
+    // 1. 先关掉左下角的菜单
+    toggleInventory();
+    
+    let deletedSomething = false;
+    
+    // 2. 从最后一条消息开始往前查，把AI发的消息，还有跟随的系统消息（比如TA已收钱）全删掉
+    while (chatHistory.length > 0) {
+        const lastMsg = chatHistory[chatHistory.length - 1];
+        
+        // 判断是不是AI发的话（包含AI收钱/退钱系统提示）
+        if (lastMsg.role === 'assistant') {
+            
+            // 防刷钱机制：如果AI上一回退还了转账，我们要把退回钱包的钱重新扣除
+            if (lastMsg.content.includes('TA已退还')) {
+                try {
+                    const amtStr = lastMsg.content.split('|')[1].replace(']', '');
+                    const amt = parseFloat(amtStr);
+                    if (!isNaN(amt)) addTransaction('撤销退款(重回)', amt, 'expense');
+                } catch(e) {}
+            }
+            
+            // 恢复刚才转账气泡的“等待收款”橙色状态
+            if (lastMsg.content.includes('TA已收钱') || lastMsg.content.includes('TA已退还')) {
+                for(let i = chatHistory.length - 1; i >= 0; i--) {
+                    if (chatHistory[i].role === 'user' && chatHistory[i].content.includes('[转账|')) {
+                        chatHistory[i].content = chatHistory[i].content.replace('|accepted]', '|pending]').replace('|returned]', '|pending]');
+                        break; // 恢复最新的一笔即可
+                    }
+                }
+            }
+            
+            chatHistory.pop(); // 咔嚓！从大脑里删掉这条消息
+            deletedSomething = true;
+        } else {
+            // 碰到了用户自己发的文字、图片或者发起的转账，就停止删除
+            break;
+        }
+    }
+    
+    if (!deletedSomething) {
+        alert("上一条是你发的消息哦，等TA回复了之后才能重回！");
+        return;
+    }
+    
+    // 3. 强制全局刷新一遍画面，把删掉的消息从屏幕上抹掉
+    renderAllMessages(false);
+    
+    // 4. 重新呼叫AI思考回复！
+    triggerAI();
+}
+// =========================================================
 
 function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
