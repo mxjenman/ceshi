@@ -148,6 +148,18 @@
         /* 隐藏左右滑动的自带滚动条 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 转账气泡专属样式 */
+        .transfer-bubble { background: #f09a37; border-radius: 8px; width: 230px; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
+        .transfer-bubble.accepted { background: #f2bc79; }
+        .transfer-bubble-top { padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+        .transfer-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
+        .transfer-icon.accepted { background: transparent; color: #f09a37; background: white; }
+        .transfer-info { display: flex; flex-direction: column; color: white; flex: 1; min-width: 0; }
+        .transfer-amt { font-size: 16px; font-weight: 500; }
+        .transfer-desc { font-size: 12px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .transfer-bottom { background: rgba(255,255,255,0.1); padding: 4px 14px; font-size: 10px; color: rgba(255,255,255,0.8); }
+        .system-msg { text-align: center; font-size: 12px; color: #999; margin: 10px 0; }
     </style>
 </head>
 <body id="desktop-body" class="h-screen overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
@@ -359,7 +371,8 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                     <div id="wx-me-id" onclick="editProfilePart('handle')">@user_ai</div>
                 </div>
                 <div class="wx-divider-thin"></div>
-                    <div class="wx-menu-item" onclick="openWalletPage()">
+                <div class="bg-white">
+                    <div class="wx-menu-item" onclick="openMePage('钱包')">
                         <span class="text-[16px]">钱包</span>
                         <span class="wx-chevron">〉</span>
                     </div>
@@ -1334,60 +1347,6 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             </div>
         </div>
     </div>
-
-    <div id="wallet-page" class="page-layer slide-hidden flex flex-col z-[100] bg-[#ededed]">
-        <div class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200">
-            <button onclick="closeWalletPage()" class="back-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div class="flex-1 text-center font-bold text-[17px]">钱包</div>
-            <div class="w-6"></div>
-        </div>
-        <div class="flex-1 overflow-y-auto">
-            <div class="bg-[#07c160] text-white p-8 flex flex-col items-center relative">
-                <div class="text-[14px] opacity-80 mb-2">我的余额</div>
-                <div class="text-[40px] font-bold cursor-pointer flex items-baseline gap-1" onclick="editWalletBalance()">
-                    <span class="text-[24px]">¥</span><span id="wallet-balance-display">0.00</span>
-                </div>
-                <div class="text-[10px] opacity-70 mt-2">点击金额可自由修改</div>
-            </div>
-            <div class="bg-white mt-2 min-h-screen">
-                <div class="p-4 border-b border-gray-100 font-bold text-[14px] text-gray-700">账单记录</div>
-                <div id="wallet-history-list" class="flex flex-col">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="transfer-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[16px] w-full max-w-sm p-6 shadow-2xl relative animate-in">
-            <h3 class="font-bold text-[#333] mb-4 text-center">发起转账</h3>
-            <div class="flex items-center text-[30px] font-bold border-b border-gray-300 pb-2 mb-4">
-                <span>¥</span>
-                <input id="transfer-amount" type="number" placeholder="0.00" class="flex-1 ml-2 outline-none w-full bg-transparent">
-            </div>
-            <input id="transfer-note" type="text" placeholder="添加转账说明 (选填)" class="w-full border border-gray-200 rounded-lg px-4 py-2 text-[14px] outline-none mb-6">
-            <div class="flex gap-3">
-                <button onclick="closeTransferModal()" class="w-1/3 py-2.5 bg-gray-100 rounded-lg font-bold text-gray-600 active:scale-95">取消</button>
-                <button onclick="submitTransfer()" class="flex-1 py-2.5 bg-[#07c160] text-white rounded-lg font-bold active:scale-95">转账</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="transfer-action-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-6">
-        <div class="bg-[#f08537] rounded-[16px] w-full max-w-sm p-6 shadow-2xl relative text-white flex flex-col items-center animate-in">
-            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#f08537] text-2xl font-bold font-serif mb-3 mt-2">¥</div>
-            <h3 class="font-bold mb-1 opacity-90 text-[15px]" id="ta-modal-title">来自TA的转账</h3>
-            <div class="text-[40px] font-bold mb-2 flex items-baseline gap-1"><span class="text-[20px]">¥</span><span id="ta-modal-amount">0.00</span></div>
-            <div class="text-[13px] mb-8 bg-black/10 px-3 py-1 rounded-full" id="ta-modal-note">备注</div>
-            <input type="hidden" id="ta-modal-idx">
-            <div class="flex gap-4 w-full px-2">
-                <button onclick="rejectAiTransfer()" class="flex-1 py-2.5 bg-black/10 rounded-lg font-bold active:scale-95 transition-transform">退回</button>
-                <button onclick="acceptAiTransfer()" class="flex-1 py-2.5 bg-white text-[#f08537] rounded-lg font-bold active:scale-95 transition-transform shadow-sm">收下</button>
-            </div>
-        </div>
-    </div>
-
     <div id="check-phone-app-screen" class="page-layer slide-hidden flex flex-col z-[90] bg-[#f2f2f6]">
         <div class="h-12 bg-white flex items-center px-4 border-b">
             <button onclick="closeCheckPhoneApp()" class="back-icon">
@@ -1565,6 +1524,24 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
     </div>
 
+    <div id="transfer-modal" class="fixed inset-0 bg-black/50 hidden z-[150] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">发起转账</h3>
+            <div class="mb-4">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">金额 (¥)</label>
+                <input id="transfer-amount" type="number" placeholder="0.00" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-[18px] outline-none font-bold">
+            </div>
+            <div class="mb-6">
+                <label class="block text-[#333] font-bold mb-1.5 text-[14px]">备注 (选填)</label>
+                <input id="transfer-note" type="text" placeholder="转账备注" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-[14px] outline-none">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeTransferModal()" class="w-1/3 py-3 bg-gray-100 rounded-xl font-bold text-gray-600 active:scale-95">取消</button>
+                <button onclick="confirmTransfer()" class="flex-1 py-3 bg-[#07c160] text-white rounded-xl font-bold text-[16px] active:scale-95">转账</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 /* 核心配置与状态 */
 let config = {
@@ -1601,136 +1578,10 @@ let userProfile = {
 let chatHistory = [];
 let friendList = [];
 let currentFriendId = null;
-let isMultiSelecting = false; // 记住是否正在多选
+let isMultiSelecting = false;  // 记住是否正在多选
 let selectedMsgIndices = new Set(); // 记住多选了哪些消息
-let currentQuoteMsg = null; // 记住正在引用哪句话
-
-// ================= 新增：钱包与转账逻辑 =================
-let userWallet = JSON.parse(localStorage.getItem('userWallet_data')) || {
-    balance: 1000.00,
-    history: []
-};
-
-function openWalletPage() {
-    document.getElementById('wallet-balance-display').innerText = userWallet.balance.toFixed(2);
-    renderWalletHistory();
-    document.getElementById('wallet-page').classList.remove('slide-hidden');
-}
-function closeWalletPage() { document.getElementById('wallet-page').classList.add('slide-hidden'); }
-
-function editWalletBalance() {
-    const res = prompt("修改钱包余额 (输入数字即可):", userWallet.balance);
-    if(res !== null && !isNaN(parseFloat(res))) {
-        userWallet.balance = parseFloat(res);
-        saveWallet();
-        document.getElementById('wallet-balance-display').innerText = userWallet.balance.toFixed(2);
-    }
-}
-
-function saveWallet() {
-    localStorage.setItem('userWallet_data', JSON.stringify(userWallet));
-}
-
-function renderWalletHistory() {
-    const list = document.getElementById('wallet-history-list');
-    list.innerHTML = '';
-    if(userWallet.history.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[13px]">暂无账单记录</div>';
-        return;
-    }
-    // 账单记录从最新到底部
-    const reversed = [...userWallet.history].reverse();
-    reversed.forEach(item => {
-        const isIncome = item.type === 'income';
-        const sign = isIncome ? '+' : '-';
-        const color = isIncome ? 'text-[#07c160]' : 'text-black';
-        list.innerHTML += `
-            <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                <div class="flex flex-col">
-                    <span class="text-[15px] font-bold text-gray-800">${item.title}</span>
-                    <span class="text-[11px] text-gray-400">${item.time}</span>
-                </div>
-                <div class="text-[16px] font-bold ${color}">${sign} ${item.amount.toFixed(2)}</div>
-            </div>
-        `;
-    });
-}
-
-function addWalletRecord(title, amount, type) {
-    const now = new Date();
-    const timeStr = `${now.getMonth()+1}-${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-    userWallet.history.push({ title, amount, type, time: timeStr });
-    if(type === 'income') userWallet.balance += amount;
-    else userWallet.balance -= amount;
-    saveWallet();
-}
-
-function openTransferModal() {
-    if(!currentFriendId) return;
-    document.getElementById('transfer-amount').value = '';
-    document.getElementById('transfer-note').value = '';
-    document.getElementById('transfer-modal').classList.remove('hidden');
-    toggleInventory(); 
-}
-
-function closeTransferModal() { document.getElementById('transfer-modal').classList.add('hidden'); }
-
-function submitTransfer() {
-    const amount = parseFloat(document.getElementById('transfer-amount').value);
-    const note = document.getElementById('transfer-note').value.trim() || '转账';
-    if(isNaN(amount) || amount <= 0) return alert("请输入正确的转账金额！");
-    if(amount > userWallet.balance) return alert("钱包余额不足！请先在微信“我-钱包”里修改余额。");
-    
-    // 自动扣钱并存入账单
-    const friend = friendList.find(f=>f.id===currentFriendId);
-    addWalletRecord(`转账给 ${friend.remark || friend.realName}`, amount, 'expense');
-    
-    const tId = 't_' + Date.now();
-    // 数据格式：[转账记录|ID|金额|备注|状态|方向(userToAi/aiToUser)]
-    // 状态: 0待接收 1已收钱 2已退回
-    const content = `[转账记录|${tId}|${amount.toFixed(2)}|${note}|0|userToAi]`;
-    chatHistory.push({role: 'user', content});
-    renderAllMessages(true);
-    closeTransferModal();
-    triggerAI();
-}
-
-function openTransferActionModal(tId, amount, note, msgIdx) {
-    document.getElementById('ta-modal-amount').innerText = amount;
-    document.getElementById('ta-modal-note').innerText = note;
-    document.getElementById('ta-modal-idx').value = msgIdx;
-    document.getElementById('transfer-action-modal').classList.remove('hidden');
-}
-
-function closeTransferActionModal() { document.getElementById('transfer-action-modal').classList.add('hidden'); }
-
-function acceptAiTransfer() {
-    const idx = parseInt(document.getElementById('ta-modal-idx').value);
-    const msg = chatHistory[idx];
-    const parts = msg.content.match(/^\[转账记录\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\]$/);
-    if(parts) {
-        const tId = parts[1], amount = parseFloat(parts[2]), note = parts[3];
-        chatHistory[idx].content = `[转账记录|${tId}|${parts[2]}|${note}|1|aiToUser]`;
-        const friend = friendList.find(f=>f.id===currentFriendId);
-        addWalletRecord(`来自 ${friend.remark || friend.realName} 的转账`, amount, 'income');
-        chatHistory.push({role: 'user', content: `[系统消息|你已接收了TA的转账]`});
-        renderAllMessages();
-    }
-    closeTransferActionModal();
-}
-
-function rejectAiTransfer() {
-    const idx = parseInt(document.getElementById('ta-modal-idx').value);
-    const msg = chatHistory[idx];
-    const parts = msg.content.match(/^\[转账记录\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\]$/);
-    if(parts) {
-        const tId = parts[1], amount = parts[2], note = parts[3];
-        chatHistory[idx].content = `[转账记录|${tId}|${amount}|${note}|2|aiToUser]`;
-        chatHistory.push({role: 'user', content: `[系统消息|你已退还了TA的转账]`});
-        renderAllMessages();
-    }
-    closeTransferActionModal();
-}
+let currentQuoteMsg = null;
+// 记住正在引用哪句话
 
 // // ================= 新增：系统通知模块 =================
 function requestNotificationPermission() {
@@ -2228,6 +2079,12 @@ function syncProfileToAI() {
 
 6. 禁用AI专属话术：绝对不出现“当然啦”“没问题”“很高兴为你解答”“希望我的回答对你有帮助”“你还有其他问题吗？”等典型AI回复，此类话术直接屏蔽。
 
+7. 微信转账互动规则：
+- 当用户给你转账时，你会在消息中看到转账提示。请结合语境和你的性格决定是否接受。
+- 如果接受，请务必在回复中单独占一行输出：【接受转账】
+- 如果拒绝/退回，请务必在回复中单独占一行输出：【退回转账】
+- 如果你想主动给用户发红包、转账表达感谢或撒娇要钱等，请在回复中单独占一行输出：【发起转账：金额，备注：xxx】（例如：【发起转账：52.0，备注：去买杯奶茶】）。金额必须是纯数字。
+
 === 进阶定制指令（分场景细化） ===
 所有进阶版本均基于核心基础指令叠加，请根据当前的角色设定和对话场景，自动选择最符合下述其中一种的语气来回复：
 
@@ -2715,81 +2572,102 @@ function renderAllMessages(isIncremental = false) {
             displayContent = displayContent.replace(/\[我发送了一张图片，图片内容是：.*?\]\n?/, '');
         }
 
-        let bubbleHtml = '';
-        
-        // ===== 新增：系统消息与转账气泡解析 =====
-        if (displayContent.startsWith('[系统消息|')) {
-            const sysText = displayContent.replace('[系统消息|', '').slice(0, -1);
-            div.className = "flex w-full justify-center items-center mb-4 animate-in select-none";
-            div.innerHTML = `<span class="bg-gray-200 text-gray-500 text-[11px] px-3 py-1 rounded-full shadow-sm">${sysText}</span>`;
+        // ======= 转账与系统消息拦截渲染 =======
+        if (displayContent.startsWith('[系统消息:')) {
+            const parts = displayContent.replace(/\[|\]/g, '').split(':');
+            const sysData = parts[1].split('|'); 
+            const action = sysData[0];
+            const amt = sysData[1];
+            
+            let text = action;
+            if (action === '你已收钱') text = `你已收款 ¥${amt}`;
+            if (action === 'TA已收钱') text = `TA已收款 ¥${amt}`;
+            if (action === '你已退还') text = `你已退还了TA的转账 ¥${amt}`;
+            if (action === 'TA已退还') text = `TA已退还了你的转账 ¥${amt}`;
+            
+            div.innerHTML = `<div class="system-msg w-full text-center text-[12px] text-gray-400 my-2">${text}</div>`;
             container.appendChild(div);
-            return;
+            return; // 是系统消息就结束渲染，不需要画普通气泡了
         }
-        
-        let isTransfer = false;
-        const transferMatch = displayContent.match(/^\[转账记录\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\]$/);
-        if (transferMatch) {
-            isTransfer = true;
-            const tId = transferMatch[1];
-            const tAmount = transferMatch[2];
-            const tNote = transferMatch[3] || '转账';
-            const tStatus = transferMatch[4]; // 0待接收 1已收钱 2已退回
-            const tDir = transferMatch[5]; 
-            
-            let iconOp = tStatus === '0' ? 'opacity-100' : 'opacity-50';
-            let bgCol = tStatus === '0' ? 'bg-[#f09a37]' : 'bg-[#f9c28b]';
-            let titleText = tDir === 'userToAi' ? (tStatus==='0'?'转账给TA':(tStatus==='1'?'TA已收钱':'已被退回')) : (tStatus==='0'?'收到转账':(tStatus==='1'?'已收钱':'已退回'));
-            let subText = tStatus === '0' ? '¥' + tAmount : (tStatus==='1'?'已收钱':'已退回');
-            
-            let clickAction = '';
-            // 如果是AI发给你的且状态是待接收，点击就会跳出收钱弹窗
-            if (tDir === 'aiToUser' && tStatus === '0') {
-                clickAction = `onclick="openTransferActionModal('${tId}', '${tAmount}', '${tNote}', ${index})"`;
-            }
 
-            const transferHtml = `
-                <div class="flex flex-col w-[220px] ${bgCol} rounded-[10px] overflow-hidden cursor-pointer active:scale-95 transition-transform" ${clickAction}>
-                    <div class="flex items-center p-3 gap-3">
-                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#f09a37] text-xl font-bold font-serif ${iconOp} shrink-0">¥</div>
-                        <div class="flex flex-col text-white min-w-0">
-                            <span class="text-[16px] truncate">${subText}</span>
-                            <span class="text-[12px] opacity-80 truncate">${tNote}</span>
+        let customBubbleHtml = null;
+        if (displayContent.startsWith('[转账|')) {
+            const parts = displayContent.replace(/\[|\]/g, '').split('|');
+            const transferId = parts[1];
+            const sender = parts[2]; // 'user' 或 'ai'
+            const amt = parts[3];
+            const note = parts[4];
+            const status = parts[5]; // 'pending', 'accepted', 'returned'
+            
+            const isSelf = msg.role === 'user';
+            let iconClass = "transfer-icon";
+            let bubbleClass = "transfer-bubble";
+            let topText = isSelf ? "转账给TA" : "转账给你";
+            let bottomText = "微信转账";
+            
+            if (status === 'accepted') {
+                bubbleClass += " accepted";
+                iconClass += " accepted";
+                topText = "已收款";
+            } else if (status === 'returned') {
+                bubbleClass += " accepted";
+                iconClass += " accepted";
+                topText = "已退还";
+            }
+            
+            let actionsHtml = '';
+            // 如果是对方发给我的钱，且还在等待状态，我可以在气泡底下点收下或退还
+            if (!isSelf && status === 'pending') {
+                actionsHtml = `
+                <div class="flex justify-around bg-white/20 border-t border-white/20 text-white text-[12px]">
+                    <div class="flex-1 text-center py-2 border-r border-white/20 cursor-pointer active:bg-white/30" onclick="acceptTransfer('${transferId}', '${amt}')">收下</div>
+                    <div class="flex-1 text-center py-2 cursor-pointer active:bg-white/30" onclick="returnTransfer('${transferId}', '${amt}')">退还</div>
+                </div>`;
+            }
+            
+            const innerBubble = `
+                <div class="${bubbleClass}">
+                    <div class="transfer-bubble-top">
+                        <div class="${iconClass}">
+                            ${status === 'pending' ? '¥' : '✓'}
+                        </div>
+                        <div class="transfer-info">
+                            <span class="transfer-amt">¥ ${amt}</span>
+                            <span class="transfer-desc">${status === 'pending' ? note : topText}</span>
                         </div>
                     </div>
-                    <div class="bg-white/20 px-3 py-1.5 text-[10px] text-white/80">${titleText}</div>
+                    <div class="transfer-bottom">${bottomText}</div>
+                    ${actionsHtml}
                 </div>
             `;
             
-            if (msg.role === 'user') {
-                bubbleHtml = `
+            if (isSelf) {
+                customBubbleHtml = `
                     ${checkboxHtml}
-                    <div class="chat-msg-user relative shadow-sm max-w-[72%]" style="width: fit-content; background: transparent; padding: 0;">
-                        ${transferHtml}
-                    </div>
+                    ${innerBubble}
                     <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
-                bubbleHtml = `
+                customBubbleHtml = `
                     ${checkboxHtml}
                     <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
-                    <div class="chat-msg-ai relative shadow-sm max-w-[72%]" style="width: fit-content; background: transparent; padding: 0;">
-                        ${transferHtml}
-                    </div>
+                    ${innerBubble}
                 `;
             }
         }
-        // ===== 结束：转账气泡解析 =====
+        // ===================================
 
-        // 如果不是转账气泡，则走原本常规的文字/图片发消息逻辑
-        if (!isTransfer) {
-            // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
-            let isMedia = false;
-            let contentForCheck = displayContent.trim();
-            if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"')) {
-                isMedia = true;
-            }
+        let bubbleHtml = '';
+        // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
+        let isMedia = false;
+        let contentForCheck = displayContent.trim();
+        if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"')) {
+            isMedia = true;
+        }
 
-            if (msg.role === 'user') {
+        if (customBubbleHtml) {
+            bubbleHtml = customBubbleHtml;
+        } else if (msg.role === 'user') {
             if (isMedia) {
                 // 纯图片/表情包模式（无气泡）
                 bubbleHtml = `
@@ -3020,24 +2898,7 @@ async function triggerAI(){
             }
         }
 
-        // ======= 检查是否有待处理的转账 =======
-        let pendingTransferPrompt = "";
-        const lastMsgObj = chatHistory[chatHistory.length - 1];
-        if (lastMsgObj && lastMsgObj.role === 'user' && lastMsgObj.content.startsWith('[转账记录|')) {
-            const parts = lastMsgObj.content.match(/^\[转账记录\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\]$/);
-            if (parts && parts[4] === '0') {
-                pendingTransferPrompt = `\n【重要系统提示：用户刚刚向你发起了一笔微信转账，金额：¥${parts[2]}，备注：“${parts[3]}”】
-请你根据人物关系和性格决定是否收下或退回。
-- 如果你要收下，请在你回复的【单独一行】写上：[接受转账]
-- 如果你要退回，请在你回复的【单独一行】写上：[退回转账]
-你的决定必须要符合角色性格！收钱或者退钱之后，下一行请继续写你想对用户说的话。`;
-            }
-        }
-        
         finalSystemMessage += `\n\n${personaPrompt}
-${pendingTransferPrompt}
-【主动转账发红包指令】
-如果根据聊天情境，你觉得你应该给用户转账（例如发红包、给零花钱、买东西付款等），请在你回复的最前面单独一行写上：[发起转账:金额:备注]，例如 [发起转账:52.00:拿去买奶茶]。系统会自动在微信里给用户弹出一个真实的转账气泡。
 
 【核心回复气泡（条数）规则 - 极其重要】
 强制要求：你每次的回复必须拆分成多条独立的消息！请务必使用换行符（回车）来分隔你的每条消息。
@@ -3191,10 +3052,45 @@ TimeChecklist:
     try {
 
         // 【修复】微信使用真正的多模态格式读取微信的历史记录
+
         let formattedMessages = [{role:'system', content:finalSystemMessage}];
         chatHistory.slice(-5).forEach(msg => {
             
+            // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
+            let textOnly = msg.content;
+            if (textOnly.startsWith('[转账|')) {
+                const parts = textOnly.replace(/\[|\]/g, '').split('|');
+                const sender = parts[2];
+                const amt = parts[3];
+                const note = parts[4];
+                const status = parts[5];
+                
+                if (sender === 'user') {
+                    if (status === 'pending') {
+                        textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
+                    } else if (status === 'accepted') {
+                        textOnly = `[你已接收了我转账的 ${amt}元]`;
+                    } else if (status === 'returned') {
+                        textOnly = `[你已退回了我转账的 ${amt}元]`;
+                    }
+                } else {
+                    if (status === 'pending') {
+                        textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
+                    } else if (status === 'accepted') {
+                        textOnly = `[我已接收了你转账的 ${amt}元]`;
+                    } else if (status === 'returned') {
+                        textOnly = `[我已退回了你转账的 ${amt}元]`;
+                    }
+                }
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 翻译完毕，跳过下面直接进入下一条
+            } else if (textOnly.startsWith('[系统消息:')) {
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 直接处理系统提示
+            }
+
             // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+
             if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
                 // 把后面的排版代码一刀切掉，只保留前面的纯文字
                 let textOnly = msg.content.split('\n<div')[0];
@@ -3239,48 +3135,55 @@ TimeChecklist:
         const data=await response.json();
         let reply=data.choices[0].message.content;
 
-        // --- 新增：转账指令智能解析系统 ---
-        const lastSentMsg = chatHistory[chatHistory.length - 1];
-        if (lastSentMsg && lastSentMsg.role === 'user' && lastSentMsg.content.startsWith('[转账记录|')) {
-            const parts = lastSentMsg.content.match(/^\[转账记录\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\]$/);
-            if (parts && parts[4] === '0') { // 0说明还是待收状态
-                if (reply.includes('[接受转账]')) {
-                    lastSentMsg.content = `[转账记录|${parts[1]}|${parts[2]}|${parts[3]}|1|userToAi]`; 
-                    chatHistory.push({role: 'assistant', content: `[系统消息|TA已接收了你的转账]`});
-                    reply = reply.replace(/\[接受转账\]\n?/g, '');
-                } else if (reply.includes('[退回转账]')) {
-                    lastSentMsg.content = `[转账记录|${parts[1]}|${parts[2]}|${parts[3]}|2|userToAi]`; 
-                    chatHistory.push({role: 'assistant', content: `[系统消息|TA已退还了你的转账]`});
-                    addWalletRecord(`TA退回的转账`, parseFloat(parts[2]), 'income'); 
-                    reply = reply.replace(/\[退回转账\]\n?/g, '');
+        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+        let extraMessages = [];
+        let needsFullRender = false;
+        
+        // 检查 AI 是否偷偷接受或退回了转账
+        if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
+            const isAccept = reply.includes('【接受转账】');
+            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim(); // 抹除暗号
+            
+            // 倒序查找你发给它的最近一笔还没领的钱
+            for(let i = chatHistory.length - 1; i >= 0; i--) {
+                if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
+                    const amt = chatHistory[i].content.split('|')[3];
+                    if (isAccept) {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
+                    } else {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
+                    }
+                    needsFullRender = true;
+                    break;
                 }
             }
         }
-
-        let newMessages = [];
-        let aiTransferMatches = reply.match(/\[发起转账:(.*?):(.*?)\]/g);
-        if (aiTransferMatches) {
-            aiTransferMatches.forEach(match => {
-                const innerMatch = match.match(/\[发起转账:(.*?):(.*?)\]/);
-                if (innerMatch) {
-                    const amt = parseFloat(innerMatch[1]) || 0;
-                    const nt = innerMatch[2] || '转账';
-                    if(amt > 0) {
-                        const tId = 't_' + Date.now() + Math.floor(Math.random()*1000);
-                        newMessages.push({role:'assistant', content: `[转账记录|${tId}|${amt.toFixed(2)}|${nt}|0|aiToUser]`});
-                    }
-                }
-                reply = reply.replace(match, ''); 
-            });
-        }
         
-        reply = reply.trim();
+        // 检查 AI 是否主动向你发起转账
+        const transferRegex = /【发起转账：([\d\.]+)，备注：(.*?)】/g;
+        let match;
+        while ((match = transferRegex.exec(reply)) !== null) {
+            const amt = match[1];
+            const note = match[2] || '转账';
+            const transferId = 'tr_' + Date.now() + Math.random().toString().substr(2,4);
+            extraMessages.push({ role: 'assistant', content: `[转账|${transferId}|ai|${amt}|${note}|pending]` });
+        }
+        reply = reply.replace(/【发起转账：.*?】/g, '').trim();
+
+        if (needsFullRender) {
+            renderAllMessages(false); // 如果改了旧气泡的颜色状态，强制全局刷新一次画面
+        }
 
         // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
         const images = reply.match(imgRegex);
         const textOnly = reply.replace(imgRegex, '').trim();
 
+        // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
+        let newMessages = [];
+        newMessages = newMessages.concat(extraMessages); // 先弹系统消息和转账气泡，再弹AI的回复
         // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -3296,8 +3199,8 @@ TimeChecklist:
             });
         }
         
-        // 3. 如果没有任何文本也没有图，但是刚刚已经发送了系统消息或转账，就不需要兜底发空消息了
-        if (!textOnly && (!images || images.length === 0) && newMessages.length === 0 && reply) {
+        // 3. 兜底
+        if (!textOnly && (!images || images.length === 0)) {
             newMessages.push({role:'assistant', content: reply});
         }
         
@@ -3600,6 +3503,67 @@ function changeAnyImage(el) {
     };
     input.click();
 }
+// ================= 新增：转账功能引擎 =================
+function openTransferModal() {
+    document.getElementById('transfer-amount').value = '';
+    document.getElementById('transfer-note').value = '';
+    document.getElementById('transfer-modal').classList.remove('hidden');
+    toggleInventory(); // 关掉底部的 + 号菜单
+}
+
+function closeTransferModal() {
+    document.getElementById('transfer-modal').classList.add('hidden');
+}
+
+function confirmTransfer() {
+    const amt = document.getElementById('transfer-amount').value;
+    const note = document.getElementById('transfer-note').value || '转账';
+    if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('请输入有效的金额哦！');
+    
+    const transferId = 'tr_' + Date.now();
+    // 把记录隐藏在历史文本里：[转账|专属ID|发送人|金额|备注|状态]
+    const content = `[转账|${transferId}|user|${amt}|${note}|pending]`;
+    chatHistory.push({ role: 'user', content: content });
+    
+    closeTransferModal();
+    renderAllMessages(true);
+    
+    // 悄悄呼叫 AI 过来收钱
+    triggerAI();
+}
+
+function acceptTransfer(transferId, amt) {
+    let found = false;
+    for(let i=0; i<chatHistory.length; i++) {
+        if(chatHistory[i].content.includes(`[转账|${transferId}|`)) {
+            chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
+            found = true;
+            break;
+        }
+    }
+    if(found) {
+        chatHistory.push({ role: 'user', content: `[系统消息:你已收钱|${amt}]` });
+        renderAllMessages(false); // 全局刷新一遍
+        triggerAI(); // 让AI知道你领了红包，它可能会说句“不客气”
+    }
+}
+
+function returnTransfer(transferId, amt) {
+    let found = false;
+    for(let i=0; i<chatHistory.length; i++) {
+        if(chatHistory[i].content.includes(`[转账|${transferId}|`)) {
+            chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
+            found = true;
+            break;
+        }
+    }
+    if(found) {
+        chatHistory.push({ role: 'user', content: `[系统消息:你已退还|${amt}]` });
+        renderAllMessages(false); // 全局刷新一遍
+        triggerAI(); // 让AI知道你没要
+    }
+}
+// =================================================
 
 // ===== 新增：朋友圈发布逻辑 =====
 function openMomentsCompose() {
