@@ -981,6 +981,21 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
             </div>
 
+            <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                <div class="relative cursor-pointer flex-shrink-0" onclick="openWeightCharSelect()">
+                    <img id="daily-char-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm">
+                    <div class="absolute -bottom-1 -right-1 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">+</div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <textarea id="daily-feeling-input" class="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-[13px] outline-none resize-none h-14 text-gray-700" placeholder="运动累了？走了很多步？没睡好？在这里碎碎念吧..."></textarea>
+                </div>
+                <div class="flex-shrink-0">
+                    <button onclick="triggerDailyAI()" class="w-11 h-11 bg-blue-400 text-white rounded-full flex items-center justify-center text-xl shadow-md active:scale-90 transition-transform">
+                        ♥
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white rounded-2xl p-4 shadow-sm space-y-5">
                 
                 <div>
@@ -1686,12 +1701,16 @@ function closeWeightCharSelect() {
     document.getElementById('weight-char-modal').classList.add('hidden');
 }
 
-// 选中某个角色
+// 选中某个角色 (同步更新体重和日常的头像)
 function selectWeightChar(id) {
     currentWeightCharId = id;
     const friend = friendList.find(f => f.id === id);
     if (friend) {
-        document.getElementById('weight-char-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+        const avatarUrl = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+        const weightAvatar = document.getElementById('weight-char-avatar');
+        if (weightAvatar) weightAvatar.src = avatarUrl;
+        const dailyAvatar = document.getElementById('daily-char-avatar');
+        if (dailyAvatar) dailyAvatar.src = avatarUrl;
     }
     closeWeightCharSelect();
 }
@@ -1777,6 +1796,97 @@ async function triggerWeightAI() {
                 feelingInput.disabled = false; // 回复完了恢复可点击
             }
         }, 50); // 数字50是每个字出来的速度，越小越快，可以自己改
+
+    } catch (e) {
+        feelingInput.value = oldVal;
+        feelingInput.disabled = false;
+        alert("网络错误或API请求失败！");
+    }
+}
+
+// 日常活动(步数/运动/睡眠)爱心点击发送给AI
+async function triggerDailyAI() {
+    if (!currentWeightCharId) {
+        alert("请先点击左侧头像勾选一个角色哦！(和体重共用一个角色)");
+        return;
+    }
+    const feelingInput = document.getElementById('daily-feeling-input');
+    const feeling = feelingInput.value.trim();
+    
+    // 获取步数、运动、睡眠的数据
+    const steps = document.getElementById('steps-input').value.trim();
+    const exercise = document.getElementById('exercise-input').value.trim();
+    const sleep = document.getElementById('sleep-input').value.trim();
+    
+    if (!feeling && !steps && !exercise && !sleep) {
+        alert("填写一下今日的步数、运动或睡眠，或者在框里写点碎碎念吧！");
+        return;
+    }
+
+    const friend = friendList.find(f => f.id === currentWeightCharId);
+    if (!friend) return;
+
+    if (!config.apiKey) {
+        alert("请先在设置中配置 API Key！");
+        return;
+    }
+
+    feelingInput.disabled = true;
+    const oldVal = feelingInput.value;
+    feelingInput.value = "TA正在思考如何回复你...";
+
+    let prompt = `你扮演 ${friend.realName}。你的设定是：${friend.persona}。\n`;
+    if (friend.userPersona) {
+        prompt += `用户的人设是：${friend.userPersona}。\n`;
+    }
+    
+    let wxMemoryText = "";
+    if (friend.memoryList && friend.memoryList.length > 0) {
+        wxMemoryText = friend.memoryList.join('\n');
+    } else if (friend.aiMemory) {
+        wxMemoryText = friend.aiMemory;
+    }
+    if (wxMemoryText) {
+        prompt += `\n这是你们之间的聊天记忆：${wxMemoryText}\n`;
+    }
+
+    prompt += `\n【场景】：用户正在健康记录APP里记录今天的活动数据，TA刚对你发起了互动。`;
+    if (steps) prompt += `\n用户今天记录的步数是：${steps} 步。`;
+    if (exercise) prompt += `\n用户今天记录的运动时间是：${exercise} 分钟。`;
+    if (sleep) prompt += `\n用户今天记录的睡眠时间是：${sleep} 小时。`;
+    if (feeling) prompt += `\n用户在输入框对你说的碎碎念/感受是：${feeling}`;
+    
+    prompt += `\n【要求】：请你根据你的人设，结合过去的记忆，针对用户的步数/运动/睡眠数据和碎碎念，给出一句简短的回复（务必控制在50字以内）。要像活人一样自然，符合你们的关系。可以直接吐槽、关心或者鼓励。只输出你说的纯文本话语，不要带任何动作描写或者表情包代码。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [
+                    { role: 'system', content: prompt },
+                    { role: 'user', content: "看看我今天的活动记录，跟我说点什么吧。" }
+                ],
+                temperature: parseFloat(config.temperature) || 1.0,
+                max_tokens: 150
+            })
+        });
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+
+        feelingInput.value = "";
+        let i = 0;
+        const typeWriter = setInterval(() => {
+            if (i < reply.length) {
+                feelingInput.value += reply.charAt(i);
+                i++;
+            } else {
+                clearInterval(typeWriter);
+                feelingInput.disabled = false;
+            }
+        }, 50);
 
     } catch (e) {
         feelingInput.value = oldVal;
