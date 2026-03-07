@@ -372,7 +372,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
                 <div class="wx-divider-thin"></div>
                 <div class="bg-white">
-                    <div class="wx-menu-item" onclick="openMePage('钱包')">
+                    <div class="wx-menu-item" onclick="openWallet()">
                         <span class="text-[16px]">钱包</span>
                         <span class="wx-chevron">〉</span>
                     </div>
@@ -1542,7 +1542,112 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
     </div>
 
+    <div id="wallet-page" class="fixed inset-0 bg-[#f0f0f0] hidden z-[200] flex flex-col transition-transform duration-300 translate-x-full">
+        <div class="bg-[#07c160] pt-12 pb-4 px-4 flex items-center text-white relative">
+            <div onclick="closeWallet()" class="text-[28px] cursor-pointer active:opacity-70 z-10 p-2 -ml-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center font-bold text-[17px] pt-8 pointer-events-none">钱包</div>
+        </div>
+        <div class="bg-[#07c160] flex flex-col items-center pt-6 pb-14 text-white">
+            <div class="text-[14px] opacity-90 mb-2 flex items-center gap-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
+                我的零钱
+            </div>
+            <div class="text-[44px] font-bold mb-6 flex items-baseline gap-1">
+                <span class="text-[28px]">¥</span>
+                <span id="wallet-balance-display">0.00</span>
+            </div>
+            <button onclick="editBalance()" class="px-6 py-2 border border-white/60 rounded-full text-[14px] font-medium active:bg-white/20 transition-colors">修改余额</button>
+        </div>
+        <div class="flex-1 bg-white rounded-t-2xl -mt-6 overflow-y-auto pb-10 shadow-lg">
+            <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div class="font-bold text-[#333] text-[15px]">零钱明细</div>
+            </div>
+            <div id="wallet-transactions" class="flex flex-col">
+                </div>
+        </div>
+    </div>
+
 <script>
+// ================= 新增：钱包核心数据与逻辑 =================
+let walletBalance = parseFloat(localStorage.getItem('wx_wallet_balance')) || 888.88;
+let walletTransactions = JSON.parse(localStorage.getItem('wx_wallet_transactions')) || [];
+
+function saveWalletData() {
+    localStorage.setItem('wx_wallet_balance', walletBalance.toFixed(2));
+    localStorage.setItem('wx_wallet_transactions', JSON.stringify(walletTransactions));
+    renderWallet();
+}
+
+function renderWallet() {
+    const balanceEl = document.getElementById('wallet-balance-display');
+    if(balanceEl) balanceEl.innerText = walletBalance.toFixed(2);
+    
+    const transEl = document.getElementById('wallet-transactions');
+    if(transEl) {
+        transEl.innerHTML = '';
+        if(walletTransactions.length === 0) {
+            transEl.innerHTML = '<div class="text-center text-gray-400 text-[13px] py-10">暂无零钱明细</div>';
+            return;
+        }
+        [...walletTransactions].reverse().forEach(t => {
+            const isIncome = t.type === 'income';
+            const sign = isIncome ? '+' : '-';
+            const colorClass = isIncome ? 'text-[#07c160]' : 'text-[#333]';
+            transEl.innerHTML += `
+                <div class="px-5 py-4 border-b border-gray-50 flex justify-between items-center active:bg-gray-50">
+                    <div class="flex flex-col gap-1.5">
+                        <span class="text-[15px] text-[#333] font-medium">${t.title}</span>
+                        <span class="text-[12px] text-gray-400">${t.time}</span>
+                    </div>
+                    <div class="text-[18px] font-bold ${colorClass}">${sign}${t.amount.toFixed(2)}</div>
+                </div>
+            `;
+        });
+    }
+}
+
+function openWallet() {
+    const page = document.getElementById('wallet-page');
+    page.classList.remove('hidden');
+    setTimeout(() => { page.classList.remove('translate-x-full'); }, 10);
+    renderWallet();
+}
+
+function closeWallet() {
+    const page = document.getElementById('wallet-page');
+    page.classList.add('translate-x-full');
+    setTimeout(() => { page.classList.add('hidden'); }, 300);
+}
+
+function editBalance() {
+    const newBalance = prompt('请输入你要修改的真实钱包余额：', walletBalance.toFixed(2));
+    if (newBalance !== null && !isNaN(newBalance) && newBalance !== '') {
+        walletBalance = parseFloat(newBalance);
+        saveWalletData();
+        alert('✅ 余额修改成功！');
+    }
+}
+
+function addTransaction(title, amount, type) {
+    const now = new Date();
+    const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    walletTransactions.push({
+        title: title,
+        amount: parseFloat(amount),
+        type: type, 
+        time: timeStr
+    });
+    if (type === 'income') {
+        walletBalance += parseFloat(amount);
+    } else {
+        walletBalance -= parseFloat(amount);
+    }
+    saveWalletData();
+}
+// =========================================================
+
 /* 核心配置与状态 */
 let config = {
     baseUrl: 'https://api.openai.com/v1',
@@ -2603,7 +2708,7 @@ function renderAllMessages(isIncremental = false) {
             let iconClass = "transfer-icon";
             let bubbleClass = "transfer-bubble";
             let topText = isSelf ? "转账给TA" : "转账给你";
-            let bottomText = "微信转账";
+            let bottomText = "转账";
             
             if (status === 'accepted') {
                 bubbleClass += " accepted";
@@ -3148,13 +3253,15 @@ TimeChecklist:
             for(let i = chatHistory.length - 1; i >= 0; i--) {
                 if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
                     const amt = chatHistory[i].content.split('|')[3];
-                    if (isAccept) {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
-                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
-                    } else {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
-                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
-                    }
+                if (isAccept) {
+                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
+                    extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
+                } else {
+                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
+                    extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
+                    // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里 ===
+                    addTransaction('转账退回', amt, 'income');
+                }
                     needsFullRender = true;
                     break;
                 }
@@ -3520,6 +3627,15 @@ function confirmTransfer() {
     const note = document.getElementById('transfer-note').value || '转账';
     if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('请输入有效的金额哦！');
     
+    // === 钱包功能：余额不足判断 ===
+    if (Number(amt) > walletBalance) {
+        alert('❌ 余额不足!');
+        return;
+    }
+    // 扣除余额并记录账单
+    addTransaction('转账发出', amt, 'expense');
+    // ============================
+    
     const transferId = 'tr_' + Date.now();
     // 把记录隐藏在历史文本里：[转账|专属ID|发送人|金额|备注|状态]
     const content = `[转账|${transferId}|user|${amt}|${note}|pending]`;
@@ -3542,6 +3658,10 @@ function acceptTransfer(transferId, amt) {
         }
     }
     if(found) {
+        // === 钱包功能：收下对方的钱，增加余额 ===
+        addTransaction('收到转账', amt, 'income');
+        // ==================================
+        
         chatHistory.push({ role: 'user', content: `[系统消息:你已收钱|${amt}]` });
         renderAllMessages(false); // 全局刷新一遍
         triggerAI(); // 让AI知道你领了红包，它可能会说句“不客气”
