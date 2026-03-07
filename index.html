@@ -2684,11 +2684,17 @@ function renderAllMessages(isIncremental = false) {
             const action = sysData[0];
             const amt = sysData[1];
             
+            let friendRemark = "TA";
+            if (currentFriendId) {
+                const friend = friendList.find(f => f.id === currentFriendId);
+                if (friend && friend.remark) friendRemark = friend.remark;
+            }
+
             let text = action;
             if (action === '你已收钱') text = `你已收款 ¥${amt}`;
-            if (action === 'TA已收钱') text = `TA已收款 ¥${amt}`;
-            if (action === '你已退还') text = `你已退还了TA的转账 ¥${amt}`;
-            if (action === 'TA已退还') text = `TA已退还了你的转账 ¥${amt}`;
+            if (action === 'TA已收钱') text = `${friendRemark}已收款 ¥${amt}`;
+            if (action === '你已退还') text = `你已退还了${friendRemark}的转账 ¥${amt}`;
+            if (action === 'TA已退还') text = `${friendRemark}已退还了你的转账 ¥${amt}`;
             
             div.innerHTML = `<div class="system-msg w-full text-center text-[12px] text-gray-400 my-2">${text}</div>`;
             container.appendChild(div);
@@ -3253,15 +3259,15 @@ TimeChecklist:
             for(let i = chatHistory.length - 1; i >= 0; i--) {
                 if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
                     const amt = chatHistory[i].content.split('|')[3];
-                if (isAccept) {
-                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
-                    extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
-                } else {
-                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
-                    extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
-                    // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里 ===
-                    addTransaction('转账退回', amt, 'income');
-                }
+                    if (isAccept) {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
+                    } else {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
+                        // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里，并显示名字 ===
+                        addTransaction(`${friend.remark} 退回转账`, amt, 'income');
+                    }
                     needsFullRender = true;
                     break;
                 }
@@ -3627,13 +3633,19 @@ function confirmTransfer() {
     const note = document.getElementById('transfer-note').value || '转账';
     if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('请输入有效的金额哦！');
     
+    let friendRemark = "TA";
+    if (currentFriendId) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        if (friend && friend.remark) friendRemark = friend.remark;
+    }
+
     // === 钱包功能：余额不足判断 ===
     if (Number(amt) > walletBalance) {
         alert('❌ 余额不足!');
         return;
     }
-    // 扣除余额并记录账单
-    addTransaction('转账发出', amt, 'expense');
+    // 扣除余额并记录账单，带上角色名字
+    addTransaction(`转账给 ${friendRemark}`, amt, 'expense');
     // ============================
     
     const transferId = 'tr_' + Date.now();
@@ -3644,8 +3656,7 @@ function confirmTransfer() {
     closeTransferModal();
     renderAllMessages(true);
     
-    // 悄悄呼叫 AI 过来收钱
-    triggerAI();
+    // 【修改】：删除了悄悄呼叫 AI 的代码，现在需要你手动点击发送按钮 AI 才会回复
 }
 
 function acceptTransfer(transferId, amt) {
@@ -3658,8 +3669,13 @@ function acceptTransfer(transferId, amt) {
         }
     }
     if(found) {
-        // === 钱包功能：收下对方的钱，增加余额 ===
-        addTransaction('收到转账', amt, 'income');
+        let friendRemark = "TA";
+        if (currentFriendId) {
+            const friend = friendList.find(f => f.id === currentFriendId);
+            if (friend && friend.remark) friendRemark = friend.remark;
+        }
+        // === 钱包功能：收下对方的钱，增加余额，并显示名字 ===
+        addTransaction(`收到 ${friendRemark} 的转账`, amt, 'income');
         // ==================================
         
         chatHistory.push({ role: 'user', content: `[系统消息:你已收钱|${amt}]` });
