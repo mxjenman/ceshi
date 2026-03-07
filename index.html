@@ -949,8 +949,26 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div class="w-6"></div>
         </div>
         
+
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
             
+            <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                <div class="relative cursor-pointer flex-shrink-0" onclick="openWeightCharSelect()">
+                    <img id="weight-char-avatar" src="https://i.postimg.cc/76N2w5M7/IMG_2980.jpg" class="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm">
+                    <div class="absolute -bottom-1 -right-1 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">+</div>
+                </div>
+                
+                <div class="flex-1 min-w-0">
+                    <textarea id="weight-feeling-input" class="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-[13px] outline-none resize-none h-14 text-gray-700" placeholder="今天感觉如何？(填完体重后可以在这里碎碎念)"></textarea>
+                </div>
+                
+                <div class="flex-shrink-0">
+                    <button onclick="triggerWeightAI()" class="w-11 h-11 bg-red-400 text-white rounded-full flex items-center justify-center text-xl shadow-md active:scale-90 transition-transform">
+                        ♥
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white rounded-2xl p-4 shadow-sm">
                 <h3 class="font-bold text-[15px] mb-3 text-gray-800">体重记录 (公斤)</h3>
                 <div class="flex gap-2 mb-4">
@@ -1630,7 +1648,143 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
     </div>
 
+    <div id="weight-char-modal" class="fixed inset-0 bg-black/50 hidden z-[210] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">选择陪你记录的角色</h3>
+            <div id="weight-char-list" class="max-h-[250px] overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2 flex flex-col gap-2">
+                </div>
+            <button onclick="closeWeightCharSelect()" class="w-full py-2.5 bg-gray-100 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
+        </div>
+    </div>
+
 <script>
+// ================= 新增：体重记录互动功能逻辑 =================
+let currentWeightCharId = null;
+
+// 打开选择角色的弹窗
+function openWeightCharSelect() {
+    const list = document.getElementById('weight-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup); // 只展示单人好友，不展示群聊
+    if (friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加角色哦</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <div class="flex items-center gap-3 p-2 cursor-pointer hover:bg-gray-50 rounded-lg" onclick="selectWeightChar('${f.id}')">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
+                    <span class="font-medium text-[14px] text-gray-700 flex-1">${f.remark}</span>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('weight-char-modal').classList.remove('hidden');
+}
+
+// 关闭弹窗
+function closeWeightCharSelect() {
+    document.getElementById('weight-char-modal').classList.add('hidden');
+}
+
+// 选中某个角色
+function selectWeightChar(id) {
+    currentWeightCharId = id;
+    const friend = friendList.find(f => f.id === id);
+    if (friend) {
+        document.getElementById('weight-char-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    }
+    closeWeightCharSelect();
+}
+
+// 点击爱心发送给AI
+async function triggerWeightAI() {
+    if (!currentWeightCharId) {
+        alert("请先点击左侧头像勾选一个角色哦！");
+        return;
+    }
+    const feelingInput = document.getElementById('weight-feeling-input');
+    const feeling = feelingInput.value.trim();
+    const weight = document.getElementById('weight-input').value.trim();
+    
+    if (!feeling && !weight) {
+        alert("填写一下今日体重，或者在中间的框里写点碎碎念吧！");
+        return;
+    }
+
+    const friend = friendList.find(f => f.id === currentWeightCharId);
+    if (!friend) return;
+
+    if (!config.apiKey) {
+        alert("请先在设置中配置 API Key！");
+        return;
+    }
+
+    // 让输入框变成不可点击，并显示正在思考
+    feelingInput.disabled = true;
+    const oldVal = feelingInput.value;
+    feelingInput.value = "TA正在思考如何回复你...";
+
+    // 把角色设定、记忆等拼凑起来告诉AI
+    let prompt = `你扮演 ${friend.realName}。你的设定是：${friend.persona}。\n`;
+    if (friend.userPersona) {
+        prompt += `用户的人设是：${friend.userPersona}。\n`;
+    }
+    
+    // 读取你和这个角色在微信里的聊天记忆
+    let wxMemoryText = "";
+    if (friend.memoryList && friend.memoryList.length > 0) {
+        wxMemoryText = friend.memoryList.join('\n');
+    } else if (friend.aiMemory) {
+        wxMemoryText = friend.aiMemory;
+    }
+    if (wxMemoryText) {
+        prompt += `\n这是你们之间的聊天记忆：${wxMemoryText}\n`;
+    }
+
+    prompt += `\n【场景】：用户正在健康记录APP里记体重，TA刚对你发起了互动。`;
+    if (weight) prompt += `\n用户今天记录的体重是：${weight} 公斤。`;
+    if (feeling) prompt += `\n用户在输入框对你说的碎碎念/感受是：${feeling}`;
+    
+    prompt += `\n【要求】：请你根据你的人设，结合过去的记忆，针对用户的体重和碎碎念，给出一句简短的回复（务必控制在50字以内）。要像活人一样自然，符合你们的关系。可以直接吐槽、关心或者鼓励。只输出你说的纯文本话语，不要带任何动作描写或者表情包代码。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [
+                    { role: 'system', content: prompt },
+                    { role: 'user', content: "看看我今天的记录，跟我说点什么吧。" }
+                ],
+                temperature: parseFloat(config.temperature) || 1.0,
+                max_tokens: 150
+            })
+        });
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+
+        // 清空原本的文字，开始一字一字浮现（打字机效果）
+        feelingInput.value = "";
+        let i = 0;
+        const typeWriter = setInterval(() => {
+            if (i < reply.length) {
+                feelingInput.value += reply.charAt(i);
+                i++;
+            } else {
+                clearInterval(typeWriter);
+                feelingInput.disabled = false; // 回复完了恢复可点击
+            }
+        }, 50); // 数字50是每个字出来的速度，越小越快，可以自己改
+
+    } catch (e) {
+        feelingInput.value = oldVal;
+        feelingInput.disabled = false;
+        alert("网络错误或API请求失败！");
+    }
+}
+
 // ================= 新增：钱包核心数据与逻辑 =================
 let walletBalance = parseFloat(localStorage.getItem('wx_wallet_balance')) || 888.88;
 let walletTransactions = JSON.parse(localStorage.getItem('wx_wallet_transactions')) || [];
