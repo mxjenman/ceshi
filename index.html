@@ -767,8 +767,9 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <input type="file" id="moments-image-input" class="hidden" accept="image/*" onchange="previewMomentsImage(this)">
 
             <div class="mt-4 border-t pt-4 pb-10">
+            <div class="mt-4 border-t pt-4 pb-10">
                 <div class="flex justify-between items-center cursor-pointer active:opacity-50 transition-opacity" onclick="document.getElementById('moments-friend-selector').classList.toggle('hidden')">
-                    <span class="text-[15px] text-[#333] font-bold">召唤好友评论 (点击展开)</span>
+                    <span class="text-[15px] text-[#333] font-bold">谁可以评论</span>
                     <span class="text-gray-400 font-bold">▼</span>
                 </div>
                 <div id="moments-friend-selector" class="hidden mt-3 border border-gray-200 rounded-xl p-2 bg-gray-50 flex flex-col gap-1 max-h-[180px] overflow-y-auto">
@@ -3396,7 +3397,11 @@ function submitMomentsPost(){
             ${textHtml}
             ${imgHtml}
             <div class="flex justify-between items-center mt-2 relative">
-                <span class="text-[13px] text-gray-400">${timeStr}</span>
+                
+                <div class="flex items-center gap-3">
+                    <span class="text-[13px] text-gray-400">${timeStr}</span>
+                    <span class="text-[13px] text-[#576b95] cursor-pointer hover:opacity-70" onclick="deleteMoment('${postId}')">删除</span>
+                </div>
                 
                 <div class="bg-[#f7f7f7] px-2 py-0.5 rounded text-[#576b95] text-xs font-bold tracking-widest cursor-pointer hover:bg-gray-200" onclick="toggleMomentsAction('${postId}')">..</div>
                 
@@ -3406,7 +3411,7 @@ function submitMomentsPost(){
                     </div>
                     <div class="w-[1px] bg-white/20 my-2"></div>
                     <div class="flex-1 flex items-center justify-center gap-1 py-2 px-2 cursor-pointer hover:bg-black/20" onclick="replyMoment('${postId}', '自己')">
-                        <span class="text-[14px] leading-none mb-[1px]">💬</span> 评论
+                        评论
                     </div>
                 </div>
             </div>
@@ -3438,6 +3443,22 @@ function submitMomentsPost(){
                 generateMomentsAIComment(postId, text, imgSrc, friendId);
             }, index * 2500); 
         });
+    }
+}
+
+// 新增：删除朋友圈动态的功能
+function deleteMoment(postId) {
+    if (confirm("确定要删除这条动态吗？")) {
+        const momentEl = document.getElementById(postId);
+        if (momentEl) {
+            momentEl.remove();
+            
+            // 如果删完之后朋友圈空了，恢复“暂时没有动态”的提示
+            const feed = document.getElementById('moments-feed');
+            if (feed.children.length === 0) {
+                feed.innerHTML = '<div id="moments-empty-hint" class="text-center text-gray-400 pt-6 text-[14px]">暂时没有动态</div>';
+            }
+        }
     }
 }
 
