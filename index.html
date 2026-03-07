@@ -2372,7 +2372,7 @@ function renderFriendList() {
 
 function switchWechatTab(tab) {
     const tabs = ['messages', 'moments', 'me'];
-    const titles = { messages: '好友', moments: '朋友圈', me: '我' };
+    const titles = { messages: '好友', moments: '朋友圈', me: '' }; // 这里去掉了“我”字
     tabs.forEach(t => {
         document.getElementById(`wechat-tab-${t}`).classList.add('hidden');
         document.getElementById(`wx-nav-${t}`).classList.remove('wechat-nav-active');
