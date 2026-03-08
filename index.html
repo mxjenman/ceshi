@@ -2059,63 +2059,73 @@ let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
-// 【全自动存档魔法】每隔 1 秒钟，偷偷把你的所有数据保存到设备里！
-// 这样不管是删后台、刷新还是直接退出，你的聊天记录、个人资料、API设置永远不会丢！
-setInterval(() => {
-    // 基础核心数据保存
-    localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
-    localStorage.setItem('friend_list', JSON.stringify(friendList));
-    localStorage.setItem('os_config', JSON.stringify(config));
-    
-    // ==========================================
-    // 新增：无敌全面存档系统（保存音乐、朋友圈、论坛、桌面所有图片文字）
-    // ==========================================
-    
-    // 1. 保存音乐列表和点赞状态
-    if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
-    if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
-    
-    // 2. 保存朋友圈和论坛推文的画面（把发布的动态原封不动存下来）
-    const momentsFeed = document.getElementById('moments-feed');
-    if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
-    
-    const forumFeed = document.getElementById('forum-feed');
-    if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
-    
-    const profilePostsFeed = document.getElementById('profile-posts-feed');
-    if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
-
-    // 3. 保存主屏幕换过的壁纸
-    const desktopBody = document.getElementById('desktop-body');
-    if (desktopBody && desktopBody.style.backgroundImage) {
-        localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
-    }
-
-    // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
-    let customDOMState = {};
-    const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-    
-    editableElements.forEach((el, index) => {
-        if (!el.id) el.id = 'auto_save_id_' + index; // 给没有名字的元素强行打上编号
+// 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
+function performGlobalSave() {
+    try {
+        // 基础核心数据保存
+        localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        localStorage.setItem('os_config', JSON.stringify(config));
         
-        if (el.tagName === 'IMG') {
-            customDOMState[el.id] = el.src;
-        } else {
-            customDOMState[el.id + '_html'] = el.innerHTML;
-            if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
+        // 1. 保存音乐列表和点赞状态
+        if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
+        if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
+        
+        // 2. 保存朋友圈和论坛推文的画面
+        const momentsFeed = document.getElementById('moments-feed');
+        if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
+        const forumFeed = document.getElementById('forum-feed');
+        if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
+        const profilePostsFeed = document.getElementById('profile-posts-feed');
+        if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
+
+        // 3. 保存主屏幕换过的壁纸
+        const desktopBody = document.getElementById('desktop-body');
+        if (desktopBody && desktopBody.style.backgroundImage) {
+            localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
         }
-    });
 
-    // 额外强制保存一些特殊文字（比如关注人数、桌面时间日期等）
-    const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
-    specialIds.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) customDOMState[id + '_html'] = el.innerHTML;
-    });
+        // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
+        let customDOMState = {};
+        const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+        
+        editableElements.forEach((el, index) => {
+            if (!el.id) el.id = 'auto_save_id_' + index;
+            if (el.tagName === 'IMG') {
+                customDOMState[el.id] = el.src;
+            } else {
+                customDOMState[el.id + '_html'] = el.innerHTML;
+                if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
+            }
+        });
 
-    localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
-    
-}, 1000);
+        // 额外强制保存一些特殊文字
+        const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
+        specialIds.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) customDOMState[id + '_html'] = el.innerHTML;
+        });
+
+        localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+    } catch (e) {
+        // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
+        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+            if (!window.hasShownQuotaAlert) {
+                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
+                window.hasShownQuotaAlert = true;
+            }
+        }
+    }
+}
+
+// 1. 常规每隔1秒钟偷偷保存
+setInterval(performGlobalSave, 1000);
+
+// 2. 苹果系统专属救命稻草：在你上滑杀后台、切回桌面的那一瞬间，强制瞬间保存！
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') performGlobalSave();
+});
+window.addEventListener('pagehide', performGlobalSave);
 
 // 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
 const savedConfig = JSON.parse(localStorage.getItem('os_config'));
