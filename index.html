@@ -4085,18 +4085,20 @@ function editAnyText(id) {
     if (res !== null && res.trim() !== '') el.innerText = res;
 }
 
-function changeAnyImage(el) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = e => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = ev => {
-            el.style.backgroundImage = `url(${ev.target.result})`;
-            el.style.backgroundSize = 'cover';
-            el.style.backgroundPosition = 'center';
-            el.innerHTML = '';
+function changeAnyImage(el){
+    const input=document.createElement('input');
+    input.type='file'; input.accept='image/*';
+    input.onchange=e=>{
+        const file=e.target.files[0];
+        const reader=new FileReader();
+        reader.onload=ev=>{ 
+            el.innerHTML=`<img src="${ev.target.result}" class="w-full h-full object-cover">`;
+            // 【新增魔法：把下方小组件上传的图片也偷偷存进手机里】
+            let savedImages = JSON.parse(localStorage.getItem('os_any_images')) || {};
+            const allElements = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
+            let elementIndex = Array.from(allElements).indexOf(el);
+            savedImages['index_' + elementIndex] = ev.target.result;
+            localStorage.setItem('os_any_images', JSON.stringify(savedImages));
         };
         reader.readAsDataURL(file);
     };
@@ -4851,9 +4853,14 @@ window.onload = () => {
     syncProfileToAI();
     renderFriendList(); 
     applyDarkModeStyle(); 
-    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 
-    // 【新增：一打开网页，就把保存的所有头像和背景贴到画面上！】
+    // 【1. 终极清理魔法：如果手机记忆里存的还是那张烦人的默认图，强制清空它！】
+    if (userProfile.avatar && userProfile.avatar.includes('IMG-2980')) userProfile.avatar = '';
+    if (userProfile.widgetLeftAvatar && userProfile.widgetLeftAvatar.includes('IMG-2980')) userProfile.widgetLeftAvatar = '';
+    if (userProfile.widgetRightAvatar && userProfile.widgetRightAvatar.includes('IMG-2980')) userProfile.widgetRightAvatar = '';
+    if (userProfile.forumAvatar && userProfile.forumAvatar.includes('IMG-2980')) userProfile.forumAvatar = '';
+
+    // 【2. 把你自己上传的新头像和背景贴上去】
     if (userProfile.avatar) updateGlobalAvatar(userProfile.avatar);
     if (userProfile.widgetLeftAvatar) document.getElementById('avatar-left').src = userProfile.widgetLeftAvatar;
     if (userProfile.widgetRightAvatar) document.getElementById('avatar-right').src = userProfile.widgetRightAvatar;
@@ -4863,6 +4870,23 @@ window.onload = () => {
     }
     if (userProfile.momentsBg) document.getElementById('moments-bg-img').src = userProfile.momentsBg;
     if (userProfile.forumBg) document.getElementById('profile-bg').src = userProfile.forumBg;
+
+    // 【3. 恢复下方小组件（照片/小头像）的自定义图片】
+    let savedImages = JSON.parse(localStorage.getItem('os_any_images')) || {};
+    const allElements = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
+    allElements.forEach((el, index) => {
+        if (savedImages['index_' + index]) {
+            el.innerHTML = `<img src="${savedImages['index_' + index]}" class="w-full h-full object-cover">`;
+        }
+    });
+
+    // 【4. 全网大扫除：把页面上任何角落残留的默认图，瞬间变成干净的高级浅灰色底！】
+    document.querySelectorAll('img').forEach(img => {
+        if (img.src.includes('IMG-2980') || img.src.includes('IMG_2980')) {
+            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+            img.style.backgroundColor = '#e5e7eb';
+        }
+    });
 };
 
 // ================= 新增：短信(iMessage)功能模块 =================
