@@ -873,19 +873,6 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
         </div>
     </div>
 
-    <div id="forum-comment-char-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
-            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">选择要评论的角色</h3>
-            <p class="text-[12px] text-gray-500 mb-3 text-center">选中的角色和陌生网友都会对该推文发表评论</p>
-            <div id="forum-comment-char-list" class="overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2 flex-1">
-            </div>
-            <div class="flex gap-3 shrink-0">
-                <button onclick="closeForumCommentModal()" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
-                <button onclick="executeForumCommentGenerate()" class="flex-1 py-2.5 bg-black text-white rounded-[30px] font-bold text-[15px] active:scale-95 shadow-sm">开始生成</button>
-            </div>
-        </div>
-    </div>
-
     <div id="forum-detail-screen" class="page-layer slide-hidden flex flex-col z-[100] bg-white">
         <div class="h-14 bg-white/90 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10 shrink-0">
             <button onclick="closeForumDetail()" class="back-icon w-10 flex justify-start">
@@ -4052,9 +4039,43 @@ function submitPost(){
     const text = document.getElementById('post-text').value.trim();
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
+    
     const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    addPostToFeed(userProfile.name, userProfile.handle, text, imgSrc, timeStr, true);
+    const timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+    
+    // 【修改】将自己发布的帖子也加入系统记忆，变得和AI帖子一模一样
+    const newPost = {
+        isChar: false,
+        charId: "",
+        name: userProfile.name,
+        handle: userProfile.handle,
+        text: text,
+        img: imgSrc,
+        time: timeStr,
+        comments: [],
+        finalAvatar: userProfile.avatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
+        isUserPost: true
+    };
+    
+    currentForumPostsData.unshift(newPost); // 放到记忆最前面
+    currentForumPostsData.forEach((p, i) => p.listIndex = i); // 重新排队号
+    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+    
+    // 重新刷新广场显示
+    const feed = document.getElementById('forum-feed');
+    const hint = document.getElementById('empty-hint');
+    if(hint) hint.remove();
+    feed.innerHTML = "";
+    currentForumPostsData.forEach(p => {
+        feed.appendChild(createForumPostNode(p));
+    });
+    
+    // 如果有个人主页，也放进去
+    const profileFeed = document.getElementById('profile-posts-feed');
+    if (profileFeed) {
+        profileFeed.prepend(createForumPostNode(newPost));
+    }
+    
     closeCompose();
 }
 
@@ -4078,41 +4099,58 @@ function changeForumAvatar() {
 }
 
 function addPostToFeed(name, handle, text, img, time, isUserPost = false){
-    const newPost = {
-        isUser: isUserPost,
-        name: name,
-        handle: handle,
-        text: text,
-        imgSrc: img,
-        time: time,
-        comments: [],
-        likes: 0,
-        retweets: 0,
-        finalAvatar: isUserPost ? (document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg") : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
-    };
-    
-    currentForumPostsData.unshift(newPost);
-    currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
-    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-    
-    refreshForumFeed();
-}
-
-function refreshForumFeed() {
-    const feed = document.getElementById('forum-feed');
+    const squareFeed = document.getElementById('forum-feed');
     const profileFeed = document.getElementById('profile-posts-feed');
-    if(feed) feed.innerHTML = '';
-    if(profileFeed) profileFeed.innerHTML = '';
-    
-    if (currentForumPostsData.length === 0) {
-        if(feed) feed.innerHTML = '<div id="empty-hint" class="p-10 text-center text-gray-400">暂无动态，点击右上角同步广场</div>';
-        return;
-    }
-    
-    currentForumPostsData.forEach(p => {
-        if(feed) feed.appendChild(createForumPostNode(p));
-        if(p.isUser && profileFeed) profileFeed.appendChild(createForumPostNode(p));
-    });
+    const hint = document.getElementById('empty-hint');
+    if(hint) hint.remove();
+
+    const createNode = () => {
+        const div = document.createElement('div');
+        div.className = "tweet-card flex gap-3 animate-in";
+
+        // 修改：论坛发帖使用独立的论坛头像，不再去读取微信头像
+        const forumAvatarSrc = document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+        
+        const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+
+        div.innerHTML = `
+            <img src="${avatarUrl}" class="tweet-avatar">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-[15px] truncate">${name}</span>
+                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span>
+                </div>
+                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div>
+                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
+                
+                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4">
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')">
+                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id1}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')">
+                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id2}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')">
+                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id3}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')">
+                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id4}">0</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        return div;
+    };
+    squareFeed.prepend(createNode());
+    if(isUserPost) profileFeed.prepend(createNode());
 }
 
 // 全局保存当前生成的帖子，用于详情页展示
@@ -4130,10 +4168,10 @@ function openForumCharSelect() {
             container.innerHTML += `
                 <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
                     <div class="flex items-center gap-3">
-                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
-                        <span class="font-bold text-[14px] text-gray-700">${f.remark}</span>
+                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-[14px] text-gray-800">${f.remark}</span>
                     </div>
-                    <input type="checkbox" class="w-5 h-5 accent-black forum-char-checkbox" value="${f.id}">
+                    <input type="checkbox" class="w-4 h-4 accent-black forum-char-checkbox" value="${f.id}">
                 </label>
             `;
         });
@@ -4145,26 +4183,23 @@ function closeForumCharSelect() {
     document.getElementById('forum-char-select-modal').classList.add('hidden');
 }
 
+// 核心：单次 API 请求生成全部内容
 async function executeForumGenerate() {
-    if (!config.apiKey) {
-        alert("请先在设置中填写 API Key！");
-        return;
-    }
-
-    const checkboxes = document.querySelectorAll('.forum-char-checkbox:checked');
-    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-
-    document.querySelector('#forum-char-select-modal button:last-child').innerText = "生成中...";
-    document.querySelector('#forum-char-select-modal button:last-child').disabled = true;
-
+    if (!config.apiKey) return alert("请先配置 API Key");
+    
+    const checkboxes = document.querySelectorAll('.forum-char-checkbox');
+    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    closeForumCharSelect();
+    
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-gray-500 animate-pulse">正在连接世界线，加载推文中...</div>';
-
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
+    
     let prompt = "";
     if (selectedIds.length === 0) {
-        prompt = `你需要生成 15 个由不同陌生网友发布的论坛帖子。这些帖子应该来自不同的话题区域（比如生活吐槽、游戏、情感求助、工作等）。
+        // 【情况一：未勾选角色】
+        prompt = `你需要生成 10 到 15 个由不同陌生网友发布的论坛帖子。这些帖子应该来自不同的话题区域（比如生活吐槽、游戏、情感求助、工作等）。
 每个帖子需要附带 3 到 5 条评论，其中必须包含其他陌生网友的回复，以及贴主对评论的回复互动。
-
 请返回 JSON 格式，严格遵循以下结构：
 {
   "posts": [
@@ -4181,6 +4216,7 @@ async function executeForumGenerate() {
   ]
 }`;
     } else {
+        // 【情况二：勾选了角色】提取记忆和人设
         let charDetails = "";
         selectedIds.forEach(id => {
             const friend = friendList.find(f => f.id === id);
@@ -4190,12 +4226,11 @@ async function executeForumGenerate() {
                 charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
             }
         });
-
+        
         prompt = `你需要生成两部分论坛帖子：
 第一部分：7 到 10 个由不同陌生网友发布的随机帖子（话题区域随意，如搞笑、求助、分享等）。
 第二部分：针对以下每一个提供的角色，生成 3 到 5 个基于他们的人设、以及他们和用户之间聊天记忆的帖子（比如角色求助恋爱问题、秀恩爱、分享日常等）。
 【重要】：所有的帖子都需要附带 3 到 5 条评论。如果是陌生人的帖子，评论是陌生人和贴主互动；如果是角色的帖子，评论里要有陌生网友和该角色的回复互动。
-
 角色列表及记忆如下：
 ${charDetails}
 
@@ -4226,43 +4261,38 @@ ${charDetails}
                 messages: [{role: 'user', content: prompt}],
                 response_format: { type: "json_object" },
                 temperature: 0.9,
-                max_tokens: 4000
+                max_tokens: 4000 // 防止因为字数太多被截断
             })
         });
-
+        
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
+        currentForumPostsData = parsed.posts || [];
+
+        // 随机打乱数组，让角色和陌生人帖子混合显示
+        currentForumPostsData.sort(() => Math.random() - 0.5);
         
-        let generatedPosts = parsed.posts || [];
-        
-        // 提取并处理头像
-        generatedPosts.forEach(p => {
-            let avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
+        feed.innerHTML = "";
+        currentForumPostsData.forEach((p, index) => {
+            p.listIndex = index;
+            // 处理头像逻辑
+            let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
             if (p.isChar && p.charId) {
                 const f = friendList.find(x => x.id === p.charId);
                 if (f && f.avatar) avatar = f.avatar;
+            } else {
+                avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
             }
             p.finalAvatar = avatar;
-            p.isUser = false; // AI生成的不是用户的
-            p.likes = Math.floor(Math.random() * 50) + 1;
-            p.retweets = 0;
+            feed.appendChild(createForumPostNode(p));
         });
 
-        // 保护你以前自己发的帖子，防止被刷新掉
-        const userPosts = currentForumPostsData.filter(p => p.isUser);
-        currentForumPostsData = [...userPosts, ...generatedPosts].sort(() => Math.random() - 0.5);
-        
-        currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
-        
+        // 【关键修复】等系统把所有推文的头像和顺序都算好之后，再存入记忆！
         localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        refreshForumFeed();
+        
     } catch(e) {
         console.error(e);
         feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，可能是配置错误或返回结果超长被截断了</div>';
-    } finally {
-        document.querySelector('#forum-char-select-modal button:last-child').innerText = "开始生成";
-        document.querySelector('#forum-char-select-modal button:last-child').disabled = false;
-        closeForumCharSelect();
     }
 }
 
@@ -4272,29 +4302,27 @@ function createForumPostNode(post) {
     div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
     div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
     
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "");
-    
     div.innerHTML = `
         <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1">
-                <span class="font-bold text-[15px] text-black truncate">${post.name}</span>
-                <span class="text-gray-500 text-[14px] truncate">${post.handle} · ${post.time || '刚刚'}</span>
+                <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
+                <span class="text-gray-500 text-[14px] truncate">${post.handle} · 刚刚</span>
             </div>
-            <div class="text-[15px] mt-1 text-[#0f1419] leading-relaxed break-words pr-2">${(post.text||'').replace(/\n/g, '<br>')}</div>
-            ${imgHtml}
-            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] pr-8">
+            <div class="text-[15px] text-[#0f1419] mt-0.5 leading-snug break-words pr-2">${post.text}</div>
+            
+            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] max-w-[200px]">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     <span>${post.comments ? post.comments.length : 0}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    <span>${post.retweets || 0}</span>
+                    <span>0</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <svg class="w-[18px] h-[18px] opacity-70 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    <span>${post.likes !== undefined ? post.likes : 0}</span>
+                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <span>${Math.floor(Math.random() * 50) + 1}</span>
                 </div>
             </div>
         </div>
@@ -4306,255 +4334,60 @@ function createForumPostNode(post) {
 function openForumDetail(index) {
     const post = currentForumPostsData[index];
     if (!post) return;
+    
     const container = document.getElementById('forum-detail-content');
+    
     let commentsHtml = '';
-
-    // 【核心判断】：只要不是自己发的，也不是AI角色发的，那就是“纯陌生网友推文”
-    // 纯陌生网友推文不允许被点击评论、也不允许生成回复
-    let isStrangerPost = !post.isUser && !post.isChar;
-
     if (post.comments && post.comments.length > 0) {
-        post.comments.forEach((c, cIdx) => {
+        post.comments.forEach(c => {
+            // 评论头像匹配：如果是贴主自己回复，沿用贴主头像；如果恰好匹配上已有角色，用角色头像；其余用随机像素头像
             let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
-            // 如果是发帖人自己的评论，用发帖人的头像
             if (c.name === post.name) {
                 cAvatar = post.finalAvatar;
             } else {
-                // 尝试在好友列表里找头像
                 const f = friendList.find(x => x.realName === c.name || x.remark === c.name);
                 if (f && f.avatar) cAvatar = f.avatar;
-                // 如果是用户自己的名字，用用户的头像
-                if (c.name === userProfile.name) cAvatar = userProfile.avatar;
             }
             
-            // 陌生人推文底下的评论不能点击回复
-            let commentClickAction = isStrangerPost ? '' : `onclick="replyToForumComment(${index}, '${c.name}')"`;
-            let commentCursor = isStrangerPost ? '' : 'cursor-pointer active:bg-gray-50';
-            
             commentsHtml += `
-            <div class="flex gap-3 px-4 py-3 border-b border-gray-100 ${commentCursor}" ${commentClickAction}>
-                <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
-                <div class="flex-1">
-                    <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
-                    <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
+                <div class="flex gap-3 px-4 py-3 border-b border-gray-100">
+                    <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
+                    <div class="flex-1">
+                        <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
+                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
+                    </div>
                 </div>
-            </div>
             `;
         });
     } else {
         commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
     }
 
-    let textHtml = post.text ? `<div class="text-[17px] text-[#0f1419] mt-2 mb-3 break-words leading-relaxed">${post.text}</div>` : '';
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="w-full rounded-2xl border border-gray-100 mb-3 object-cover max-h-[400px]">` : (post.img ? `<img src="${post.img}" class="w-full rounded-2xl border border-gray-100 mb-3 object-cover max-h-[400px]">` : '');
-
-    // 按钮样式和点击事件判断
-    let btnCursor = isStrangerPost ? 'opacity-50' : 'cursor-pointer active:scale-90 transition-transform';
-    let retweetAction = isStrangerPost ? '' : `onclick="openForumCommentGenerateModal(${index})"`;
-    // 修改点：主评论按钮调用 replyToForumPost，直接评论推文本身
-    let commentAction = isStrangerPost ? '' : `onclick="replyToForumPost(${index})"`;
-
-    let actionsHtml = `
-    <div class="flex justify-between items-center text-gray-500 py-3 border-t border-b border-gray-100 px-2">
-        <div class="flex items-center gap-2 ${btnCursor}" ${commentAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> ${post.comments ? post.comments.length : 0}</div>
-        <div class="flex items-center gap-2 ${btnCursor}" ${retweetAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> ${post.retweets || 0}</div>
-        <div class="flex items-center gap-2 cursor-pointer active:scale-90 transition-transform" onclick="toggleForumPostLike(${index})"><svg class="w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> ${post.likes}</div>
-        <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></div>
-    </div>
-    `;
-
     container.innerHTML = `
-        <div class="p-4">
-            <div class="flex gap-3 items-center mb-4">
+        <div class="p-4 border-b-8 border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
                 <img src="${post.finalAvatar}" class="w-12 h-12 rounded-full object-cover">
                 <div>
-                    <div class="font-bold text-[15px] text-black">${post.name}</div>
-                    <div class="text-[14px] text-gray-500">${post.handle} · ${post.time}</div>
+                    <div class="font-bold text-[16px] text-black">${post.name}</div>
+                    <div class="text-gray-500 text-[14px]">${post.handle}</div>
                 </div>
             </div>
-            ${textHtml}
-            ${imgHtml}
-            <div class="mt-4">
-                ${actionsHtml}
+            <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${post.text.replace(/\n/g, '<br>')}</div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · 智能生成</div>
+            <div class="flex justify-around items-center pt-3 text-gray-500">
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></div>
             </div>
         </div>
-        <div class="pb-6">
+        <div class="font-bold text-[16px] p-4 border-b border-gray-100">评论区</div>
+        <div class="pb-10">
             ${commentsHtml}
         </div>
     `;
     
     document.getElementById('forum-detail-screen').classList.remove('slide-hidden');
 }
-
-// ================= 新增论坛点赞与评论生成功能模块 =================
-
-window.toggleForumPostLike = function(index) {
-    const post = currentForumPostsData[index];
-    if(!post) return;
-    if(post.isLiked) {
-        post.isLiked = false;
-        post.likes = Math.max(0, post.likes - 1);
-    } else {
-        post.isLiked = true;
-        post.likes += 1;
-    }
-    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-    refreshForumFeed();
-    openForumDetail(index);
-};
-
-// 新增：用户直接评论推文（比如你在自己推文下留言）
-window.replyToForumPost = function(postIndex) {
-    const text = prompt(`添加评论:`);
-    if (text && text.trim()) {
-        const post = currentForumPostsData[postIndex];
-        if(!post.comments) post.comments = [];
-        post.comments.push({ name: userProfile.name, text: text.trim() });
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        refreshForumFeed();
-        openForumDetail(postIndex);
-    }
-};
-
-// 用户回复推文下的某条特定评论
-window.replyToForumComment = function(postIndex, targetName) {
-    const text = prompt(`回复 ${targetName}:`);
-    if (text && text.trim()) {
-        const post = currentForumPostsData[postIndex];
-        const replyText = `回复 <span class="text-blue-500">${targetName}</span>：${text.trim()}`;
-        if(!post.comments) post.comments = [];
-        post.comments.push({ name: userProfile.name, text: replyText });
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        refreshForumFeed();
-        openForumDetail(postIndex);
-    }
-};
-
-let currentForumCommentPostIndex = -1;
-
-window.openForumCommentGenerateModal = function(index) {
-    currentForumCommentPostIndex = index;
-    const container = document.getElementById('forum-comment-char-list');
-    container.innerHTML = '';
-    const friends = friendList.filter(f => !f.isGroup);
-    if (friends.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加任何角色</div>';
-    } else {
-        friends.forEach(f => {
-            container.innerHTML += `
-            <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
-                <div class="flex items-center gap-3">
-                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
-                    <span class="font-bold text-[14px] text-gray-700">${f.remark}</span>
-                </div>
-                <input type="checkbox" class="w-5 h-5 accent-black forum-comment-char-checkbox" value="${f.id}">
-            </label>
-            `;
-        });
-    }
-    document.getElementById('forum-comment-char-modal').classList.remove('hidden');
-};
-
-window.closeForumCommentModal = function() {
-    document.getElementById('forum-comment-char-modal').classList.add('hidden');
-};
-
-window.executeForumCommentGenerate = async function() {
-    if (!config.apiKey) return alert("请填写 API Key！");
-    const checkboxes = document.querySelectorAll('.forum-comment-char-checkbox:checked');
-    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-    
-    const post = currentForumPostsData[currentForumCommentPostIndex];
-    if (!post) return;
-    
-    document.querySelector('#forum-comment-char-modal button:last-child').innerText = "生成中...";
-    document.querySelector('#forum-comment-char-modal button:last-child').disabled = true;
-
-    let charDetails = "";
-    selectedIds.forEach(id => {
-        const friend = friendList.find(f => f.id === id);
-        if (friend) {
-            let memory = friend.memoryList ? friend.memoryList.join(';') : '';
-            charDetails += `- 角色名: ${friend.realName || friend.remark}, 设定: ${friend.persona}。聊天记忆: ${memory}\n`;
-        }
-    });
-
-    let existingCommentsText = "";
-    if (post.comments && post.comments.length > 0) {
-        existingCommentsText = "\n当前推文下已有的评论（你可以针对这些评论进行互动）：\n";
-        post.comments.forEach(c => {
-            // 清理掉之前带的HTML颜色代码，方便AI阅读
-            existingCommentsText += `[${c.name}]: ${c.text.replace(/<[^>]+>/g, '')}\n`;
-        });
-    }
-    
-    let prompt = `你正在扮演论坛里的网友和特定角色，对下面的推文发表评论或回复已有评论。
-推文发布时间：${post.time}
-贴主昵称：${post.name}
-正文：${post.text || '分享了图片'}${existingCommentsText}
-
-请生成 3 到 5 条评论，要求如下：
-1. 包含 1-2 条来自不同“陌生网友”的随机评论。
-2. 如果下面提供了特定角色的设定，请务必让每个角色都发表 1 条符合他们人设和记忆的评论（直接用他们的名字作为昵称发表）。
-3. 【重要】：如果推文是用户（${userProfile.name}）发的，或者底下的评论里有用户（${userProfile.name}）的发言，勾选的角色必须优先针对用户的配图、正文或发言进行互动回复！（如果是回复别人，格式必须为：回复 <span class="text-blue-500">被回复人昵称</span>：回复内容）。
-
-特定角色列表：
-${charDetails}
-
-请返回 JSON 格式，严格遵循以下结构：
-{
-  "comments": [
-    {"name": "评论者昵称", "text": "评论内容"}
-  ]
-}`;
-
-    try {
-        let messagePayload = [];
-        let imageUrl = post.imgSrc || post.img;
-        // 如果用户的推文带了图片，让AI长眼睛看图回复！
-        if (imageUrl && imageUrl.startsWith('data:image')) {
-            messagePayload = [
-                { type: 'text', text: prompt },
-                { type: 'image_url', image_url: { url: imageUrl } }
-            ];
-        } else {
-            messagePayload = [
-                { type: 'text', text: prompt }
-            ];
-        }
-
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{role: 'user', content: messagePayload}],
-                response_format: { type: "json_object" },
-                temperature: 0.9,
-                max_tokens: 1500
-            })
-        });
-
-        const data = await response.json();
-        const parsed = JSON.parse(data.choices[0].message.content);
-
-        if (parsed.comments && parsed.comments.length > 0) {
-            if(!post.comments) post.comments = [];
-            post.comments = post.comments.concat(parsed.comments);
-            post.retweets = (post.retweets || 0) + 1;
-            localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-            refreshForumFeed();
-            openForumDetail(currentForumCommentPostIndex);
-        }
-    } catch(e) {
-        alert("生成评论失败！请检查网络配置，或检查您当前使用的AI模型是否支持图片识别功能（如果推文带了图，需要能看图的模型哦）。");
-    } finally {
-        document.querySelector('#forum-comment-char-modal button:last-child').innerText = "开始生成";
-        document.querySelector('#forum-comment-char-modal button:last-child').disabled = false;
-        closeForumCommentModal();
-    }
-};
-=======================================================
 
 function closeForumDetail() {
     document.getElementById('forum-detail-screen').classList.add('slide-hidden');
