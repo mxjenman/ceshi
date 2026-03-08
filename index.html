@@ -172,11 +172,11 @@
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
-                        <img id="avatar-left" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('left')">
+                        <img id="avatar-left" class="widget-avatar" src="" onclick="changeAvatar('left')">
                     </div>
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('right')">(˶⁃ ω ⁃˶)</span>
-                        <img id="avatar-right" class="widget-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeAvatar('right')">
+                        <img id="avatar-right" class="widget-avatar" src="" onclick="changeAvatar('right')">
                     </div>
                 </div>
                 <div id="widget-text" class="widget-text" onclick="editWidgetText()">我不想隔着屏幕和你说话</div>
@@ -260,7 +260,7 @@
 backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px solid rgba(255,255,255,0.2); transform: translateY(-10px);">
                 <div class="flex gap-4 items-center mb-3">
                     <div class="w-[50px] h-[50px] bg-gray-300 rounded-[12px] flex-shrink-0 overflow-hidden shadow-md">
-                        <img id="widget-cover" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
+                        <img id="widget-cover" src="" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
                         <div class="font-bold text-[16px] truncate text-gray-500 music-widget-text drop-shadow-sm" id="music-title">暂无歌曲</div>
@@ -351,7 +351,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                     <img id="moments-bg-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="background-color: #a3a3a3;" class="w-full h-full object-cover cursor-pointer" onclick="editProfilePart('moments-bg')">
                     
                     <span class="moments-name" id="wx-moments-name">Gemini User</span>
-                    <img id="wx-moments-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="moments-avatar">
+                    <img id="wx-moments-avatar" src="" class="moments-avatar">
                 </div>
                 <div id="moments-feed" class="mt-10 p-4 space-y-8">
                     <div id="moments-empty-hint" class="text-center text-gray-400 pt-6 text-[14px]">暂时没有动态</div>
@@ -360,7 +360,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
 
             <div id="wechat-tab-me" class="hidden bg-white min-h-full">
                 <div class="wx-me-header">
-                    <img id="wx-me-avatar" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
+                    <img id="wx-me-avatar" src="" class="wx-me-avatar-rect" onclick="editProfilePart('avatar')">
                     <div class="flex items-center gap-3">
                         <span id="wx-me-name" onclick="editProfilePart('name')">{{user}}</span>
                         <div class="wx-status-tag" onclick="editStatus()">
@@ -824,7 +824,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <div id="view-profile" class="hidden">
                 <div class="relative">
                     <img id="profile-bg" class="profile-banner" src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800" onclick="editProfilePart('bg')">
-                    <img id="profile-avatar" class="profile-avatar-main" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" onclick="changeForumAvatar()">
+                    <img id="profile-avatar" class="profile-avatar-main" src="" onclick="changeForumAvatar()">
                 </div>
                 <div class="px-4 mt-2">
                     <div class="flex justify-between items-start">
@@ -864,7 +864,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <button id="post-submit-btn" onclick="submitPost()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold btn-disabled" disabled>发布</button>
         </div>
         <div class="p-4 flex gap-3">
-            <img id="compose-avatar-sync" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-10 h-10 rounded-full object-cover">
+            <img id="compose-avatar-sync" src="" class="w-10 h-10 rounded-full object-cover">
             <div class="flex-1">
                 <textarea id="post-text" class="w-full text-lg outline-none resize-none min-h-[150px]" placeholder="有什么新鲜事？" oninput="validatePostContent()"></textarea>
                 <div id="post-image-add-btn" class="mt-2 w-[110px] h-[110px] bg-[#f4f5f6] rounded-[16px] flex items-center justify-center cursor-pointer" onclick="triggerPostImage()">
@@ -2002,7 +2002,7 @@ let currentEditingIconId = '';
 let userProfile = JSON.parse(localStorage.getItem('os_user_profile')) || {
     name: "{{user}}",
     handle: "@user_ai",
-    avatar: "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
+    avatar: "",
     bio: "探索AI OS的无限可能。",
     status: "状态"
 };
@@ -2559,30 +2559,19 @@ Daddy参考：乖宝宝、摸头、怎么了，嗯？
 }
 
 function changeAvatar(side){
-    const input = document.createElement('input');
-    input.type = 'file'; 
-    input.accept = 'image/*';
-    input.style.display = 'none';
-    document.body.appendChild(input); // 【超级关键】把按钮放到页面里，手机才认！
-
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => { 
+    const input=document.createElement('input');
+    input.type='file'; input.accept='image/*';
+    input.onchange=e=>{
+        const file=e.target.files[0];
+        const reader=new FileReader();
+        reader.onload=ev=>{ 
             const newSrc = ev.target.result;
-            // 智能识别你要换哪个头像（不管是上面还是下面）
-            const imgElement = document.getElementById(side) || document.getElementById(`avatar-${side}`);
-            if (imgElement) {
-                imgElement.src = newSrc;
-            }
-            // 自动把这个头像存起来
-            userProfile[`widget_${side}`] = newSrc;
+            document.getElementById(`avatar-${side}`).src=newSrc; 
+            // 移除了全局同步，让桌面头像独立
         };
         reader.readAsDataURL(file);
     };
     input.click();
-    setTimeout(() => document.body.removeChild(input), 1000); // 选完后打扫干净
 }
 function updateGlobalAvatar(src) {
     userProfile.avatar = src;
@@ -3822,34 +3811,18 @@ function switchForumTab(tab){
 function editProfilePart(part){
     if(part === 'bg' || part === 'avatar' || part === 'moments-bg'){
         const input = document.createElement('input');
-        input.type = 'file'; 
-        input.accept = 'image/*';
-        input.style.display = 'none';
-        document.body.appendChild(input); // 【超级关键】
-
+        input.type = 'file'; input.accept = 'image/*';
         input.onchange = e => {
             const file = e.target.files[0];
-            if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                const newSrc = ev.target.result;
-                if(part === 'bg') {
-                    document.getElementById('profile-bg').src = newSrc;
-                    userProfile.forumBg = newSrc; 
-                }
-                if(part === 'moments-bg') {
-                    document.getElementById('moments-bg-img').src = newSrc;
-                    userProfile.momentsBg = newSrc; 
-                }
-                if(part === 'avatar') {
-                    updateGlobalAvatar(newSrc);
-                    userProfile.avatar = newSrc;
-                }
+                if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
+                if(part === 'moments-bg') document.getElementById('moments-bg-img').src = ev.target.result;
+                if(part === 'avatar') updateGlobalAvatar(ev.target.result);
             };
             reader.readAsDataURL(file);
         };
         input.click();
-        setTimeout(() => document.body.removeChild(input), 1000);
     } else {
         const map = {
             'name': ['wx-me-name', '修改昵称', 'name'],
@@ -3925,17 +3898,11 @@ function submitPost(){
 }
 
 // 新增：专门用来修改论坛头像的函数，不波及微信
-
 function changeForumAvatar() {
     const input = document.createElement('input');
-    input.type = 'file'; 
-    input.accept = 'image/*';
-    input.style.display = 'none';
-    document.body.appendChild(input); // 【超级关键】
-
+    input.type = 'file'; input.accept = 'image/*';
     input.onchange = e => {
         const file = e.target.files[0];
-        if (!file) return;
         const reader = new FileReader();
         reader.onload = ev => {
             const newSrc = ev.target.result;
@@ -3943,12 +3910,10 @@ function changeForumAvatar() {
             if (el1) el1.src = newSrc;
             const el2 = document.getElementById('compose-avatar-sync');
             if (el2) el2.src = newSrc;
-            userProfile.forumAvatar = newSrc;
         };
         reader.readAsDataURL(file);
     };
     input.click();
-    setTimeout(() => document.body.removeChild(input), 1000);
 }
 
 function addPostToFeed(name, handle, text, img, time, isUserPost = false){
@@ -4085,20 +4050,18 @@ function editAnyText(id) {
     if (res !== null && res.trim() !== '') el.innerText = res;
 }
 
-function changeAnyImage(el){
-    const input=document.createElement('input');
-    input.type='file'; input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=ev=>{ 
-            el.innerHTML=`<img src="${ev.target.result}" class="w-full h-full object-cover">`;
-            // 【新增魔法：把下方小组件上传的图片也偷偷存进手机里】
-            let savedImages = JSON.parse(localStorage.getItem('os_any_images')) || {};
-            const allElements = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
-            let elementIndex = Array.from(allElements).indexOf(el);
-            savedImages['index_' + elementIndex] = ev.target.result;
-            localStorage.setItem('os_any_images', JSON.stringify(savedImages));
+function changeAnyImage(el) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = ev => {
+            el.style.backgroundImage = `url(${ev.target.result})`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+            el.innerHTML = '';
         };
         reader.readAsDataURL(file);
     };
@@ -4847,46 +4810,12 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-
 window.onload = () => { 
     switchWechatTab('messages'); 
     syncProfileToAI();
     renderFriendList(); 
     applyDarkModeStyle(); 
-
-    // 【1. 终极清理魔法：如果手机记忆里存的还是那张烦人的默认图，强制清空它！】
-    if (userProfile.avatar && userProfile.avatar.includes('IMG-2980')) userProfile.avatar = '';
-    if (userProfile.widgetLeftAvatar && userProfile.widgetLeftAvatar.includes('IMG-2980')) userProfile.widgetLeftAvatar = '';
-    if (userProfile.widgetRightAvatar && userProfile.widgetRightAvatar.includes('IMG-2980')) userProfile.widgetRightAvatar = '';
-    if (userProfile.forumAvatar && userProfile.forumAvatar.includes('IMG-2980')) userProfile.forumAvatar = '';
-
-    // 【2. 把你自己上传的新头像和背景贴上去】
-    if (userProfile.avatar) updateGlobalAvatar(userProfile.avatar);
-    if (userProfile.widgetLeftAvatar) document.getElementById('avatar-left').src = userProfile.widgetLeftAvatar;
-    if (userProfile.widgetRightAvatar) document.getElementById('avatar-right').src = userProfile.widgetRightAvatar;
-    if (userProfile.forumAvatar) {
-        if(document.getElementById('profile-avatar')) document.getElementById('profile-avatar').src = userProfile.forumAvatar;
-        if(document.getElementById('compose-avatar-sync')) document.getElementById('compose-avatar-sync').src = userProfile.forumAvatar;
-    }
-    if (userProfile.momentsBg) document.getElementById('moments-bg-img').src = userProfile.momentsBg;
-    if (userProfile.forumBg) document.getElementById('profile-bg').src = userProfile.forumBg;
-
-    // 【3. 恢复下方小组件（照片/小头像）的自定义图片】
-    let savedImages = JSON.parse(localStorage.getItem('os_any_images')) || {};
-    const allElements = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
-    allElements.forEach((el, index) => {
-        if (savedImages['index_' + index]) {
-            el.innerHTML = `<img src="${savedImages['index_' + index]}" class="w-full h-full object-cover">`;
-        }
-    });
-
-    // 【4. 全网大扫除：把页面上任何角落残留的默认图，瞬间变成干净的高级浅灰色底！】
-    document.querySelectorAll('img').forEach(img => {
-        if (img.src.includes('IMG-2980') || img.src.includes('IMG_2980')) {
-            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
-            img.style.backgroundColor = '#e5e7eb';
-        }
-    });
+    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 };
 
 // ================= 新增：短信(iMessage)功能模块 =================
