@@ -4308,54 +4308,60 @@ function openForumDetail(index) {
     if (!post) return;
     const container = document.getElementById('forum-detail-content');
     let commentsHtml = '';
-    
-    // 【修改点】：判断是不是单纯的陌生网友推文。如果是，就不允许点赞、评论和生成！
+
+    // 【核心判断】：只要不是自己发的，也不是AI角色发的，那就是“纯陌生网友推文”
+    // 纯陌生网友推文不允许被点击评论、也不允许生成回复
     let isStrangerPost = !post.isUser && !post.isChar;
-    
+
     if (post.comments && post.comments.length > 0) {
         post.comments.forEach((c, cIdx) => {
             let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
+            // 如果是发帖人自己的评论，用发帖人的头像
             if (c.name === post.name) {
                 cAvatar = post.finalAvatar;
             } else {
+                // 尝试在好友列表里找头像
                 const f = friendList.find(x => x.realName === c.name || x.remark === c.name);
                 if (f && f.avatar) cAvatar = f.avatar;
+                // 如果是用户自己的名字，用用户的头像
+                if (c.name === userProfile.name) cAvatar = userProfile.avatar;
             }
             
-            // 陌生人推文底下的评论也不能点击回复
+            // 陌生人推文底下的评论不能点击回复
             let commentClickAction = isStrangerPost ? '' : `onclick="replyToForumComment(${index}, '${c.name}')"`;
             let commentCursor = isStrangerPost ? '' : 'cursor-pointer active:bg-gray-50';
-
+            
             commentsHtml += `
-                <div class="flex gap-3 px-4 py-3 border-b border-gray-100 ${commentCursor}" ${commentClickAction}>
-                    <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
-                    <div class="flex-1">
-                        <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
-                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
-                    </div>
+            <div class="flex gap-3 px-4 py-3 border-b border-gray-100 ${commentCursor}" ${commentClickAction}>
+                <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
+                <div class="flex-1">
+                    <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
+                    <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
                 </div>
+            </div>
             `;
         });
     } else {
         commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
     }
 
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : "");
-    let textHtml = post.text ? `<div class="text-[#0f1419] mt-3 text-[16px] leading-relaxed break-words">${post.text}</div>` : '';
-    
-    // 陌生网友推文禁用评论和转发按钮的点击事件
-    let replyAction = isStrangerPost ? '' : `onclick="replyToForumComment(${index}, '${post.name}')"`;
+    let textHtml = post.text ? `<div class="text-[17px] text-[#0f1419] mt-2 mb-3 break-words leading-relaxed">${post.text}</div>` : '';
+    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="w-full rounded-2xl border border-gray-100 mb-3 object-cover max-h-[400px]">` : (post.img ? `<img src="${post.img}" class="w-full rounded-2xl border border-gray-100 mb-3 object-cover max-h-[400px]">` : '');
+
+    // 按钮样式和点击事件判断
+    let btnCursor = isStrangerPost ? 'opacity-50' : 'cursor-pointer active:scale-90 transition-transform';
     let retweetAction = isStrangerPost ? '' : `onclick="openForumCommentGenerateModal(${index})"`;
-    let btnCursor = isStrangerPost ? '' : 'cursor-pointer active:scale-90 transition-transform';
+    // 修改点：主评论按钮调用 replyToForumPost，直接评论推文本身
+    let commentAction = isStrangerPost ? '' : `onclick="replyToForumPost(${index})"`;
 
     let actionsHtml = `
-            <div class="flex justify-between items-center py-3 border-t border-b border-gray-100 text-[#536471] px-2 mb-4">
-                <div class="flex items-center gap-2 ${btnCursor}" ${replyAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> ${post.comments ? post.comments.length : 0}</div>
-                <div class="flex items-center gap-2 ${btnCursor}" ${retweetAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> ${post.retweets || 0}</div>
-                <div class="flex items-center gap-2 cursor-pointer active:scale-90 transition-transform" onclick="toggleForumPostLike(${index})"><svg class="w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> ${post.likes}</div>
-                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></div>
-            </div>
-        `;
+    <div class="flex justify-between items-center text-gray-500 py-3 border-t border-b border-gray-100 px-2">
+        <div class="flex items-center gap-2 ${btnCursor}" ${commentAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> ${post.comments ? post.comments.length : 0}</div>
+        <div class="flex items-center gap-2 ${btnCursor}" ${retweetAction}><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> ${post.retweets || 0}</div>
+        <div class="flex items-center gap-2 cursor-pointer active:scale-90 transition-transform" onclick="toggleForumPostLike(${index})"><svg class="w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> ${post.likes}</div>
+        <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></div>
+    </div>
+    `;
 
     container.innerHTML = `
         <div class="p-4">
@@ -4381,6 +4387,7 @@ function openForumDetail(index) {
 }
 
 // ================= 新增论坛点赞与评论生成功能模块 =================
+
 window.toggleForumPostLike = function(index) {
     const post = currentForumPostsData[index];
     if(!post) return;
@@ -4396,11 +4403,26 @@ window.toggleForumPostLike = function(index) {
     openForumDetail(index);
 };
 
+// 新增：用户直接评论推文（比如你在自己推文下留言）
+window.replyToForumPost = function(postIndex) {
+    const text = prompt(`添加评论:`);
+    if (text && text.trim()) {
+        const post = currentForumPostsData[postIndex];
+        if(!post.comments) post.comments = [];
+        post.comments.push({ name: userProfile.name, text: text.trim() });
+        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+        refreshForumFeed();
+        openForumDetail(postIndex);
+    }
+};
+
+// 用户回复推文下的某条特定评论
 window.replyToForumComment = function(postIndex, targetName) {
     const text = prompt(`回复 ${targetName}:`);
     if (text && text.trim()) {
         const post = currentForumPostsData[postIndex];
         const replyText = `回复 <span class="text-blue-500">${targetName}</span>：${text.trim()}`;
+        if(!post.comments) post.comments = [];
         post.comments.push({ name: userProfile.name, text: replyText });
         localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
         refreshForumFeed();
@@ -4420,13 +4442,13 @@ window.openForumCommentGenerateModal = function(index) {
     } else {
         friends.forEach(f => {
             container.innerHTML += `
-                <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
-                    <div class="flex items-center gap-3">
-                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
-                        <span class="font-bold text-[14px] text-gray-700">${f.remark}</span>
-                    </div>
-                    <input type="checkbox" class="w-5 h-5 accent-black forum-comment-char-checkbox" value="${f.id}">
-                </label>
+            <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
+                    <span class="font-bold text-[14px] text-gray-700">${f.remark}</span>
+                </div>
+                <input type="checkbox" class="w-5 h-5 accent-black forum-comment-char-checkbox" value="${f.id}">
+            </label>
             `;
         });
     }
@@ -4438,14 +4460,16 @@ window.closeForumCommentModal = function() {
 };
 
 window.executeForumCommentGenerate = async function() {
-    if (!config.apiKey) return alert("请先配置API Key");
+    if (!config.apiKey) return alert("请填写 API Key！");
     const checkboxes = document.querySelectorAll('.forum-comment-char-checkbox:checked');
     const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    const post = currentForumPostsData[currentForumCommentPostIndex];
+    if (!post) return;
     
     document.querySelector('#forum-comment-char-modal button:last-child').innerText = "生成中...";
     document.querySelector('#forum-comment-char-modal button:last-child').disabled = true;
 
-    const post = currentForumPostsData[currentForumCommentPostIndex];
     let charDetails = "";
     selectedIds.forEach(id => {
         const friend = friendList.find(f => f.id === id);
@@ -4455,15 +4479,15 @@ window.executeForumCommentGenerate = async function() {
         }
     });
 
-    // 【修改点】：将原有的评论也喂给 AI，让它能回复用户的评论！
     let existingCommentsText = "";
     if (post.comments && post.comments.length > 0) {
         existingCommentsText = "\n当前推文下已有的评论（你可以针对这些评论进行互动）：\n";
         post.comments.forEach(c => {
-            existingCommentsText += `[${c.name}]: ${c.text}\n`;
+            // 清理掉之前带的HTML颜色代码，方便AI阅读
+            existingCommentsText += `[${c.name}]: ${c.text.replace(/<[^>]+>/g, '')}\n`;
         });
     }
-
+    
     let prompt = `你正在扮演论坛里的网友和特定角色，对下面的推文发表评论或回复已有评论。
 推文发布时间：${post.time}
 贴主昵称：${post.name}
@@ -4472,7 +4496,7 @@ window.executeForumCommentGenerate = async function() {
 请生成 3 到 5 条评论，要求如下：
 1. 包含 1-2 条来自不同“陌生网友”的随机评论。
 2. 如果下面提供了特定角色的设定，请务必让每个角色都发表 1 条符合他们人设和记忆的评论（直接用他们的名字作为昵称发表）。
-3. 【重要】：如果已有评论中包含用户（${userProfile.name}）的评论，或者这篇推文是用户（${userProfile.name}）发的，勾选的角色必须优先结合配图和正文，针对用户的发言进行互动回复！（如果是回复别人，格式必须为：回复 <span class="text-blue-500">被回复人昵称</span>：回复内容）。
+3. 【重要】：如果推文是用户（${userProfile.name}）发的，或者底下的评论里有用户（${userProfile.name}）的发言，勾选的角色必须优先针对用户的配图、正文或发言进行互动回复！（如果是回复别人，格式必须为：回复 <span class="text-blue-500">被回复人昵称</span>：回复内容）。
 
 特定角色列表：
 ${charDetails}
@@ -4485,9 +4509,9 @@ ${charDetails}
 }`;
 
     try {
-        // 【修改点】：支持把推文的配图发给 AI，让它长眼睛！
         let messagePayload = [];
         let imageUrl = post.imgSrc || post.img;
+        // 如果用户的推文带了图片，让AI长眼睛看图回复！
         if (imageUrl && imageUrl.startsWith('data:image')) {
             messagePayload = [
                 { type: 'text', text: prompt },
@@ -4510,6 +4534,7 @@ ${charDetails}
                 max_tokens: 1500
             })
         });
+
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
 
@@ -4517,7 +4542,6 @@ ${charDetails}
             if(!post.comments) post.comments = [];
             post.comments = post.comments.concat(parsed.comments);
             post.retweets = (post.retweets || 0) + 1;
-            
             localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
             refreshForumFeed();
             openForumDetail(currentForumCommentPostIndex);
