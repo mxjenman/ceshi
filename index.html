@@ -2559,21 +2559,30 @@ Daddy参考：乖宝宝、摸头、怎么了，嗯？
 }
 
 function changeAvatar(side){
-    const input=document.createElement('input');
-    input.type='file'; input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=ev=>{ 
+    const input = document.createElement('input');
+    input.type = 'file'; 
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input); // 【超级关键】把按钮放到页面里，手机才认！
+
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => { 
             const newSrc = ev.target.result;
-            document.getElementById(`avatar-${side}`).src=newSrc; 
-            // 【新增：把桌面小组件头像保存进记忆里】
-            if (side === 'left') userProfile.widgetLeftAvatar = newSrc;
-            if (side === 'right') userProfile.widgetRightAvatar = newSrc;
+            // 智能识别你要换哪个头像（不管是上面还是下面）
+            const imgElement = document.getElementById(side) || document.getElementById(`avatar-${side}`);
+            if (imgElement) {
+                imgElement.src = newSrc;
+            }
+            // 自动把这个头像存起来
+            userProfile[`widget_${side}`] = newSrc;
         };
         reader.readAsDataURL(file);
     };
     input.click();
+    setTimeout(() => document.body.removeChild(input), 1000); // 选完后打扫干净
 }
 function updateGlobalAvatar(src) {
     userProfile.avatar = src;
@@ -3813,24 +3822,34 @@ function switchForumTab(tab){
 function editProfilePart(part){
     if(part === 'bg' || part === 'avatar' || part === 'moments-bg'){
         const input = document.createElement('input');
-        input.type = 'file'; input.accept = 'image/*';
+        input.type = 'file'; 
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input); // 【超级关键】
+
         input.onchange = e => {
             const file = e.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = ev => {
+                const newSrc = ev.target.result;
                 if(part === 'bg') {
-                    document.getElementById('profile-bg').src = ev.target.result;
-                    userProfile.forumBg = ev.target.result; // 【新增：保存论坛背景】
+                    document.getElementById('profile-bg').src = newSrc;
+                    userProfile.forumBg = newSrc; 
                 }
                 if(part === 'moments-bg') {
-                    document.getElementById('moments-bg-img').src = ev.target.result;
-                    userProfile.momentsBg = ev.target.result; // 【新增：保存朋友圈背景】
+                    document.getElementById('moments-bg-img').src = newSrc;
+                    userProfile.momentsBg = newSrc; 
                 }
-                if(part === 'avatar') updateGlobalAvatar(ev.target.result);
+                if(part === 'avatar') {
+                    updateGlobalAvatar(newSrc);
+                    userProfile.avatar = newSrc;
+                }
             };
             reader.readAsDataURL(file);
         };
         input.click();
+        setTimeout(() => document.body.removeChild(input), 1000);
     } else {
         const map = {
             'name': ['wx-me-name', '修改昵称', 'name'],
@@ -3906,11 +3925,17 @@ function submitPost(){
 }
 
 // 新增：专门用来修改论坛头像的函数，不波及微信
+
 function changeForumAvatar() {
     const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
+    input.type = 'file'; 
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input); // 【超级关键】
+
     input.onchange = e => {
         const file = e.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
         reader.onload = ev => {
             const newSrc = ev.target.result;
@@ -3918,12 +3943,12 @@ function changeForumAvatar() {
             if (el1) el1.src = newSrc;
             const el2 = document.getElementById('compose-avatar-sync');
             if (el2) el2.src = newSrc;
-            // 【新增：把论坛头像保存进记忆里】
             userProfile.forumAvatar = newSrc;
         };
         reader.readAsDataURL(file);
     };
     input.click();
+    setTimeout(() => document.body.removeChild(input), 1000);
 }
 
 function addPostToFeed(name, handle, text, img, time, isUserPost = false){
