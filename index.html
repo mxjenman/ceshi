@@ -1679,7 +1679,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
     
     <div id="moments-comment-bar" class="fixed inset-x-0 bottom-0 bg-[#f7f7f7] border-t flex items-center gap-2 px-3 py-3 z-[230] hidden transform translate-y-full transition-transform duration-300 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <input id="moments-comment-input" type="text" class="flex-1 border border-gray-300 rounded-lg bg-white px-3 py-2 outline-none text-[15px]" placeholder="评论" onkeydown="if(event.key === 'Enter') submitMomentsComment()">
-        <button class="bg-[#07c160] text-white px-4 py-2 rounded-lg text-[14px] font-bold active:scale-95 transition-transform" onclick="submitMomentsComment()">发送</button>
+        <button class="bg-black text-white px-4 py-2 rounded-[30px] text-[14px] font-bold active:scale-95 transition-transform" onclick="submitMomentsComment()">发送</button>
     </div>
 
 <script>
@@ -3444,27 +3444,26 @@ function deleteSelectedMessages() {
     cancelMultiSelect();
 }
 
-function sendUserMsg(){
-    if(!currentFriendId) return;
+function sendUserMsg(){ 
+    if(!currentFriendId) return; 
     const input = document.getElementById('chat-input');
-    const text = input.value.trim();
+    const text = input.value.trim(); 
     
-    // 【核心修改】：如果输入框是空的，直接触发AI回复（相当于呼唤它）
-    if(!text && !currentQuoteMsg) {
-        triggerAI();
-        return;
-    }
+    // 【微信专属逻辑】：如果输入框是空的，那就什么都不做，绝对不触发AI。
+    // 想让TA回复，只能去点击右侧那个专门的回复按键！
+    if(!text && !currentQuoteMsg) { 
+        return; 
+    } 
     
     let finalContent = text;
-    if (currentQuoteMsg) {
-        finalContent = `[引用:${currentQuoteMsg}]\n${text}`;
-        currentQuoteMsg = null;
-        input.placeholder = "输入消息...";
-    }
-    
-    // 把消息扔进屏幕，但不呼唤AI，实现单纯的“连发”
-    chatHistory.push({role:'user',content:finalContent});
-    input.value = '';
+    if (currentQuoteMsg) { 
+        finalContent = `[引用:${currentQuoteMsg}]\n${text}`; 
+        currentQuoteMsg = null; 
+        input.placeholder = "输入消息..."; 
+    } 
+    // 把消息扔进屏幕，但不呼唤AI，实现单纯的“连发” 
+    chatHistory.push({role:'user',content:finalContent}); 
+    input.value = ''; 
     renderAllMessages(true);
 }
 async function triggerAI(){
