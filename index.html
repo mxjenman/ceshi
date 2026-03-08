@@ -1673,6 +1673,51 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
     </div>
 
 <script>
+// ================= 新增：全局图片极速压缩引擎（彻底解决相册图片太大撑爆内存导致无法保存的问题） =================
+const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
+FileReader.prototype.readAsDataURL = function(file) {
+    // 拦截所有的图片读取，如果是GIF动图为了保持能动就不压缩，其他的全部压缩！
+    if (file && file.type && file.type.startsWith('image/') && file.type !== 'image/gif') {
+        const img = new Image();
+        const objUrl = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(objUrl);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设定图片最大尺寸为 800 像素，清晰度绝对够用，但体积能缩小 90% 以上
+            const MAX_SIZE = 800;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height && width > MAX_SIZE) {
+                height *= MAX_SIZE / width;
+                width = MAX_SIZE;
+            } else if (height > MAX_SIZE) {
+                width *= MAX_SIZE / height;
+                height = MAX_SIZE;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // 强制转换为 JPG 格式，画质保留 60% (肉眼看不出区别，但极大降低体积)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            
+            // 把变小后的微型图片伪装成交回给原程序
+            if (typeof this.onload === 'function') {
+                this.onload({ target: { result: dataUrl } });
+            }
+        };
+        img.src = objUrl;
+    } else {
+        // 如果不是图片或者是GIF，就按原样读取
+        originalReadAsDataURL.call(this, file);
+    }
+};
+// =============================================================================================
+
 // ================= 新增：体重记录互动功能逻辑 =================
 let currentWeightCharId = null;
 
