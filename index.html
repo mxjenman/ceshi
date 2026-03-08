@@ -3724,45 +3724,38 @@ TimeChecklist:
             });
         }
         
-            // 3. 兜底
-            if (!textOnly && (!images || images.length === 0)) {
-                newMessages.push({role:'assistant', content: reply || "..."});
-            }
+        // 3. 兜底
+        if (!textOnly && (!images || images.length === 0)) {
+            newMessages.push({role:'assistant', content: reply});
+        }
+        
+        // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
+        let msgIndex = 0;
+        function showNextMsg() {
+            if (msgIndex < newMessages.length) {
+                // 拿走当前的一条消息，放到聊天记录里
+                const currentMsg = newMessages[msgIndex];
+                chatHistory.push(currentMsg);
+                renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
+                
+                // 【修改重点】：在每发一条气泡时，只要界面在后台，就发一次系统弹窗！
+                sendSystemNotification(friend.remark || friend.realName || "AI 好友", currentMsg.content);
 
-            // --- ★ 新增：把刚才提取出来的整体心声，挂载到AI回复的最后一条气泡上 ---
-            if (extractedVoice && newMessages.length > 0) {
-                newMessages[newMessages.length - 1].innerVoice = extractedVoice;
-            }
+                msgIndex++;
+                // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
+                setTimeout(showNextMsg, 1200);
+            } else {
+                // 消息全发完了，恢复原来的备注名字和发送按钮
+                titleEl.innerText = originalTitle;
+                if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
 
-            let msgIndex = 0;
-            function showNextMsg() {
-                if (msgIndex < newMessages.length) {
-                    const currentMsg = newMessages[msgIndex];
-                    chatHistory.push(currentMsg);
-                    renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
-                    
-                    // 【修改重点】：在每发一条气泡时，只要界面在后台，就发一次系统弹窗！
-                    sendSystemNotification(friend.remark || friend.realName || "AI 好友", currentMsg.content);
-
-                    msgIndex++;
-                    // 设置定时器，1200 毫秒（1.2秒）后发下一条。你可以自己修改这个数字！
-                    setTimeout(showNextMsg, 1200);
-                } else {
-                    // 消息全发完了，恢复原来的备注名字和发送按钮
-                    titleEl.innerText = originalTitle;
-                    if(btn) {
-                        btn.style.opacity="1";
-                        btn.style.pointerEvents="auto";
-                    }
-                    
-                    // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
-                    checkAndTriggerAutoSummary();
-                    
-                    // ★ 修改：我们已经在同一次API里获取了心声，所以把原本单独请求的这句话彻底删掉！不再有二次请求！
-                    // generateInnerVoiceForLastMsg(currentFriendId, reply);
-                }
+                // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
+                checkAndTriggerAutoSummary();
+                // 自动根据这轮对话生成TA的心声！
+                generateInnerVoiceForLastMsg(currentFriendId, reply);
             }
-            showNextMsg(); // 启动一条条发送！
+        }
+        showNextMsg(); // 启动一条条发送！
 
     }catch(e){ 
         chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
@@ -7128,6 +7121,83 @@ function drawWeightChart() {
         ctx.fillText(weight, x, y - 10);
     });
 }
+    // --- ★ 全局自动记忆引擎 开始 ★ ---
+    // 【1. 每次打开网页时，自动读取上次保存的数据】
+    window.addEventListener('DOMContentLoaded', () => {
+        try {
+            // 恢复微信好友、聊天记录、头像
+            if (typeof friends !== 'undefined' && localStorage.getItem('os_friends')) {
+                const data = JSON.parse(localStorage.getItem('os_friends'));
+                friends.length = 0; data.forEach(item => friends.push(item));
+            }
+            // 恢复论坛/朋友圈动态
+            if (typeof posts !== 'undefined' && localStorage.getItem('os_posts')) {
+                const data = JSON.parse(localStorage.getItem('os_posts'));
+                posts.length = 0; data.forEach(item => posts.push(item));
+            }
+            if (typeof moments !== 'undefined' && localStorage.getItem('os_moments')) {
+                const data = JSON.parse(localStorage.getItem('os_moments'));
+                moments.length = 0; data.forEach(item => moments.push(item));
+            }
+            // 恢复短信
+            if (typeof smsMessages !== 'undefined' && localStorage.getItem('os_smsMessages')) {
+                const data = JSON.parse(localStorage.getItem('os_smsMessages'));
+                smsMessages.length = 0; data.forEach(item => smsMessages.push(item));
+            }
+            // 恢复体重健康记录
+            if (typeof weightRecords !== 'undefined' && localStorage.getItem('os_weightRecords')) {
+                const data = JSON.parse(localStorage.getItem('os_weightRecords'));
+                weightRecords.length = 0; data.forEach(item => weightRecords.push(item));
+            }
+            // 恢复你自己的个人信息（名字、主头像）
+            if (typeof myProfile !== 'undefined' && localStorage.getItem('os_myProfile')) {
+                const data = JSON.parse(localStorage.getItem('os_myProfile'));
+                Object.assign(myProfile, data);
+            }
+            // 恢复桌面图标
+            if (typeof apps !== 'undefined' && localStorage.getItem('os_apps')) {
+                const data = JSON.parse(localStorage.getItem('os_apps'));
+                apps.length = 0; data.forEach(item => apps.push(item));
+            }
+            
+            // 恢复自定义壁纸
+            const savedWallpaper = localStorage.getItem('os_wallpaper');
+            if(savedWallpaper) {
+                document.body.style.backgroundImage = `url(${savedWallpaper})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+            }
+
+            // 延迟0.5秒刷新一下界面，让刚才恢复的数据显示出来
+            setTimeout(() => {
+                if(typeof renderFriendsList === 'function') renderFriendsList();
+                if(typeof renderMoments === 'function') renderMoments();
+                if(typeof renderAppGrid === 'function') renderAppGrid();
+            }, 500);
+
+        } catch(e) { 
+            console.log("记忆恢复加载中..."); 
+        }
+    });
+
+    // 【2. 每隔 2 秒钟，自动把所有数据偷偷保存进缓存】
+    setInterval(() => {
+        if (typeof friends !== 'undefined') localStorage.setItem('os_friends', JSON.stringify(friends));
+        if (typeof posts !== 'undefined') localStorage.setItem('os_posts', JSON.stringify(posts));
+        if (typeof moments !== 'undefined') localStorage.setItem('os_moments', JSON.stringify(moments));
+        if (typeof smsMessages !== 'undefined') localStorage.setItem('os_smsMessages', JSON.stringify(smsMessages));
+        if (typeof weightRecords !== 'undefined') localStorage.setItem('os_weightRecords', JSON.stringify(weightRecords));
+        if (typeof myProfile !== 'undefined') localStorage.setItem('os_myProfile', JSON.stringify(myProfile));
+        if (typeof apps !== 'undefined') localStorage.setItem('os_apps', JSON.stringify(apps));
+        
+        // 自动保存现在的壁纸
+        let bg = document.body.style.backgroundImage;
+        if(bg && bg.includes('url')) {
+            let bgUrl = bg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+            localStorage.setItem('os_wallpaper', bgUrl);
+        }
+    }, 2000);
+    // --- ★ 全局自动记忆引擎 结束 ★ ---
 </script>
 </body>
 </html>
