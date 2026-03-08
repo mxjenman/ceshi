@@ -3382,9 +3382,11 @@ async function triggerAI(){
         renderAllMessages();
         return;
     }
-    
     const btn=document.getElementById('gen-btn-icon');
-    if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
+    if(btn) {
+        btn.style.opacity="0.5";
+        btn.style.pointerEvents="none";
+    }
 
     // --- 修改：保持字体大小和粗细跟原本完全一致，仅仅把颜色改成浅灰色 ---
     const titleEl = document.getElementById('chat-detail-title');
@@ -3408,7 +3410,7 @@ async function triggerAI(){
             if (wxMemoryText) {
                 finalSystemMessage += `\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
             }
-            
+
             let smsMemoryText = "";
             if (friend.smsMemoryList && friend.smsMemoryList.length > 0) {
                 smsMemoryText = friend.smsMemoryList.join('\n');
@@ -3418,7 +3420,7 @@ async function triggerAI(){
             }
         }
     }
-    
+
     const friend = friendList.find(f => f.id === currentFriendId);
     if(friend) {
         // 自动获取当前的真实时间喂给AI
@@ -3441,14 +3443,12 @@ async function triggerAI(){
             });
             personaPrompt += `\n请你扮演群里的某个角色进行回复（你可以根据对话上下文决定由谁来回复，或者群里的几个人互相接话）。回复时，必须在每句话最前面加上角色的名字和冒号，例如：“[角色名]: 回复内容”。你需要根据用户的人设、自己的人设以及其他角色的人设进行真实的群聊互动。`;
         } else {
-            personaPrompt = `你的真实名字是：${friend.realName}。
-你的设定是：${friend.persona}。
-你不知道自己被用户设置了什么备注。`;
+            personaPrompt = `你的真实名字是：${friend.realName}。 你的设定是：${friend.persona}。 你不知道自己被用户设置了什么备注。`;
             if (friend.userPersona) {
                 personaPrompt += `\n当前用户（我）的人设是：${friend.userPersona}。`;
             }
         }
-
+        
         finalSystemMessage += `\n\n${personaPrompt}
 
 【核心回复气泡（条数）规则 - 极其重要】
@@ -3456,23 +3456,18 @@ async function triggerAI(){
 - 通常情况：每次回复分为 5 到 6 条独立的消息（即写 5 到 6 行）。
 - ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
 - 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
-- 【严厉警告】：绝对不允许在回复中带上任何序号、排版前缀或行号（千万不要写“Line 1:”、“1.”、“消息1”等字眼）！只允许输出纯文本，用换行符（回车）隔开即可！
+- 【严厉警告】：绝对不允许在回复中带上任何序号、排版前缀或行号（千万不要写“Line 1:”、“1.”、“消息1”等字眼）！只允许输出纯文本，像活人一样自然地分开发送。
 
-【活人感引擎：注意，当前真实世界时间是 ${timeString}】
+【时间感知系统】
+当前手机真实时间：${timeString}。
 ============================================
-# 【第一部分：硬性规则】必须放在最前面
-FORBIDDEN:
-  - "机械报时（禁止：'现在是晚上10点'、'时间是凌晨3点'）"
-  - "状态与时间严重不符（深夜不应精力充沛，清晨不应话多活跃）"
-  - "孤立的时间问候（时间必须融入对话，不能单独存在后就没了）"
-  - "每次回复都强调时间（适度，不要变成时间播报员）"
-  - "因时间状态而完全抑制角色核心特质"
-
-Priority:
-  1: "SpecialDates - 特殊日期（覆盖一切）"
-  2: "TimeTriggers - 环境触发器（优先于普通状态）"
-  3: "TimeSlots - 基础时间轴（默认状态）"
-
+# 【第一部分：时间影响优先级】
+优先级顺序：
+1: "StoryContext - 剧情连贯性（最优先）"
+  - 如果正在进行高潮剧情或紧凑对话，可忽略时间。
+  - 特殊日期（覆盖一切）
+2: "TimeTriggers - 环境触发器（优先于普通状态）"
+3: "TimeSlots - 基础时间轴（默认状态）"
 SkipConditions:
   - "紧急剧情或高强度情感对话"
   - "对方明确表示不想聊时间相关话题"
@@ -3517,7 +3512,7 @@ TimeSlots:
 
 # 【第四部分：时间流逝表达风格】
 TimeExpressions:
-  style: "符合你人设性格的时间表达风格"
+  style: "符合你人设性格的时间表达风格" 
   cross_period: ["不知不觉天都黑了", "聊着聊着…已经是新的一天了"]
   next_morning: ["早上好…昨晚睡得好吗？"]
 
@@ -3534,11 +3529,8 @@ TimeChecklist:
     if (friend && friend.isTranslationEnabled) {
         finalSystemMessage += `\n\n【强制翻译要求】：你开启了多语言自动翻译。你的每一条回复都必须严格使用以下单行HTML代码包裹（绝对不能在代码中间换行！），只需要把里面的[原语言]和[中文翻译]替换成你的回复即可：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">[原语言]</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">[中文翻译]</div></div></div>`;
     }
-    finalSystemMessage += `\n\n当前与你对话的用户信息：
-    昵称: ${userProfile.name}
-    账号: ${userProfile.handle}
-    个性签名: ${userProfile.bio}
-    当前状态: ${userProfile.status}`;
+
+    finalSystemMessage += `\n\n当前与你对话的用户信息：\n昵称: ${userProfile.name}\n账号: ${userProfile.handle}\n个性签名: ${userProfile.bio}\n当前状态: ${userProfile.status}`;
 
     let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中单独占一行，原样输出对应的【代码】即可。\n";
     let hasEmoji = false;
@@ -3548,10 +3540,13 @@ TimeChecklist:
             hasEmoji = true;
         });
     }
-    if (hasEmoji) { finalSystemMessage += aiEmojiLib; }
+    if (hasEmoji) {
+        finalSystemMessage += aiEmojiLib;
+    }
 
-     const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
+    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
+    
     // 【核心修改】：群聊要把群的关联世界书和所有角色的关联世界书都融合读取
     let linkedIds = [];
     if (friend.isGroup) {
@@ -3568,113 +3563,100 @@ TimeChecklist:
     } else {
         linkedIds = friend.linkedLorebooks || [];
     }
+
     const activeLorebooks = lorebook.filter(entry => linkedIds.includes(entry.id));
 
     activeLorebooks.forEach(entry => {
         let keywords = [];
-        
         // 1. 如果填了关键词，就把关键词放进触发条件里
         if (entry.key) {
             keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
         }
-        
-        // 2. 不管填没填关键词，都把“世界书内容”本身也加进触发条件里
-        if (entry.content) {
-            keywords.push(entry.content);
+        // 2. 不管填没填关键词，都把标题也作为触发条件之一
+        if (entry.title) {
+            keywords.push(entry.title.trim());
         }
+
+        // 只要最新的一句话里包含了任何一个触发词，就把这段设定喂给AI
+        const shouldInject = keywords.some(kw => latestUserMsg.includes(kw));
         
-        // 检查：只要用户发送的话里，包含了上述任何一个触发条件，就提取这个设定！
-        let triggered = false;
-        for(let k of keywords) {
-            if(k && latestUserMsg.includes(k)) {
-                triggered = true;
-                break; 
-            }
-        }
-        
-        if(triggered) {
-            injectedLore.push(`[设定《${entry.title || '未命名'}》: ${entry.content}]`);
+        if (shouldInject) {
+            injectedLore.push(`- ${entry.title}: ${entry.content}`);
         }
     });
-        if(injectedLore.length > 0) {
-            finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
-            console.log("注入了世界书数据:", injectedLore);
+
+    if (injectedLore.length > 0) {
+        finalSystemMessage += `\n\n【附加世界书设定】\n` + injectedLore.join('\n');
+    }
+
+    let formattedMessages = [{role:'system', content:finalSystemMessage}];
+    
+    chatHistory.slice(-10).forEach(msg => {
+        // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
+        let textOnly = msg.content;
+        
+        if (textOnly.startsWith('[转账|')) {
+            const parts = textOnly.replace(/\[|\]/g, '').split('|');
+            const sender = parts[2];
+            const amt = parts[3];
+            const note = parts[4];
+            const status = parts[5];
+            
+            if (sender === 'user') {
+                if (status === 'pending') {
+                    textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
+                } else if (status === 'accepted') {
+                    textOnly = `[你已接收了我转账的 ${amt}元]`;
+                } else if (status === 'returned') {
+                    textOnly = `[你已退回了我转账的 ${amt}元]`;
+                }
+            } else {
+                if (status === 'pending') {
+                    textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
+                } else if (status === 'accepted') {
+                    textOnly = `[我已接收了你转账的 ${amt}元]`;
+                } else if (status === 'returned') {
+                    textOnly = `[我已退回了你转账的 ${amt}元]`;
+                }
+            }
+            formattedMessages.push({ role: msg.role, content: textOnly });
+            return; // 翻译完毕，跳过下面直接进入下一条
+        } else if (textOnly.startsWith('[系统消息:')) {
+            formattedMessages.push({ role: msg.role, content: textOnly });
+            return; // 直接处理系统提示
         }
         
-        // --- ★ 新增：让AI一次性生成所有对话并整体总结心声 ---
-        finalSystemMessage += `\n\n【核心心声要求】：在你的全部回复内容最末尾，你必须对这整次回复进行一个整体的内心想法总结。格式必须严格为：<心声>这里写你总体的内心真实想法</心声>。注意：心声是对本次你所有说的话的“整体总结”，只允许在末尾输出一次，绝对不要每说一句话就加一个心声！而且你的正文千万不要出现这个标签。`;
+        // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+        if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
+            // 把后面的排版代码一刀切掉，只保留前面的纯文字
+            let textOnly = msg.content.split('\n<div')[0];
+            // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
+            textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
+            formattedMessages.push({ role: msg.role, content: textOnly });
+            return; // 这一条处理完毕，直接跳过后面的识图步骤
+        }
 
-        try {
-            // 【修复】微信使用真正的多模态格式读取微信的历史记录
-
-        let formattedMessages = [{role:'system', content:finalSystemMessage}];
-        chatHistory.slice(-5).forEach(msg => {
+        const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
+        if (imgMatch) {
+            const base64Url = imgMatch[1];
+            let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+            // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
+            if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
             
-            // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
-            let textOnly = msg.content;
-            if (textOnly.startsWith('[转账|')) {
-                const parts = textOnly.replace(/\[|\]/g, '').split('|');
-                const sender = parts[2];
-                const amt = parts[3];
-                const note = parts[4];
-                const status = parts[5];
-                
-                if (sender === 'user') {
-                    if (status === 'pending') {
-                        textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
-                    } else if (status === 'accepted') {
-                        textOnly = `[你已接收了我转账的 ${amt}元]`;
-                    } else if (status === 'returned') {
-                        textOnly = `[你已退回了我转账的 ${amt}元]`;
-                    }
-                } else {
-                    if (status === 'pending') {
-                        textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
-                    } else if (status === 'accepted') {
-                        textOnly = `[我已接收了你转账的 ${amt}元]`;
-                    } else if (status === 'returned') {
-                        textOnly = `[我已退回了你转账的 ${amt}元]`;
-                    }
-                }
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 翻译完毕，跳过下面直接进入下一条
-            } else if (textOnly.startsWith('[系统消息:')) {
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 直接处理系统提示
-            }
+            formattedMessages.push({
+                role: msg.role,
+                content: [
+                    { type: "text", text: textOnly },
+                    { type: "image_url", image_url: { url: base64Url } }
+                ]
+            });
+        } else {
+            formattedMessages.push({ role: msg.role, content: msg.content });
+        }
+    });
 
-            // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
-
-            if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
-                // 把后面的排版代码一刀切掉，只保留前面的纯文字
-                let textOnly = msg.content.split('\n<div')[0];
-                // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
-                textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
-                
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 这一条处理完毕，直接跳过后面的识图步骤
-            }
-
-            const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
-            if (imgMatch) {
-                const base64Url = imgMatch[1];
-                let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
- 
-               // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
-                if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
-                
-                formattedMessages.push({
-                    role: msg.role,
-                    content: [
-                        { type: "text", text: textOnly },
-                        { type: "image_url", image_url: { url: base64Url } }
-                    ]
-                });
-            } else {
-                formattedMessages.push({ role: msg.role, content: msg.content });
-            }
-        });
-
+    // 🌟 这里就是之前漏掉的关键代码 try {  🌟
+    try {
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
@@ -3685,40 +3667,41 @@ TimeChecklist:
                 max_tokens:800
             })
         });
+        const data=await response.json();
+        let reply=data.choices[0].message.content;
 
-            const data=await response.json();
-            let reply=data.choices[0].message.content;
+        // --- ★ 新增：拦截并提取AI在末尾生成的心声 ---
+        let extractedVoice = "";
+        const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
+        const voiceMatch = reply.match(voiceRegex);
+        if (voiceMatch) {
+            extractedVoice = voiceMatch[1].trim();
+            reply = reply.replace(voiceRegex, '').trim(); // 把心声从正文里抠出去，以免发给用户看到
+        }
 
-            // --- ★ 新增：拦截并提取AI在末尾生成的心声 ---
-            let extractedVoice = "";
-            const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
-            const voiceMatch = reply.match(voiceRegex);
-            if (voiceMatch) {
-                extractedVoice = voiceMatch[1].trim();
-                reply = reply.replace(voiceRegex, '').trim(); // 把心声从正文里抠出去，以免发给用户看到
-            }
-
-            // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
-            let extraMessages = [];
-            let needsFullRender = false;
+        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+        let extraMessages = [];
+        let needsFullRender = false;
         
         // 检查 AI 是否偷偷接受或退回了转账
         if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
             const isAccept = reply.includes('【接受转账】');
-            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim(); // 抹除暗号
+            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
             
-            // 倒序查找你发给它的最近一笔还没领的钱
+            // 抹除气泡橙色状态，变成已收款或已退还
             for(let i = chatHistory.length - 1; i >= 0; i--) {
-                if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
-                    const amt = chatHistory[i].content.split('|')[3];
+                if (chatHistory[i].role === 'user' && chatHistory[i].content.includes('[转账|') && chatHistory[i].content.includes('|pending]')) {
+                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', isAccept ? '|accepted]' : '|returned]');
+                    
+                    const parts = chatHistory[i].content.replace(/\[|\]/g, '').split('|');
+                    const amt = parseFloat(parts[3]);
+                    
                     if (isAccept) {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
                         extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
                     } else {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
                         extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
-                        // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里，并显示名字 ===
-                        addTransaction(`${friend.remark} 退回转账`, amt, 'income');
+                        // 退还的钱加回钱包
+                        addTransaction('转账退还', amt, 'income');
                     }
                     needsFullRender = true;
                     break;
@@ -3748,7 +3731,9 @@ TimeChecklist:
 
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
+        
         newMessages = newMessages.concat(extraMessages); // 先弹系统消息和转账气泡，再弹AI的回复
+        
         // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -3768,7 +3753,7 @@ TimeChecklist:
         if (!textOnly && (!images || images.length === 0)) {
             newMessages.push({role:'assistant', content: reply});
         }
-        
+
         // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
         let msgIndex = 0;
         function showNextMsg() {
@@ -3787,8 +3772,11 @@ TimeChecklist:
             } else {
                 // 消息全发完了，恢复原来的备注名字和发送按钮
                 titleEl.innerText = originalTitle;
-                if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
-
+                if(btn) {
+                    btn.style.opacity="1";
+                    btn.style.pointerEvents="auto";
+                }
+                
                 // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
                 checkAndTriggerAutoSummary();
                 // 自动根据这轮对话生成TA的心声！
@@ -3797,18 +3785,21 @@ TimeChecklist:
         }
         showNextMsg(); // 启动一条条发送！
 
-    }catch(e){ 
+    } catch(e) {
         chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
         renderAllMessages();
         // 如果网络出错，也要记得恢复名字和发送按钮
         titleEl.innerText = originalTitle;
-        if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+        if(btn) {
+            btn.style.opacity="1";
+            btn.style.pointerEvents="auto";
+        }
     }
     // 注意：原来的 finally 代码块已经被我删掉了，因为恢复按钮的逻辑已经写到了上面的发完消息的步骤里
 }
 // --- 替换部分结束 ---
 
-function openMePage(title) {
+ion openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
 }
