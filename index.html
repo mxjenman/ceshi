@@ -4123,18 +4123,22 @@ function openForumCharSelect() {
     const container = document.getElementById('forum-char-list');
     container.innerHTML = '';
     const friends = friendList.filter(f => !f.isGroup);
+    
     if (friends.length === 0) {
         container.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加任何角色</div>';
     } else {
         friends.forEach(f => {
             container.innerHTML += `
-                <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
-                    <div class="flex items-center gap-3">
-                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
-                        <span class="font-bold text-[14px] text-gray-700">${f.remark}</span>
+                <div class="flex items-center justify-between p-2 border-b border-gray-50 hover:bg-gray-50">
+                    <label class="flex items-center gap-3 cursor-pointer flex-1">
+                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover shrink-0">
+                        <span class="font-bold text-[14px] text-gray-700 truncate w-16">${f.remark}</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="forum-handle-${f.id}" placeholder="@账号(选填)" class="border border-gray-300 rounded px-2 py-1 text-[12px] w-24 outline-none">
+                        <input type="checkbox" class="w-5 h-5 accent-black forum-char-checkbox" value="${f.id}">
                     </div>
-                    <input type="checkbox" class="w-5 h-5 accent-black forum-char-checkbox" value="${f.id}">
-                </label>
+                </div>
             `;
         });
     }
@@ -4153,45 +4157,32 @@ async function executeForumGenerate() {
 
     const checkboxes = document.querySelectorAll('.forum-char-checkbox:checked');
     const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-
+    
     document.querySelector('#forum-char-select-modal button:last-child').innerText = "生成中...";
     document.querySelector('#forum-char-select-modal button:last-child').disabled = true;
 
-    const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-gray-500 animate-pulse">正在连接世界线，加载推文中...</div>';
+    let charDetails = "";
+    // 用来记录你给每个角色填写的账号
+    let handleMap = {};
 
-    let prompt = "";
-    if (selectedIds.length === 0) {
-        prompt = `你需要生成 15 个由不同陌生网友发布的论坛帖子。这些帖子应该来自不同的话题区域（比如生活吐槽、游戏、情感求助、工作等）。
-每个帖子需要附带 3 到 5 条评论，其中必须包含其他陌生网友的回复，以及贴主对评论的回复互动。
+    selectedIds.forEach(id => {
+        const friend = friendList.find(f => f.id === id);
+        if (friend) {
+            let memory = "";
+            if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
+            
+            // 抓取你刚才填在输入框里的账号
+            const handleInput = document.getElementById(`forum-handle-${friend.id}`);
+            let handle = handleInput && handleInput.value.trim() !== "" ? handleInput.value.trim() : "";
+            // 如果用户填写的账号没有带 @，自动帮他加上去
+            if (handle && !handle.startsWith('@')) handle = '@' + handle;
+            handleMap[friend.id] = handle;
 
-请返回 JSON 格式，严格遵循以下结构：
-{
-  "posts": [
-    {
-      "isChar": false,
-      "charId": "",
-      "name": "网友昵称",
-      "handle": "@账号",
-      "text": "帖子正文内容...",
-      "comments": [
-        {"name": "评论者昵称", "text": "评论内容"}
-      ]
-    }
-  ]
-}`;
-    } else {
-        let charDetails = "";
-        selectedIds.forEach(id => {
-            const friend = friendList.find(f => f.id === id);
-            if (friend) {
-                let memory = "";
-                if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
-                charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
-            }
-        });
+            charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
+        }
+    });
 
-        prompt = `你需要生成两部分论坛帖子：
+    let prompt = `你需要生成两部分论坛帖子：
 第一部分：7 到 10 个由不同陌生网友发布的随机帖子（话题区域随意，如搞笑、求助、分享等）。
 第二部分：针对以下每一个提供的角色，生成 3 到 5 个基于他们的人设、以及他们和用户之间聊天记忆的帖子（比如角色求助恋爱问题、秀恩爱、分享日常等）。
 【重要】：所有的帖子都需要附带 3 到 5 条评论。如果是陌生人的帖子，评论是陌生人和贴主互动；如果是角色的帖子，评论里要有陌生网友和该角色的回复互动。
@@ -4215,12 +4206,14 @@ ${charDetails}
   ]
 }
 注意：请一次性输出完整的 JSON，绝对不要截断。`;
-    }
 
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`
+            },
             body: JSON.stringify({
                 model: config.model,
                 messages: [{role: 'user', content: prompt}],
@@ -4241,6 +4234,11 @@ ${charDetails}
             if (p.isChar && p.charId) {
                 const f = friendList.find(x => x.id === p.charId);
                 if (f && f.avatar) avatar = f.avatar;
+                
+                // 核心：强制把最终帖子上的账号替换成你填写的专属账号
+                if (handleMap[p.charId]) {
+                    p.handle = handleMap[p.charId];
+                }
             }
             p.finalAvatar = avatar;
             p.isUser = false; // AI生成的不是用户的
@@ -4251,14 +4249,14 @@ ${charDetails}
         // 保护你以前自己发的帖子，防止被刷新掉
         const userPosts = currentForumPostsData.filter(p => p.isUser);
         currentForumPostsData = [...userPosts, ...generatedPosts].sort(() => Math.random() - 0.5);
-        
         currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
-        
         localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
         refreshForumFeed();
+
     } catch(e) {
         console.error(e);
-        feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，可能是配置错误或返回结果超长被截断了</div>';
+        const feed = document.getElementById('forum-feed');
+        if (feed) feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，可能是配置错误或返回结果超长被截断了</div>';
     } finally {
         document.querySelector('#forum-char-select-modal button:last-child').innerText = "开始生成";
         document.querySelector('#forum-char-select-modal button:last-child').disabled = false;
@@ -4269,21 +4267,26 @@ ${charDetails}
 // 绘制广场帖子卡片
 function createForumPostNode(post) {
     const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
+    // 我们在这里加上了 relative，让三个点可以绝对定位在右上角
+    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors relative";
     div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
     
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : "");
-    
+    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : "");
+
     div.innerHTML = `
-        <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
-        <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1">
-                <span class="font-bold text-[15px] text-black truncate">${post.name}</span>
-                <span class="text-gray-500 text-[14px] truncate">${post.handle} · ${post.time || '刚刚'}</span>
+        <div class="absolute top-2 right-2 p-1 text-gray-400 cursor-pointer hover:bg-gray-100 rounded-full" onclick="event.stopPropagation(); deleteForumPost(${post.listIndex})">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+        </div>
+        <img src="${post.finalAvatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"}" class="w-12 h-12 rounded-full object-cover shrink-0 bg-gray-100">
+        <div class="flex-1 min-w-0 pr-6">
+            <div class="flex items-center gap-1.5">
+                <span class="font-bold text-[15px] text-gray-900 truncate">${post.name}</span>
+                <span class="text-[14px] text-gray-500 truncate">${post.handle}</span>
+                <span class="text-[14px] text-gray-500 shrink-0">· ${post.time}</span>
             </div>
-            <div class="text-[15px] mt-1 text-[#0f1419] leading-relaxed break-words pr-2">${(post.text||'').replace(/\n/g, '<br>')}</div>
+            <div class="text-[15px] text-[#0f1419] mt-0.5 leading-[1.4] whitespace-pre-wrap break-words">${post.text}</div>
             ${imgHtml}
-            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] pr-8">
+            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] font-medium pr-4">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     <span>${post.comments ? post.comments.length : 0}</span>
@@ -4301,6 +4304,16 @@ function createForumPostNode(post) {
     `;
     return div;
 }
+
+// 新增删除推文的功能
+window.deleteForumPost = function(index) {
+    if (confirm("确定要删除这条推文吗？")) {
+        currentForumPostsData.splice(index, 1);
+        currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
+        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+        refreshForumFeed();
+    }
+};
 
 // 打开全屏详情页并渲染评论
 function openForumDetail(index) {
