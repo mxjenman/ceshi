@@ -4271,18 +4271,21 @@ function createForumPostNode(post) {
     div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors relative";
     div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
     
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : "");
+    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : '';
+    let pTime = post.time || "刚刚";
+    let pHandle = post.handle || "@user";
 
     div.innerHTML = `
-        <div class="absolute top-2 right-2 p-1 text-gray-400 cursor-pointer hover:bg-gray-100 rounded-full" onclick="event.stopPropagation(); deleteForumPost(${post.listIndex})">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+        <div class="absolute top-2 right-2 text-gray-400 p-2 cursor-pointer active:bg-gray-200 rounded-full z-10" onclick="event.stopPropagation(); deleteForumPost(${post.listIndex})">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
         </div>
+
         <img src="${post.finalAvatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"}" class="w-12 h-12 rounded-full object-cover shrink-0 bg-gray-100">
         <div class="flex-1 min-w-0 pr-6">
             <div class="flex items-center gap-1.5">
                 <span class="font-bold text-[15px] text-gray-900 truncate">${post.name}</span>
-                <span class="text-[14px] text-gray-500 truncate">${post.handle}</span>
-                <span class="text-[14px] text-gray-500 shrink-0">· ${post.time}</span>
+                <span class="text-[14px] text-gray-500 truncate">${pHandle}</span>
+                <span class="text-[14px] text-gray-500 shrink-0">· ${pTime}</span>
             </div>
             <div class="text-[15px] text-[#0f1419] mt-0.5 leading-[1.4] whitespace-pre-wrap break-words">${post.text}</div>
             ${imgHtml}
@@ -4295,9 +4298,12 @@ function createForumPostNode(post) {
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     <span>${post.retweets || 0}</span>
                 </div>
+                <div class="flex items-center gap-1.5 ${post.isLiked ? 'text-red-500' : ''}" onclick="event.stopPropagation(); toggleForumPostLike(${post.listIndex})">
+                    <svg class="w-[18px] h-[18px] ${post.isLiked ? 'opacity-100' : 'opacity-70'}" fill="${post.isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <span>${post.likes || 0}</span>
+                </div>
                 <div class="flex items-center gap-1.5">
-                    <svg class="w-[18px] h-[18px] opacity-70 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    <span>${post.likes !== undefined ? post.likes : 0}</span>
+                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </div>
             </div>
         </div>
@@ -4305,79 +4311,129 @@ function createForumPostNode(post) {
     return div;
 }
 
-// 新增删除推文的功能
-window.deleteForumPost = function(index) {
-    if (confirm("确定要删除这条推文吗？")) {
+// 【新增核心功能】：真正可以删帖的大脑控制代码，带有确认提示弹窗
+function deleteForumPost(index) {
+    if (confirm("确定要删除这条推文吗？删了就找不回来了哦！")) {
+        // 从记录里抹去这篇推文
         currentForumPostsData.splice(index, 1);
+        // 重新排列推文序号，防止乱套
         currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
+        // 存到本地记忆里
         localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+        // 立刻刷新广场，让推文马上消失
         refreshForumFeed();
+        // 如果是从帖子详情页里点的删除，帮你顺便把详情页自动关掉
+        document.getElementById('forum-detail-screen').classList.add('slide-hidden');
     }
-};
+}
 
-// 打开全屏详情页并渲染评论
-function openForumDetail(index) {
+window.openForumDetail = function(index) {
     const post = currentForumPostsData[index];
-    if (!post) return;
+    if(!post) return;
+    
     const container = document.getElementById('forum-detail-content');
+    let pTime = post.time || "刚刚";
+    let pHandle = post.handle || "@user";
+    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-4 rounded-2xl border border-gray-100 w-full object-cover">` : '';
     
     let commentsHtml = '';
-    if (post.comments && post.comments.length > 0) {
-        post.comments.forEach((c, cIdx) => {
-            let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
-            if (c.name === post.name) {
-                cAvatar = post.finalAvatar;
-            } else {
-                const f = friendList.find(x => x.realName === c.name || x.remark === c.name);
-                if (f && f.avatar) cAvatar = f.avatar;
-            }
-            // 给每一条评论加上了点击事件，可以随时回复
+    if(post.comments && post.comments.length > 0) {
+        post.comments.forEach(c => {
+            let cAvatar = c.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
             commentsHtml += `
-                <div class="flex gap-3 px-4 py-3 border-b border-gray-100 cursor-pointer active:bg-gray-50" onclick="replyToForumComment(${index}, '${c.name}')">
-                    <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
-                    <div class="flex-1">
-                        <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
-                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
+                <div class="flex gap-3 px-4 py-3 border-b border-gray-50 bg-white">
+                    <img src="${cAvatar}" class="w-10 h-10 rounded-full object-cover shrink-0 bg-gray-100">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <span class="font-bold text-[14px] text-gray-900">${c.name}</span>
+                            <span class="text-[13px] text-gray-500">${c.handle || '@' + c.name}</span>
+                        </div>
+                        <div class="text-[14px] text-[#0f1419] whitespace-pre-wrap break-words">${c.text}</div>
+                        <div class="flex items-center gap-4 mt-2 text-gray-500 text-[12px]">
+                            <button class="flex items-center gap-1 hover:text-blue-500" onclick="replyToForumComment(${index}, '${c.name}')">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                回复
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
         });
     } else {
-        commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
+        commentsHtml = '<div class="p-8 text-center text-gray-400 text-sm">还没有人评论</div>';
     }
-    
-    let imgHtml = post.imgSrc ? `<img src="${post.imgSrc}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : (post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : "");
 
-    if (post.likes === undefined) post.likes = Math.floor(Math.random() * 50) + 1;
+    let actionButtons = `
+        <div class="flex justify-around items-center py-3 border-b border-gray-100 text-gray-500">
+            <button class="flex items-center justify-center p-2 rounded-full hover:bg-blue-50 hover:text-blue-500 transition-colors" onclick="openForumCommentGenerateModal(${index})">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </button>
+            <button class="flex items-center justify-center p-2 rounded-full hover:bg-green-50 hover:text-green-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+            <button class="flex items-center justify-center p-2 rounded-full ${post.isLiked ? 'text-red-500' : 'hover:bg-red-50 hover:text-red-500'} transition-colors" onclick="toggleForumPostLike(${index})">
+                <svg class="w-6 h-6 ${post.isLiked ? 'opacity-100' : ''}" fill="${post.isLiked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            </button>
+            <button class="flex items-center justify-center p-2 rounded-full hover:bg-blue-50 hover:text-blue-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            </button>
+        </div>
+    `;
+
+    let commentInputBar = `
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex items-center gap-3 z-20">
+            <img src="${userProfile.avatar || 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg'}" class="w-8 h-8 rounded-full object-cover shrink-0">
+            <input type="text" id="forum-user-comment-input" placeholder="发布你的回复..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-[14px] outline-none" onkeydown="if(event.key === 'Enter') submitForumUserComment(${index})">
+            <button class="text-blue-500 font-bold text-[14px] px-2 active:scale-95" onclick="submitForumUserComment(${index})">发送</button>
+        </div>
+    `;
 
     container.innerHTML = `
-        <div class="p-4 border-b-8 border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${post.finalAvatar}" class="w-12 h-12 rounded-full object-cover">
-                <div>
-                    <div class="font-bold text-[16px] text-black">${post.name}</div>
-                    <div class="text-gray-500 text-[14px]">${post.handle}</div>
+        <div class="p-4 border-b border-gray-100 bg-white relative">
+            <div class="flex items-center gap-3 mb-3 pr-8">
+                <img src="${post.finalAvatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"}" class="w-12 h-12 rounded-full object-cover shrink-0 bg-gray-100">
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-[16px] text-gray-900 truncate">${post.name}</div>
+                    <div class="text-[14px] text-gray-500 truncate">${pHandle}</div>
+                </div>
+                <div class="absolute top-1 right-2 text-gray-400 p-2 cursor-pointer active:bg-gray-200 rounded-full" onclick="deleteForumPost(${index})">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
                 </div>
             </div>
             <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${(post.text||'').replace(/\n/g, '<br>')}</div>
             ${imgHtml}
-            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">${post.time || '刚刚'} · 智能生成</div>
-            <div class="flex justify-around items-center pt-3 text-gray-500">
-                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> ${post.comments ? post.comments.length : 0}</div>
-                
-                <div class="flex items-center gap-2 cursor-pointer active:scale-90 transition-transform" onclick="openForumCommentGenerateModal(${index})"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> ${post.retweets || 0}</div>
-                
-                <div class="flex items-center gap-2 cursor-pointer active:scale-90 transition-transform" onclick="toggleForumPostLike(${index})"><svg class="w-5 h-5 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> ${post.likes}</div>
-                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></div>
-            </div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">${pTime} · 智能生成</div>
+            ${actionButtons}
         </div>
-        <div class="pb-6">
+        <div class="pb-20">
             ${commentsHtml}
         </div>
+        ${commentInputBar}
     `;
     
     document.getElementById('forum-detail-screen').classList.remove('slide-hidden');
 }
+
+// 补充增加：用户自己发评论的功能 (你刚刚在详情页里打字点发送就会触发这个)
+window.submitForumUserComment = function(index) {
+    const input = document.getElementById('forum-user-comment-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const post = currentForumPostsData[index];
+    if(!post.comments) post.comments = [];
+    post.comments.push({
+        name: userProfile.name,
+        handle: userProfile.handle,
+        avatar: userProfile.avatar,
+        text: text
+    });
+    
+    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+    input.value = '';
+    openForumDetail(index); // 重新刷新详情页
+    refreshForumFeed(); // 同步刷新外面广场的数据
+};
 
 // ================= 新增论坛点赞与评论生成功能模块 =================
 window.toggleForumPostLike = function(index) {
