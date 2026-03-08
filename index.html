@@ -7311,6 +7311,109 @@ function drawWeightChart() {
         ctx.fillText(weight, x, y - 10);
     });
 }
+// ================= 苹果系统专属修复补丁：彻底解决更换照片失效与丢失问题 =================
+// 1. 创建一个永远不会被苹果杀后台机制清理的“全局相册选择器”
+const globalSafeImageInput = document.createElement('input');
+globalSafeImageInput.type = 'file';
+globalSafeImageInput.accept = 'image/*';
+globalSafeImageInput.style.display = 'none';
+document.body.appendChild(globalSafeImageInput);
+
+// 2. 覆盖所有原来的换图代码，让它们全部使用这个绝对安全的选图器
+window.changeAvatar = function(side) {
+    globalSafeImageInput.onchange = e => {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = ev => { document.getElementById(`avatar-${side}`).src = ev.target.result; };
+        reader.readAsDataURL(e.target.files[0]);
+        globalSafeImageInput.value = ''; 
+    };
+    globalSafeImageInput.click();
+};
+
+window.editProfilePart = function(part) {
+    if(part === 'bg' || part === 'avatar' || part === 'moments-bg') {
+        globalSafeImageInput.onchange = e => {
+            if (!e.target.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
+                if(part === 'moments-bg') document.getElementById('moments-bg-img').src = ev.target.result;
+                if(part === 'avatar') { if(typeof updateGlobalAvatar === 'function') updateGlobalAvatar(ev.target.result); }
+            };
+            reader.readAsDataURL(e.target.files[0]);
+            globalSafeImageInput.value = '';
+        };
+        globalSafeImageInput.click();
+    } else {
+        const map = {
+            'name': ['wx-me-name', '修改昵称', 'name'],
+            'handle': ['wx-me-id', '修改账号', 'handle'],
+            'bio': ['profile-bio', '修改简介', 'bio']
+        };
+        const cfg = map[part];
+        const el = document.getElementById(cfg[0]);
+        const res = prompt(cfg[1], el.innerText);
+        if(res !== null){
+            if(typeof userProfile !== 'undefined') userProfile[cfg[2]] = res;
+            if(cfg[2] === 'name') {
+                const e1 = document.getElementById('wx-me-name'); if(e1) e1.innerText = res;
+                const e2 = document.getElementById('profile-name'); if(e2) e2.innerText = res;
+                const e3 = document.getElementById('wx-moments-name'); if(e3) e3.innerText = res;
+            } else if(cfg[2] === 'handle') {
+                const e1 = document.getElementById('wx-me-id'); if(e1) e1.innerText = res;
+                const e2 = document.getElementById('profile-handle'); if(e2) e2.innerText = res;
+            } else {
+                const e1 = document.getElementById('profile-bio'); if(e1) e1.innerText = res;
+            }
+            if(typeof syncProfileToAI === 'function') syncProfileToAI();
+        }
+    }
+};
+
+window.changeForumAvatar = function() {
+    globalSafeImageInput.onchange = e => {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const newSrc = ev.target.result;
+            const el1 = document.getElementById('profile-avatar'); if (el1) el1.src = newSrc;
+            const el2 = document.getElementById('compose-avatar-sync'); if (el2) el2.src = newSrc;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+        globalSafeImageInput.value = '';
+    };
+    globalSafeImageInput.click();
+};
+
+window.changeAnyImage = function(el) {
+    globalSafeImageInput.onchange = e => {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            el.style.backgroundImage = `url(${ev.target.result})`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+            el.innerHTML = '';
+        };
+        reader.readAsDataURL(e.target.files[0]);
+        globalSafeImageInput.value = '';
+    };
+    globalSafeImageInput.click();
+};
+
+// 3. 悄悄修补“论坛头像无法保存”的漏洞
+setInterval(() => {
+    try {
+        let customDOMState = JSON.parse(localStorage.getItem('os_custom_dom_state')) || {};
+        const forumAvatar = document.getElementById('profile-avatar');
+        if (forumAvatar && forumAvatar.src) {
+            customDOMState['profile-avatar'] = forumAvatar.src;
+            localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+        }
+    } catch(e) {}
+}, 1000);
+// =====================================================================
 </script>
 </body>
 </html>
