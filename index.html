@@ -2567,7 +2567,9 @@ function changeAvatar(side){
         reader.onload=ev=>{ 
             const newSrc = ev.target.result;
             document.getElementById(`avatar-${side}`).src=newSrc; 
-            // 移除了全局同步，让桌面头像独立
+            // 【新增：把桌面小组件头像保存进记忆里】
+            if (side === 'left') userProfile.widgetLeftAvatar = newSrc;
+            if (side === 'right') userProfile.widgetRightAvatar = newSrc;
         };
         reader.readAsDataURL(file);
     };
@@ -3816,8 +3818,14 @@ function editProfilePart(part){
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = ev => {
-                if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
-                if(part === 'moments-bg') document.getElementById('moments-bg-img').src = ev.target.result;
+                if(part === 'bg') {
+                    document.getElementById('profile-bg').src = ev.target.result;
+                    userProfile.forumBg = ev.target.result; // 【新增：保存论坛背景】
+                }
+                if(part === 'moments-bg') {
+                    document.getElementById('moments-bg-img').src = ev.target.result;
+                    userProfile.momentsBg = ev.target.result; // 【新增：保存朋友圈背景】
+                }
                 if(part === 'avatar') updateGlobalAvatar(ev.target.result);
             };
             reader.readAsDataURL(file);
@@ -3910,6 +3918,8 @@ function changeForumAvatar() {
             if (el1) el1.src = newSrc;
             const el2 = document.getElementById('compose-avatar-sync');
             if (el2) el2.src = newSrc;
+            // 【新增：把论坛头像保存进记忆里】
+            userProfile.forumAvatar = newSrc;
         };
         reader.readAsDataURL(file);
     };
@@ -4810,12 +4820,24 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
+
 window.onload = () => { 
     switchWechatTab('messages'); 
     syncProfileToAI();
     renderFriendList(); 
     applyDarkModeStyle(); 
     // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
+
+    // 【新增：一打开网页，就把保存的所有头像和背景贴到画面上！】
+    if (userProfile.avatar) updateGlobalAvatar(userProfile.avatar);
+    if (userProfile.widgetLeftAvatar) document.getElementById('avatar-left').src = userProfile.widgetLeftAvatar;
+    if (userProfile.widgetRightAvatar) document.getElementById('avatar-right').src = userProfile.widgetRightAvatar;
+    if (userProfile.forumAvatar) {
+        if(document.getElementById('profile-avatar')) document.getElementById('profile-avatar').src = userProfile.forumAvatar;
+        if(document.getElementById('compose-avatar-sync')) document.getElementById('compose-avatar-sync').src = userProfile.forumAvatar;
+    }
+    if (userProfile.momentsBg) document.getElementById('moments-bg-img').src = userProfile.momentsBg;
+    if (userProfile.forumBg) document.getElementById('profile-bg').src = userProfile.forumBg;
 };
 
 // ================= 新增：短信(iMessage)功能模块 =================
