@@ -817,7 +817,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                         </svg>
                     </button>
                     <div class="flex-1 text-center font-bold text-[16px] text-black">推文</div>
-                    <button onclick="generateAIPosts()" class="flex items-center justify-center">
+                    <button onclick="openForumCharSelect()" class="flex items-center justify-center">
                         <img src="https://i.postimg.cc/BntTBs0P/IMG-3094.png" class="nav-sync-icon">
                     </button>
                 </div>
@@ -859,6 +859,30 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
             <button onclick="switchForumTab('profile')" id="tab-profile" class="flex flex-col items-center text-gray-400"><span class="text-xs font-bold">我</span></button>
         </div>
         <div class="fab-btn" onclick="openCompose()">+</div>
+    </div>
+    <div id="forum-char-select-modal" class="fixed inset-0 bg-black/50 hidden z-[110] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">选择要发帖的角色</h3>
+            <p class="text-[12px] text-gray-500 mb-3 text-center">不选则只生成陌生网友帖子</p>
+            <div id="forum-char-list" class="overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2 flex-1">
+            </div>
+            <div class="flex gap-3 shrink-0">
+                <button onclick="closeForumCharSelect()" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
+                <button onclick="executeForumGenerate()" class="flex-1 py-2.5 bg-black text-white rounded-[30px] font-bold text-[15px] active:scale-95 shadow-sm">开始生成</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="forum-detail-screen" class="page-layer slide-hidden flex flex-col z-[100] bg-white">
+        <div class="h-14 bg-white/90 backdrop-blur-md flex items-center px-4 border-b sticky top-0 z-10 shrink-0">
+            <button onclick="closeForumDetail()" class="back-icon w-10 flex justify-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18L9 12L15 6"/></svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[16px] text-black">帖子详情</div>
+            <div class="w-10"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto bg-white" id="forum-detail-content">
+        </div>
     </div>
 
     <div id="compose-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[70]">
@@ -4095,28 +4119,242 @@ function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     if(isUserPost) profileFeed.prepend(createNode());
 }
 
-async function generateAIPosts(){
-    if(!config.apiKey) return alert("同步广场需要配置 API Key");
+// 全局保存当前生成的帖子，用于详情页展示
+let currentForumPostsData = [];
+
+// 呼出选择角色菜单
+function openForumCharSelect() {
+    const container = document.getElementById('forum-char-list');
+    container.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    if (friends.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加任何角色</div>';
+    } else {
+        friends.forEach(f => {
+            container.innerHTML += `
+                <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-[14px] text-gray-800">${f.remark}</span>
+                    </div>
+                    <input type="checkbox" class="w-4 h-4 accent-black forum-char-checkbox" value="${f.id}">
+                </label>
+            `;
+        });
+    }
+    document.getElementById('forum-char-select-modal').classList.remove('hidden');
+}
+
+function closeForumCharSelect() {
+    document.getElementById('forum-char-select-modal').classList.add('hidden');
+}
+
+// 核心：单次 API 请求生成全部内容
+async function executeForumGenerate() {
+    if (!config.apiKey) return alert("请先配置 API Key");
+    
+    const checkboxes = document.querySelectorAll('.forum-char-checkbox');
+    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    closeForumCharSelect();
+    
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse">正在同步广场...</div>';
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
+    
+    let prompt = "";
+    if (selectedIds.length === 0) {
+        // 【情况一：未勾选角色】
+        prompt = `你需要生成 10 到 15 个由不同陌生网友发布的论坛帖子。这些帖子应该来自不同的话题区域（比如生活吐槽、游戏、情感求助、工作等）。
+每个帖子需要附带 3 到 5 条评论，其中必须包含其他陌生网友的回复，以及贴主对评论的回复互动。
+请返回 JSON 格式，严格遵循以下结构：
+{
+  "posts": [
+    {
+      "isChar": false,
+      "charId": "",
+      "name": "网友昵称",
+      "handle": "@账号",
+      "text": "帖子正文内容...",
+      "comments": [
+        {"name": "评论者昵称", "text": "评论内容"}
+      ]
+    }
+  ]
+}`;
+    } else {
+        // 【情况二：勾选了角色】提取记忆和人设
+        let charDetails = "";
+        selectedIds.forEach(id => {
+            const friend = friendList.find(f => f.id === id);
+            if (friend) {
+                let memory = "";
+                if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
+                charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
+            }
+        });
+        
+        prompt = `你需要生成两部分论坛帖子：
+第一部分：7 到 10 个由不同陌生网友发布的随机帖子（话题区域随意，如搞笑、求助、分享等）。
+第二部分：针对以下每一个提供的角色，生成 3 到 5 个基于他们的人设、以及他们和用户之间聊天记忆的帖子（比如角色求助恋爱问题、秀恩爱、分享日常等）。
+【重要】：所有的帖子都需要附带 3 到 5 条评论。如果是陌生人的帖子，评论是陌生人和贴主互动；如果是角色的帖子，评论里要有陌生网友和该角色的回复互动。
+角色列表及记忆如下：
+${charDetails}
+
+请返回 JSON 格式，严格遵循以下结构：
+{
+  "posts": [
+    {
+      "isChar": true或false,
+      "charId": "如果isChar为true，填上面的角色ID；否则留空",
+      "name": "昵称(如果是角色，必须使用角色的名字)",
+      "handle": "@账号",
+      "text": "帖子正文内容...",
+      "comments": [
+        {"name": "评论者昵称", "text": "评论内容"}
+      ]
+    }
+  ]
+}
+注意：请一次性输出完整的 JSON，绝对不要截断。`;
+    }
+
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
             body: JSON.stringify({
                 model: config.model,
-                messages: [{role: 'system', content: '生成10条社交动态，JSON格式：{"posts":[{"name":"昵称","handle":"@ID","text":"内容"}]}'}],
-                response_format: { type: "json_object" }
+                messages: [{role: 'user', content: prompt}],
+                response_format: { type: "json_object" },
+                temperature: 0.9,
+                max_tokens: 4000 // 防止因为字数太多被截断
             })
         });
+        
         const data = await response.json();
-        const posts = JSON.parse(data.choices[0].message.content).posts;
+        const parsed = JSON.parse(data.choices[0].message.content);
+        currentForumPostsData = parsed.posts || [];
+        
+        // 随机打乱数组，让角色和陌生人帖子混合显示
+        currentForumPostsData.sort(() => Math.random() - 0.5);
+        
         feed.innerHTML = "";
-        posts.forEach(p => addPostToFeed(p.name, p.handle, p.text, null, "刚刚"));
+        currentForumPostsData.forEach((p, index) => {
+            p.listIndex = index;
+            // 处理头像逻辑
+            let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+            if (p.isChar && p.charId) {
+                const f = friendList.find(x => x.id === p.charId);
+                if (f && f.avatar) avatar = f.avatar;
+            } else {
+                avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
+            }
+            p.finalAvatar = avatar;
+            
+            feed.appendChild(createForumPostNode(p));
+        });
+        
     } catch(e) {
-        feed.innerHTML = "";
-        addPostToFeed("开发者", "@dev", "连接超时，请检查 API 设置", null, "1s");
+        console.error(e);
+        feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，可能是配置错误或返回结果超长被截断了</div>';
     }
+}
+
+// 绘制广场帖子卡片
+function createForumPostNode(post) {
+    const div = document.createElement('div');
+    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
+    div.onclick = () => openForumDetail(post.listIndex);
+    
+    div.innerHTML = `
+        <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1">
+                <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
+                <span class="text-gray-500 text-[14px] truncate">${post.handle} · 刚刚</span>
+            </div>
+            <div class="text-[15px] text-[#0f1419] mt-0.5 leading-snug break-words pr-2">${post.text}</div>
+            
+            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] max-w-[200px]">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    <span>${post.comments ? post.comments.length : 0}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>0</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <span>${Math.floor(Math.random() * 50) + 1}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+// 打开全屏详情页并渲染评论
+function openForumDetail(index) {
+    const post = currentForumPostsData[index];
+    if (!post) return;
+    
+    const container = document.getElementById('forum-detail-content');
+    
+    let commentsHtml = '';
+    if (post.comments && post.comments.length > 0) {
+        post.comments.forEach(c => {
+            // 评论头像匹配：如果是贴主自己回复，沿用贴主头像；如果恰好匹配上已有角色，用角色头像；其余用随机像素头像
+            let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
+            if (c.name === post.name) {
+                cAvatar = post.finalAvatar;
+            } else {
+                const f = friendList.find(x => x.realName === c.name || x.remark === c.name);
+                if (f && f.avatar) cAvatar = f.avatar;
+            }
+            
+            commentsHtml += `
+                <div class="flex gap-3 px-4 py-3 border-b border-gray-100">
+                    <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
+                    <div class="flex-1">
+                        <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
+                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
+    }
+
+    container.innerHTML = `
+        <div class="p-4 border-b-8 border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${post.finalAvatar}" class="w-12 h-12 rounded-full object-cover">
+                <div>
+                    <div class="font-bold text-[16px] text-black">${post.name}</div>
+                    <div class="text-gray-500 text-[14px]">${post.handle}</div>
+                </div>
+            </div>
+            <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${post.text.replace(/\n/g, '<br>')}</div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · 智能生成</div>
+            <div class="flex justify-around items-center pt-3 text-gray-500">
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></div>
+            </div>
+        </div>
+        <div class="font-bold text-[16px] p-4 border-b border-gray-100">评论区</div>
+        <div class="pb-10">
+            ${commentsHtml}
+        </div>
+    `;
+    
+    document.getElementById('forum-detail-screen').classList.remove('slide-hidden');
+}
+
+function closeForumDetail() {
+    document.getElementById('forum-detail-screen').classList.add('slide-hidden');
 }
 
 function openModal(type){
