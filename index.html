@@ -2009,38 +2009,67 @@ let userProfile = JSON.parse(localStorage.getItem('os_user_profile')) || {
 
 let chatHistory = [];
 
-// === 【新增：全套记忆变量，用来保存音乐、动态和文字】 ===
-let playlist = JSON.parse(localStorage.getItem('os_playlist')) || [];
-let momentLikes = JSON.parse(localStorage.getItem('os_moment_likes')) || {};
-let customDOMText = JSON.parse(localStorage.getItem('os_custom_text')) || {};
-let customDOMImage = JSON.parse(localStorage.getItem('os_custom_image')) || {};
-let deskAvatars = JSON.parse(localStorage.getItem('os_desk_avatars')) || { left: '', right: '' };
-let appliedAppearance = JSON.parse(localStorage.getItem('os_appearance')) || { wallpaper: '', icons: {} };
-
 // 【修改开始】让好友列表和所有聊天记录，每次打开时都自动读取出来
 let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
 // 【全自动存档魔法】每隔 1 秒钟，偷偷把你的所有数据保存到设备里！
+// 这样不管是删后台、刷新还是直接退出，你的聊天记录、个人资料、API设置永远不会丢！
 setInterval(() => {
+    // 基础核心数据保存
     localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     localStorage.setItem('os_config', JSON.stringify(config));
     
-    // 【新增】：一秒保存一次你的音乐列表和点赞
-    localStorage.setItem('os_playlist', JSON.stringify(playlist));
-    localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
+    // ==========================================
+    // 新增：无敌全面存档系统（保存音乐、朋友圈、论坛、桌面所有图片文字）
+    // ==========================================
     
-    // 【新增】：一秒保存一次论坛和朋友圈的所有画面！
+    // 1. 保存音乐列表和点赞状态
+    if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
+    if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
+    
+    // 2. 保存朋友圈和论坛推文的画面（把发布的动态原封不动存下来）
     const momentsFeed = document.getElementById('moments-feed');
-    if(momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
+    if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
     
     const forumFeed = document.getElementById('forum-feed');
-    if(forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
+    if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
     
-    const profileFeed = document.getElementById('profile-posts-feed');
-    if(profileFeed) localStorage.setItem('os_profile_feed_html', profileFeed.innerHTML);
+    const profilePostsFeed = document.getElementById('profile-posts-feed');
+    if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
+
+    // 3. 保存主屏幕换过的壁纸
+    const desktopBody = document.getElementById('desktop-body');
+    if (desktopBody && desktopBody.style.backgroundImage) {
+        localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
+    }
+
+    // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
+    let customDOMState = {};
+    const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+    
+    editableElements.forEach((el, index) => {
+        if (!el.id) el.id = 'auto_save_id_' + index; // 给没有名字的元素强行打上编号
+        
+        if (el.tagName === 'IMG') {
+            customDOMState[el.id] = el.src;
+        } else {
+            customDOMState[el.id + '_html'] = el.innerHTML;
+            if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
+        }
+    });
+
+    // 额外强制保存一些特殊文字（比如关注人数、桌面时间日期等）
+    const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
+    specialIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) customDOMState[id + '_html'] = el.innerHTML;
+    });
+
+    localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+    
 }, 1000);
 
 // 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
@@ -2588,9 +2617,7 @@ function changeAvatar(side){
         reader.onload=ev=>{ 
             const newSrc = ev.target.result;
             document.getElementById(`avatar-${side}`).src=newSrc; 
-            // 【新增：把桌面头像存到底层记忆】
-            deskAvatars[side] = newSrc;
-            localStorage.setItem('os_desk_avatars', JSON.stringify(deskAvatars));
+            // 移除了全局同步，让桌面头像独立
         };
         reader.readAsDataURL(file);
     };
@@ -3382,11 +3409,9 @@ async function triggerAI(){
         renderAllMessages();
         return;
     }
+    
     const btn=document.getElementById('gen-btn-icon');
-    if(btn) {
-        btn.style.opacity="0.5";
-        btn.style.pointerEvents="none";
-    }
+    if(btn) { btn.style.opacity="0.5"; btn.style.pointerEvents="none"; }
 
     // --- 修改：保持字体大小和粗细跟原本完全一致，仅仅把颜色改成浅灰色 ---
     const titleEl = document.getElementById('chat-detail-title');
@@ -3410,7 +3435,7 @@ async function triggerAI(){
             if (wxMemoryText) {
                 finalSystemMessage += `\n【你们在微信的记忆总结】：\n${wxMemoryText}`;
             }
-
+            
             let smsMemoryText = "";
             if (friend.smsMemoryList && friend.smsMemoryList.length > 0) {
                 smsMemoryText = friend.smsMemoryList.join('\n');
@@ -3420,7 +3445,7 @@ async function triggerAI(){
             }
         }
     }
-
+    
     const friend = friendList.find(f => f.id === currentFriendId);
     if(friend) {
         // 自动获取当前的真实时间喂给AI
@@ -3443,12 +3468,14 @@ async function triggerAI(){
             });
             personaPrompt += `\n请你扮演群里的某个角色进行回复（你可以根据对话上下文决定由谁来回复，或者群里的几个人互相接话）。回复时，必须在每句话最前面加上角色的名字和冒号，例如：“[角色名]: 回复内容”。你需要根据用户的人设、自己的人设以及其他角色的人设进行真实的群聊互动。`;
         } else {
-            personaPrompt = `你的真实名字是：${friend.realName}。 你的设定是：${friend.persona}。 你不知道自己被用户设置了什么备注。`;
+            personaPrompt = `你的真实名字是：${friend.realName}。
+你的设定是：${friend.persona}。
+你不知道自己被用户设置了什么备注。`;
             if (friend.userPersona) {
                 personaPrompt += `\n当前用户（我）的人设是：${friend.userPersona}。`;
             }
         }
-        
+
         finalSystemMessage += `\n\n${personaPrompt}
 
 【核心回复气泡（条数）规则 - 极其重要】
@@ -3456,18 +3483,23 @@ async function triggerAI(){
 - 通常情况：每次回复分为 5 到 6 条独立的消息（即写 5 到 6 行）。
 - ！！性格决定条数！！：必须严格按照你（${friend.realName}）的人设性格来调整。高冷、寡言、疲惫等人设只回 3 到 4 行即可；话痨、开朗、激动的人设可以回 6 到 7 行以上。
 - 绝对不要把所有话挤在同一行里发出来，你的每一行都会被系统变成一个独立的聊天气泡发送给用户！
-- 【严厉警告】：绝对不允许在回复中带上任何序号、排版前缀或行号（千万不要写“Line 1:”、“1.”、“消息1”等字眼）！只允许输出纯文本，像活人一样自然地分开发送。
+- 【严厉警告】：绝对不允许在回复中带上任何序号、排版前缀或行号（千万不要写“Line 1:”、“1.”、“消息1”等字眼）！只允许输出纯文本，用换行符（回车）隔开即可！
 
-【时间感知系统】
-当前手机真实时间：${timeString}。
+【活人感引擎：注意，当前真实世界时间是 ${timeString}】
 ============================================
-# 【第一部分：时间影响优先级】
-优先级顺序：
-1: "StoryContext - 剧情连贯性（最优先）"
-  - 如果正在进行高潮剧情或紧凑对话，可忽略时间。
-  - 特殊日期（覆盖一切）
-2: "TimeTriggers - 环境触发器（优先于普通状态）"
-3: "TimeSlots - 基础时间轴（默认状态）"
+# 【第一部分：硬性规则】必须放在最前面
+FORBIDDEN:
+  - "机械报时（禁止：'现在是晚上10点'、'时间是凌晨3点'）"
+  - "状态与时间严重不符（深夜不应精力充沛，清晨不应话多活跃）"
+  - "孤立的时间问候（时间必须融入对话，不能单独存在后就没了）"
+  - "每次回复都强调时间（适度，不要变成时间播报员）"
+  - "因时间状态而完全抑制角色核心特质"
+
+Priority:
+  1: "SpecialDates - 特殊日期（覆盖一切）"
+  2: "TimeTriggers - 环境触发器（优先于普通状态）"
+  3: "TimeSlots - 基础时间轴（默认状态）"
+
 SkipConditions:
   - "紧急剧情或高强度情感对话"
   - "对方明确表示不想聊时间相关话题"
@@ -3512,7 +3544,7 @@ TimeSlots:
 
 # 【第四部分：时间流逝表达风格】
 TimeExpressions:
-  style: "符合你人设性格的时间表达风格" 
+  style: "符合你人设性格的时间表达风格"
   cross_period: ["不知不觉天都黑了", "聊着聊着…已经是新的一天了"]
   next_morning: ["早上好…昨晚睡得好吗？"]
 
@@ -3529,8 +3561,11 @@ TimeChecklist:
     if (friend && friend.isTranslationEnabled) {
         finalSystemMessage += `\n\n【强制翻译要求】：你开启了多语言自动翻译。你的每一条回复都必须严格使用以下单行HTML代码包裹（绝对不能在代码中间换行！），只需要把里面的[原语言]和[中文翻译]替换成你的回复即可：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">[原语言]</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">[中文翻译]</div></div></div>`;
     }
-
-    finalSystemMessage += `\n\n当前与你对话的用户信息：\n昵称: ${userProfile.name}\n账号: ${userProfile.handle}\n个性签名: ${userProfile.bio}\n当前状态: ${userProfile.status}`;
+    finalSystemMessage += `\n\n当前与你对话的用户信息：
+    昵称: ${userProfile.name}
+    账号: ${userProfile.handle}
+    个性签名: ${userProfile.bio}
+    当前状态: ${userProfile.status}`;
 
     let aiEmojiLib = "\n\n【特别设定】你现在拥有以下表情包库。如果你想发表情包，请在回复中单独占一行，原样输出对应的【代码】即可。\n";
     let hasEmoji = false;
@@ -3540,13 +3575,10 @@ TimeChecklist:
             hasEmoji = true;
         });
     }
-    if (hasEmoji) {
-        finalSystemMessage += aiEmojiLib;
-    }
+    if (hasEmoji) { finalSystemMessage += aiEmojiLib; }
 
-    const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
+     const latestUserMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "";
     let injectedLore = [];
-    
     // 【核心修改】：群聊要把群的关联世界书和所有角色的关联世界书都融合读取
     let linkedIds = [];
     if (friend.isGroup) {
@@ -3563,100 +3595,113 @@ TimeChecklist:
     } else {
         linkedIds = friend.linkedLorebooks || [];
     }
-
     const activeLorebooks = lorebook.filter(entry => linkedIds.includes(entry.id));
 
     activeLorebooks.forEach(entry => {
         let keywords = [];
+        
         // 1. 如果填了关键词，就把关键词放进触发条件里
         if (entry.key) {
             keywords = entry.key.split(',').map(k => k.trim()).filter(k => k);
         }
-        // 2. 不管填没填关键词，都把标题也作为触发条件之一
-        if (entry.title) {
-            keywords.push(entry.title.trim());
-        }
-
-        // 只要最新的一句话里包含了任何一个触发词，就把这段设定喂给AI
-        const shouldInject = keywords.some(kw => latestUserMsg.includes(kw));
         
-        if (shouldInject) {
-            injectedLore.push(`- ${entry.title}: ${entry.content}`);
+        // 2. 不管填没填关键词，都把“世界书内容”本身也加进触发条件里
+        if (entry.content) {
+            keywords.push(entry.content);
         }
-    });
-
-    if (injectedLore.length > 0) {
-        finalSystemMessage += `\n\n【附加世界书设定】\n` + injectedLore.join('\n');
-    }
-
-    let formattedMessages = [{role:'system', content:finalSystemMessage}];
-    
-    chatHistory.slice(-10).forEach(msg => {
-        // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
-        let textOnly = msg.content;
         
-        if (textOnly.startsWith('[转账|')) {
-            const parts = textOnly.replace(/\[|\]/g, '').split('|');
-            const sender = parts[2];
-            const amt = parts[3];
-            const note = parts[4];
-            const status = parts[5];
-            
-            if (sender === 'user') {
-                if (status === 'pending') {
-                    textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
-                } else if (status === 'accepted') {
-                    textOnly = `[你已接收了我转账的 ${amt}元]`;
-                } else if (status === 'returned') {
-                    textOnly = `[你已退回了我转账的 ${amt}元]`;
-                }
-            } else {
-                if (status === 'pending') {
-                    textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
-                } else if (status === 'accepted') {
-                    textOnly = `[我已接收了你转账的 ${amt}元]`;
-                } else if (status === 'returned') {
-                    textOnly = `[我已退回了你转账的 ${amt}元]`;
-                }
+        // 检查：只要用户发送的话里，包含了上述任何一个触发条件，就提取这个设定！
+        let triggered = false;
+        for(let k of keywords) {
+            if(k && latestUserMsg.includes(k)) {
+                triggered = true;
+                break; 
             }
-            formattedMessages.push({ role: msg.role, content: textOnly });
-            return; // 翻译完毕，跳过下面直接进入下一条
-        } else if (textOnly.startsWith('[系统消息:')) {
-            formattedMessages.push({ role: msg.role, content: textOnly });
-            return; // 直接处理系统提示
         }
         
-        // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
-        if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
-            // 把后面的排版代码一刀切掉，只保留前面的纯文字
-            let textOnly = msg.content.split('\n<div')[0];
-            // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
-            textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
-            formattedMessages.push({ role: msg.role, content: textOnly });
-            return; // 这一条处理完毕，直接跳过后面的识图步骤
-        }
-
-        const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
-        if (imgMatch) {
-            const base64Url = imgMatch[1];
-            let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
-            // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
-            if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
-            
-            formattedMessages.push({
-                role: msg.role,
-                content: [
-                    { type: "text", text: textOnly },
-                    { type: "image_url", image_url: { url: base64Url } }
-                ]
-            });
-        } else {
-            formattedMessages.push({ role: msg.role, content: msg.content });
+        if(triggered) {
+            injectedLore.push(`[设定《${entry.title || '未命名'}》: ${entry.content}]`);
         }
     });
+        if(injectedLore.length > 0) {
+            finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
+            console.log("注入了世界书数据:", injectedLore);
+        }
+        
+        // --- ★ 新增：让AI一次性生成所有对话并整体总结心声 ---
+        finalSystemMessage += `\n\n【核心心声要求】：在你的全部回复内容最末尾，你必须对这整次回复进行一个整体的内心想法总结。格式必须严格为：<心声>这里写你总体的内心真实想法</心声>。注意：心声是对本次你所有说的话的“整体总结”，只允许在末尾输出一次，绝对不要每说一句话就加一个心声！而且你的正文千万不要出现这个标签。`;
 
-    // 🌟 这里就是之前漏掉的关键代码 try {  🌟
-    try {
+        try {
+            // 【修复】微信使用真正的多模态格式读取微信的历史记录
+
+        let formattedMessages = [{role:'system', content:finalSystemMessage}];
+        chatHistory.slice(-5).forEach(msg => {
+            
+            // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
+            let textOnly = msg.content;
+            if (textOnly.startsWith('[转账|')) {
+                const parts = textOnly.replace(/\[|\]/g, '').split('|');
+                const sender = parts[2];
+                const amt = parts[3];
+                const note = parts[4];
+                const status = parts[5];
+                
+                if (sender === 'user') {
+                    if (status === 'pending') {
+                        textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
+                    } else if (status === 'accepted') {
+                        textOnly = `[你已接收了我转账的 ${amt}元]`;
+                    } else if (status === 'returned') {
+                        textOnly = `[你已退回了我转账的 ${amt}元]`;
+                    }
+                } else {
+                    if (status === 'pending') {
+                        textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
+                    } else if (status === 'accepted') {
+                        textOnly = `[我已接收了你转账的 ${amt}元]`;
+                    } else if (status === 'returned') {
+                        textOnly = `[我已退回了你转账的 ${amt}元]`;
+                    }
+                }
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 翻译完毕，跳过下面直接进入下一条
+            } else if (textOnly.startsWith('[系统消息:')) {
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 直接处理系统提示
+            }
+
+            // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+
+            if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
+                // 把后面的排版代码一刀切掉，只保留前面的纯文字
+                let textOnly = msg.content.split('\n<div')[0];
+                // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
+                textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
+                
+                formattedMessages.push({ role: msg.role, content: textOnly });
+                return; // 这一条处理完毕，直接跳过后面的识图步骤
+            }
+
+            const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
+            if (imgMatch) {
+                const base64Url = imgMatch[1];
+                let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+ 
+               // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
+                if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
+                
+                formattedMessages.push({
+                    role: msg.role,
+                    content: [
+                        { type: "text", text: textOnly },
+                        { type: "image_url", image_url: { url: base64Url } }
+                    ]
+                });
+            } else {
+                formattedMessages.push({ role: msg.role, content: msg.content });
+            }
+        });
+
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.apiKey}`},
@@ -3667,41 +3712,40 @@ TimeChecklist:
                 max_tokens:800
             })
         });
-        const data=await response.json();
-        let reply=data.choices[0].message.content;
 
-        // --- ★ 新增：拦截并提取AI在末尾生成的心声 ---
-        let extractedVoice = "";
-        const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
-        const voiceMatch = reply.match(voiceRegex);
-        if (voiceMatch) {
-            extractedVoice = voiceMatch[1].trim();
-            reply = reply.replace(voiceRegex, '').trim(); // 把心声从正文里抠出去，以免发给用户看到
-        }
+            const data=await response.json();
+            let reply=data.choices[0].message.content;
 
-        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
-        let extraMessages = [];
-        let needsFullRender = false;
+            // --- ★ 新增：拦截并提取AI在末尾生成的心声 ---
+            let extractedVoice = "";
+            const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
+            const voiceMatch = reply.match(voiceRegex);
+            if (voiceMatch) {
+                extractedVoice = voiceMatch[1].trim();
+                reply = reply.replace(voiceRegex, '').trim(); // 把心声从正文里抠出去，以免发给用户看到
+            }
+
+            // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+            let extraMessages = [];
+            let needsFullRender = false;
         
         // 检查 AI 是否偷偷接受或退回了转账
         if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
             const isAccept = reply.includes('【接受转账】');
-            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
+            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim(); // 抹除暗号
             
-            // 抹除气泡橙色状态，变成已收款或已退还
+            // 倒序查找你发给它的最近一笔还没领的钱
             for(let i = chatHistory.length - 1; i >= 0; i--) {
-                if (chatHistory[i].role === 'user' && chatHistory[i].content.includes('[转账|') && chatHistory[i].content.includes('|pending]')) {
-                    chatHistory[i].content = chatHistory[i].content.replace('|pending]', isAccept ? '|accepted]' : '|returned]');
-                    
-                    const parts = chatHistory[i].content.replace(/\[|\]/g, '').split('|');
-                    const amt = parseFloat(parts[3]);
-                    
+                if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
+                    const amt = chatHistory[i].content.split('|')[3];
                     if (isAccept) {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
                         extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
                     } else {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
                         extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
-                        // 退还的钱加回钱包
-                        addTransaction('转账退还', amt, 'income');
+                        // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里，并显示名字 ===
+                        addTransaction(`${friend.remark} 退回转账`, amt, 'income');
                     }
                     needsFullRender = true;
                     break;
@@ -3731,9 +3775,7 @@ TimeChecklist:
 
         // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
-        
         newMessages = newMessages.concat(extraMessages); // 先弹系统消息和转账气泡，再弹AI的回复
-        
         // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -3753,7 +3795,7 @@ TimeChecklist:
         if (!textOnly && (!images || images.length === 0)) {
             newMessages.push({role:'assistant', content: reply});
         }
-
+        
         // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
         let msgIndex = 0;
         function showNextMsg() {
@@ -3772,11 +3814,8 @@ TimeChecklist:
             } else {
                 // 消息全发完了，恢复原来的备注名字和发送按钮
                 titleEl.innerText = originalTitle;
-                if(btn) {
-                    btn.style.opacity="1";
-                    btn.style.pointerEvents="auto";
-                }
-                
+                if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+
                 // --- 新增：检查消息条数够不够，够了就触发自动总结 ---
                 checkAndTriggerAutoSummary();
                 // 自动根据这轮对话生成TA的心声！
@@ -3785,21 +3824,18 @@ TimeChecklist:
         }
         showNextMsg(); // 启动一条条发送！
 
-    } catch(e) {
+    }catch(e){ 
         chatHistory.push({role:'assistant',content:"（消息发送失败，请检查配置）"});
         renderAllMessages();
         // 如果网络出错，也要记得恢复名字和发送按钮
         titleEl.innerText = originalTitle;
-        if(btn) {
-            btn.style.opacity="1";
-            btn.style.pointerEvents="auto";
-        }
+        if(btn) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
     }
     // 注意：原来的 finally 代码块已经被我删掉了，因为恢复按钮的逻辑已经写到了上面的发完消息的步骤里
 }
 // --- 替换部分结束 ---
 
-ion openMePage(title) {
+function openMePage(title) {
     document.getElementById('me-detail-title').innerText = title;
     document.getElementById('me-detail-page').classList.remove('slide-hidden');
 }
@@ -4061,12 +4097,7 @@ function editAnyText(id) {
     const el = document.getElementById(id);
     if (!el) return;
     const res = prompt("修改文本内容", el.innerText);
-    if (res !== null && res.trim() !== '') {
-        el.innerText = res.trim();
-        // 【新增】：把改过的文字存进记忆
-        customDOMText[id] = res.trim();
-        localStorage.setItem('os_custom_text', JSON.stringify(customDOMText));
-    }
+    if (res !== null && res.trim() !== '') el.innerText = res;
 }
 
 function changeAnyImage(el) {
@@ -4077,20 +4108,10 @@ function changeAnyImage(el) {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = ev => {
-            const img = el.querySelector('img');
-            if (img) {
-                img.src = ev.target.result;
-            } else {
-                el.innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover pointer-events-none">`;
-            }
-            
-            // 【新增】：自动追踪这是第几个图片，并存入记忆
-            const all = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
-            const idx = Array.from(all).indexOf(el);
-            if (idx !== -1) {
-                customDOMImage[idx] = ev.target.result;
-                localStorage.setItem('os_custom_image', JSON.stringify(customDOMImage));
-            }
+            el.style.backgroundImage = `url(${ev.target.result})`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+            el.innerHTML = '';
         };
         reader.readAsDataURL(file);
     };
@@ -4815,9 +4836,8 @@ function saveAppearanceApp() {
     // 1. 应用壁纸
     if (tempAppearance.wallpaper) {
         document.getElementById('desktop-body').style.backgroundImage = `url(${tempAppearance.wallpaper})`;
-        appliedAppearance.wallpaper = tempAppearance.wallpaper;
     }
-
+    
     // 2. 应用所有更改过的图标到真实桌面
     for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
         const desktopImg = document.getElementById(iconId);
@@ -4825,19 +4845,14 @@ function saveAppearanceApp() {
             desktopImg.src = imgSrc;
             // 如果原本是纯色占位的背景，现在去除了
             if(desktopImg.style.backgroundColor) desktopImg.style.backgroundColor = 'transparent';
-            appliedAppearance.icons[iconId] = imgSrc;
         }
     }
-    
-    // 【新增】：真正把外观存进手机底层记忆里
-    localStorage.setItem('os_appearance', JSON.stringify(appliedAppearance));
     
     // 保存全局聊天背景到缓存
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
         localStorage.setItem('globalChatBg', tempAppearance.chatBg);
     }
-    
     alert("✅ 外观设置已应用到桌面！");
     closeAppearanceApp();
 }
@@ -4846,55 +4861,79 @@ function saveAppearanceApp() {
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
 window.onload = () => {
+    // ==========================================
+    // 新增：在页面刚打开时，立刻把所有保存的数据恢复到屏幕上
+    // ==========================================
+    
+    // 1. 恢复音乐列表和朋友圈点赞
+    const savedPlaylist = localStorage.getItem('os_playlist');
+    if (savedPlaylist && typeof playlist !== 'undefined') {
+        playlist = JSON.parse(savedPlaylist);
+        if (typeof renderPlaylist === 'function') renderPlaylist();
+    }
+    const savedLikes = localStorage.getItem('os_moment_likes');
+    if (savedLikes && typeof momentLikes !== 'undefined') momentLikes = JSON.parse(savedLikes);
+    
+    // 2. 恢复朋友圈长相
+    const savedMoments = localStorage.getItem('os_moments_html');
+    if (savedMoments) {
+        const momentsFeed = document.getElementById('moments-feed');
+        if (momentsFeed) momentsFeed.innerHTML = savedMoments;
+    }
+    
+    // 3. 恢复论坛推文长相
+    const savedForum = localStorage.getItem('os_forum_html');
+    if (savedForum) {
+        const forumFeed = document.getElementById('forum-feed');
+        if (forumFeed) forumFeed.innerHTML = savedForum;
+    }
+    const savedProfilePosts = localStorage.getItem('os_profile_posts_html');
+    if (savedProfilePosts) {
+        const profilePostsFeed = document.getElementById('profile-posts-feed');
+        if (profilePostsFeed) profilePostsFeed.innerHTML = savedProfilePosts;
+    }
+
+    // 4. 恢复桌面壁纸
+    const savedBg = localStorage.getItem('os_desktop_bg');
+    if (savedBg) {
+        const desktopBody = document.getElementById('desktop-body');
+        if (desktopBody) desktopBody.style.backgroundImage = savedBg;
+    }
+
+    // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
+    const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+    editableElements.forEach((el, index) => {
+        if (!el.id) el.id = 'auto_save_id_' + index;
+    });
+
+    // 6. 恢复所有被更改过的自定义文本和图标图片
+    const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
+    if (savedCustomState) {
+        for (const key in savedCustomState) {
+            if (key.endsWith('_html')) {
+                const realId = key.replace('_html', '');
+                const el = document.getElementById(realId);
+                if (el) el.innerHTML = savedCustomState[key];
+            } else if (key.endsWith('_bg')) {
+                const realId = key.replace('_bg', '');
+                const el = document.getElementById(realId);
+                if (el) el.style.backgroundImage = savedCustomState[key];
+            } else {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (el.tagName === 'IMG') el.src = savedCustomState[key];
+                    else el.innerHTML = savedCustomState[key];
+                }
+            }
+        }
+    }
+    // ==========================================
+
     switchWechatTab('messages');
     syncProfileToAI();
     renderFriendList();
     applyDarkModeStyle();
-    
-    // === 【新增：开机自动恢复你的桌面外观和图标】 ===
-    if (appliedAppearance.wallpaper) {
-        document.getElementById('desktop-body').style.backgroundImage = `url(${appliedAppearance.wallpaper})`;
-    }
-    for (const [iconId, imgSrc] of Object.entries(appliedAppearance.icons)) {
-        const el = document.getElementById(iconId);
-        if (el) {
-            el.src = imgSrc;
-            el.style.backgroundColor = 'transparent';
-        }
-    }
-    
-    // === 【新增：开机恢复桌面的左右心情小头像】 ===
-    if (deskAvatars.left) document.getElementById('avatar-left').src = deskAvatars.left;
-    if (deskAvatars.right) document.getElementById('avatar-right').src = deskAvatars.right;
-    
-    // === 【新增：开机自动恢复你改过的所有文字】 ===
-    for (const id in customDOMText) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = customDOMText[id];
-    }
-    
-    // === 【新增：开机自动恢复你改过的所有图片(相册等)】 ===
-    const allCustomImgs = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
-    for (const idx in customDOMImage) {
-        const el = allCustomImgs[idx];
-        if (el) {
-            if (el.querySelector('img')) {
-                el.querySelector('img').src = customDOMImage[idx];
-            } else {
-                el.innerHTML = `<img src="${customDOMImage[idx]}" class="w-full h-full object-cover pointer-events-none">`;
-            }
-        }
-    }
-    
-    // === 【新增：开机自动恢复朋友圈和推文的历史动态】 ===
-    const savedMoments = localStorage.getItem('os_moments_html');
-    if(savedMoments && savedMoments.trim() !== '') document.getElementById('moments-feed').innerHTML = savedMoments;
-    
-    const savedForum = localStorage.getItem('os_forum_html');
-    if(savedForum && savedForum.trim() !== '') document.getElementById('forum-feed').innerHTML = savedForum;
-    
-    const savedProfileFeed = localStorage.getItem('os_profile_feed_html');
-    if(savedProfileFeed && savedProfileFeed.trim() !== '') document.getElementById('profile-posts-feed').innerHTML = savedProfileFeed;
+    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 };
 
 // ================= 新增：短信(iMessage)功能模块 =================
@@ -6162,7 +6201,7 @@ function applyDarkModeStyle() {
 }
 
 // ================= 终极版：真·音乐播放器控制引擎 =================
-// playlist 已经在最上面声明并读取了，这里不需要再声明空数组了
+let playlist = [];
 let currentSongIndex = -1;
 let isPlaying = false;
 let playMode = 'list'; // 播放模式：'list'列表循环, 'single'单曲循环, 'random'随机播放
