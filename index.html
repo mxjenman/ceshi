@@ -8,6 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="echo">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <title>echo</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1670,6 +1673,13 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
             <button onclick="closeWeightCharSelect()" class="w-full py-2.5 bg-gray-100 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
         </div>
+    </div>
+
+    <div id="moments-comment-mask" class="fixed inset-0 z-[220] hidden" onclick="hideMomentsCommentBar()"></div>
+    
+    <div id="moments-comment-bar" class="fixed inset-x-0 bottom-0 bg-[#f7f7f7] border-t flex items-center gap-2 px-3 py-3 z-[230] hidden transform translate-y-full transition-transform duration-300 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <input id="moments-comment-input" type="text" class="flex-1 border border-gray-300 rounded-lg bg-white px-3 py-2 outline-none text-[15px]" placeholder="评论" onkeydown="if(event.key === 'Enter') submitMomentsComment()">
+        <button class="bg-[#07c160] text-white px-4 py-2 rounded-lg text-[14px] font-bold active:scale-95 transition-transform" onclick="submitMomentsComment()">发送</button>
     </div>
 
 <script>
@@ -4484,13 +4494,83 @@ function toggleLike(momentId) {
     }
 }
 
+// 记录当前正在评论的朋友圈ID和被回复人的名字
+let currentCommentMomentId = null;
+let currentReplyTargetName = null;
+
+// 显示底部输入框的魔法
+function showMomentsCommentBar(momentId, replyName = null) {
+    currentCommentMomentId = momentId;
+    currentReplyTargetName = replyName;
+    
+    const mask = document.getElementById('moments-comment-mask');
+    const bar = document.getElementById('moments-comment-bar');
+    const input = document.getElementById('moments-comment-input');
+    
+    mask.classList.remove('hidden');
+    bar.classList.remove('hidden');
+    
+    // 动画滑出
+    setTimeout(() => {
+        bar.classList.remove('translate-y-full');
+    }, 10);
+    
+    if (replyName) {
+        input.placeholder = `回复 ${replyName}：`;
+    } else {
+        input.placeholder = "评论";
+    }
+    input.value = "";
+    input.focus();
+}
+
+// 隐藏底部输入框
+function hideMomentsCommentBar() {
+    const mask = document.getElementById('moments-comment-mask');
+    const bar = document.getElementById('moments-comment-bar');
+    
+    bar.classList.add('translate-y-full');
+    setTimeout(() => {
+        mask.classList.add('hidden');
+        bar.classList.add('hidden');
+    }, 300);
+    
+    currentCommentMomentId = null;
+    currentReplyTargetName = null;
+}
+
+// 真正点击发送按钮的动作
+function submitMomentsComment() {
+    const input = document.getElementById('moments-comment-input');
+    const text = input.value.trim();
+    if (!text || !currentCommentMomentId) return;
+    
+    if (currentReplyTargetName) {
+        // 这是一个回复
+        const finalReply = `回复 <span class="text-[#576b95] font-bold">${currentReplyTargetName}</span>：${text}`;
+        appendComment(currentCommentMomentId, userProfile.name, finalReply, false);
+        
+        // 呼叫AI
+        const aiFriends = friendList.filter(f => f.remark === currentReplyTargetName || f.realName === currentReplyTargetName);
+        if(aiFriends.length > 0) {
+            setTimeout(() => {
+                if (typeof generateAIComment === 'function') {
+                    generateAIComment(currentCommentMomentId, aiFriends[0].id, finalReply, null);
+                }
+            }, 1500);
+        }
+    } else {
+        // 这是一个普通评论
+        appendComment(currentCommentMomentId, userProfile.name, text, false);
+    }
+    
+    hideMomentsCommentBar();
+}
+
 // 点击自己发表评论
 function openMomentComment(momentId) {
     toggleMomentPopover(momentId);
-    const comment = prompt("评论这条朋友圈：");
-    if (comment && comment.trim() !== "") {
-        appendComment(momentId, userProfile.name, comment.trim(), false);
-    }
+    showMomentsCommentBar(momentId, null);
 }
 
 // 负责把评论加到界面的通用函数
@@ -4499,7 +4579,7 @@ function appendComment(momentId, name, text, isAI) {
     const commentsArea = document.getElementById(`comments-area-${momentId}`);
     interactionArea.classList.remove('hidden');
     commentsArea.classList.remove('hidden');
-
+    
     // 给每条评论生成一个唯一的身份证号，防止删错
     const commentId = 'cmt_' + Date.now() + Math.floor(Math.random() * 1000);
     const div = document.createElement('div');
@@ -4507,7 +4587,6 @@ function appendComment(momentId, name, text, isAI) {
     // 增加点击反馈颜色，增加内边距让它更好点
     div.className = "mb-0.5 break-words cursor-pointer active:bg-gray-200 transition-colors rounded px-1";
     div.id = commentId;
-
     // 绑定防刷新的魔法点击和长按事件
     div.setAttribute('onclick', `handleCommentClick('${momentId}', '${name}', '${commentId}')`);
     div.setAttribute('ontouchstart', `startCommentPress(event, '${momentId}', '${commentId}')`);
@@ -4516,7 +4595,7 @@ function appendComment(momentId, name, text, isAI) {
     div.setAttribute('onmousedown', `startCommentPress(event, '${momentId}', '${commentId}')`);
     div.setAttribute('onmouseup', `cancelCommentPress('${commentId}')`);
     div.setAttribute('onmouseleave', `cancelCommentPress('${commentId}')`);
-
+    
     // 统一格式，不需要区分AI还是自己了，大家都能点
     div.innerHTML = `<span class="text-[#576b95] font-bold">${name}</span><span class="text-gray-800">：${text}</span>`;
     commentsArea.appendChild(div);
@@ -4527,24 +4606,9 @@ window.handleCommentClick = function(momentId, name, commentId) {
     const el = document.getElementById(commentId);
     // 如果刚刚是长按操作，就拦截掉，不要弹出回复框
     if (el && el.getAttribute('data-longpressed') === 'true') return;
-    
-    const replyText = prompt(`回复 ${name}：`);
-    if (replyText && replyText.trim() !== "") {
-        // 组装成微信那种 “回复 xxx：内容” 的样式
-        const finalReply = `回复 <span class="text-[#576b95] font-bold">${name}</span>：${replyText.trim()}`;
-        appendComment(momentId, userProfile.name, finalReply, false);
-        
-        // 如果是在回复AI，也顺便呼叫AI，让它有可能继续回复你
-        const aiFriends = friendList.filter(f => f.remark === name || f.realName === name);
-        if(aiFriends.length > 0) {
-             // 假装思考一小会儿再回复
-             setTimeout(() => {
-                 if (typeof generateAIComment === 'function') {
-                     generateAIComment(momentId, aiFriends[0].id, finalReply, null);
-                 }
-             }, 1500);
-        }
-    }
+
+    // 呼出我们好看的输入框，而不是以前那种丑弹窗
+    showMomentsCommentBar(momentId, name);
 };
 
 window.startCommentPress = function(e, momentId, commentId) {
