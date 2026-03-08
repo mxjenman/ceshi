@@ -7311,20 +7311,35 @@ function drawWeightChart() {
         ctx.fillText(weight, x, y - 10);
     });
 }
-// ================= 苹果系统专属修复补丁：彻底解决更换照片失效与丢失问题 =================
-// 1. 创建一个永远不会被苹果杀后台机制清理的“全局相册选择器”
+// ================= 终极修复补丁：全局同步 + 防篡改死锁系统 =================
+// 1. 创建绝对安全的全局选图器
 const globalSafeImageInput = document.createElement('input');
 globalSafeImageInput.type = 'file';
 globalSafeImageInput.accept = 'image/*';
 globalSafeImageInput.style.display = 'none';
 document.body.appendChild(globalSafeImageInput);
 
-// 2. 覆盖所有原来的换图代码，让它们全部使用这个绝对安全的选图器
+// 2. 专门解决【微信主页】和【朋友圈】头像不同步的问题
+window.updateGlobalAvatar = function(newSrc) {
+    // 把程序里所有代表“你”的头像ID全部列出来，一网打尽！
+    const myAvatars = ['wx-me-avatar', 'wx-moments-avatar', 'moments-avatar', 'profile-avatar', 'compose-avatar-sync'];
+    myAvatars.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('src', newSrc);
+    });
+    // 存入VIP专属记忆库
+    localStorage.setItem('vip_my_avatar', newSrc);
+};
+
+// 3. 覆盖所有换图代码
 window.changeAvatar = function(side) {
     globalSafeImageInput.onchange = e => {
         if (!e.target.files[0]) return;
         const reader = new FileReader();
-        reader.onload = ev => { document.getElementById(`avatar-${side}`).src = ev.target.result; };
+        reader.onload = ev => { 
+            const el = document.getElementById(`avatar-${side}`);
+            if(el) el.setAttribute('src', ev.target.result); 
+        };
         reader.readAsDataURL(e.target.files[0]);
         globalSafeImageInput.value = ''; 
     };
@@ -7337,9 +7352,9 @@ window.editProfilePart = function(part) {
             if (!e.target.files[0]) return;
             const reader = new FileReader();
             reader.onload = ev => {
-                if(part === 'bg') document.getElementById('profile-bg').src = ev.target.result;
-                if(part === 'moments-bg') document.getElementById('moments-bg-img').src = ev.target.result;
-                if(part === 'avatar') { if(typeof updateGlobalAvatar === 'function') updateGlobalAvatar(ev.target.result); }
+                if(part === 'bg') document.getElementById('profile-bg').setAttribute('src', ev.target.result);
+                if(part === 'moments-bg') document.getElementById('moments-bg-img').setAttribute('src', ev.target.result);
+                if(part === 'avatar') updateGlobalAvatar(ev.target.result); // 触发VIP同步
             };
             reader.readAsDataURL(e.target.files[0]);
             globalSafeImageInput.value = '';
@@ -7353,6 +7368,7 @@ window.editProfilePart = function(part) {
         };
         const cfg = map[part];
         const el = document.getElementById(cfg[0]);
+        if(!el) return;
         const res = prompt(cfg[1], el.innerText);
         if(res !== null){
             if(typeof userProfile !== 'undefined') userProfile[cfg[2]] = res;
@@ -7375,11 +7391,7 @@ window.changeForumAvatar = function() {
     globalSafeImageInput.onchange = e => {
         if (!e.target.files[0]) return;
         const reader = new FileReader();
-        reader.onload = ev => {
-            const newSrc = ev.target.result;
-            const el1 = document.getElementById('profile-avatar'); if (el1) el1.src = newSrc;
-            const el2 = document.getElementById('compose-avatar-sync'); if (el2) el2.src = newSrc;
-        };
+        reader.onload = ev => { updateGlobalAvatar(ev.target.result); }; // 论坛头像也走VIP同步
         reader.readAsDataURL(e.target.files[0]);
         globalSafeImageInput.value = '';
     };
@@ -7402,17 +7414,50 @@ window.changeAnyImage = function(el) {
     globalSafeImageInput.click();
 };
 
-// 3. 悄悄修补“论坛头像无法保存”的漏洞
+// 4. 解决“删后台头像变回去”的终极武器：【0.5秒高频自动巡逻死锁】
+// 之前变回去是因为系统加载代码把你换的图覆盖了，现在保安每0.5秒巡逻一次，发现不对立刻给你换回来！
 setInterval(() => {
     try {
-        let customDOMState = JSON.parse(localStorage.getItem('os_custom_dom_state')) || {};
-        const forumAvatar = document.getElementById('profile-avatar');
-        if (forumAvatar && forumAvatar.src) {
-            customDOMState['profile-avatar'] = forumAvatar.src;
-            localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+        // 巡逻1：死锁你的微信/论坛主头像
+        const savedMyAvatar = localStorage.getItem('vip_my_avatar');
+        if (savedMyAvatar) {
+            const myAvatars = ['wx-me-avatar', 'wx-moments-avatar', 'moments-avatar', 'profile-avatar', 'compose-avatar-sync'];
+            myAvatars.forEach(id => {
+                const el = document.getElementById(id);
+                // 发现头像被篡改，马上强行钉死回去！
+                if (el && el.getAttribute('src') !== savedMyAvatar) {
+                    el.setAttribute('src', savedMyAvatar);
+                }
+            });
+        }
+
+        // 巡逻2：死锁桌面组件和另外几个会变回去的小头像
+        const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
+        if (savedCustomState) {
+            for (const key in savedCustomState) {
+                if (key.endsWith('_bg')) {
+                    const realId = key.replace('_bg', '');
+                    const el = document.getElementById(realId);
+                    if (el && savedCustomState[key].length > 50) {
+                        const coreData = savedCustomState[key].substring(25, 60); 
+                        if (el.style.backgroundImage && !el.style.backgroundImage.includes(coreData)) {
+                            el.style.backgroundImage = savedCustomState[key];
+                        }
+                    }
+                } else if (!key.endsWith('_html')) {
+                    const el = document.getElementById(key);
+                    if (el && el.tagName === 'IMG') {
+                        // 如果发现小头像被原系统刷没了，强行再刷回来！
+                        const currentSrc = el.getAttribute('src') || '';
+                        if (currentSrc !== savedCustomState[key]) {
+                            el.setAttribute('src', savedCustomState[key]);
+                        }
+                    }
+                }
+            }
         }
     } catch(e) {}
-}, 1000);
+}, 500);
 // =====================================================================
 </script>
 </body>
