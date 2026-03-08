@@ -4972,7 +4972,13 @@ window.onload = () => {
             } else if (key.endsWith('_bg')) {
                 const realId = key.replace('_bg', '');
                 const el = document.getElementById(realId);
-                if (el) el.style.backgroundImage = savedCustomState[key];
+                if (el) {
+                    el.style.backgroundImage = savedCustomState[key];
+                    // 【关键修复】：恢复时强制要求图片保持完美缩放和居中！
+                    el.style.backgroundSize = 'cover';
+                    el.style.backgroundPosition = 'center';
+                    el.style.backgroundRepeat = 'no-repeat';
+                }
             } else {
                 const el = document.getElementById(key);
                 if (el) {
@@ -7442,6 +7448,10 @@ setInterval(() => {
                         const coreData = savedCustomState[key].substring(25, 60); 
                         if (el.style.backgroundImage && !el.style.backgroundImage.includes(coreData)) {
                             el.style.backgroundImage = savedCustomState[key];
+                            // 【关键修复】：巡逻强制刷回来的时候，也要强制保持完美缩放和居中！
+                            el.style.backgroundSize = 'cover';
+                            el.style.backgroundPosition = 'center';
+                            el.style.backgroundRepeat = 'no-repeat';
                         }
                     }
                 } else if (!key.endsWith('_html')) {
