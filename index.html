@@ -2009,17 +2009,38 @@ let userProfile = JSON.parse(localStorage.getItem('os_user_profile')) || {
 
 let chatHistory = [];
 
+// === 【新增：全套记忆变量，用来保存音乐、动态和文字】 ===
+let playlist = JSON.parse(localStorage.getItem('os_playlist')) || [];
+let momentLikes = JSON.parse(localStorage.getItem('os_moment_likes')) || {};
+let customDOMText = JSON.parse(localStorage.getItem('os_custom_text')) || {};
+let customDOMImage = JSON.parse(localStorage.getItem('os_custom_image')) || {};
+let deskAvatars = JSON.parse(localStorage.getItem('os_desk_avatars')) || { left: '', right: '' };
+let appliedAppearance = JSON.parse(localStorage.getItem('os_appearance')) || { wallpaper: '', icons: {} };
+
 // 【修改开始】让好友列表和所有聊天记录，每次打开时都自动读取出来
 let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
 // 【全自动存档魔法】每隔 1 秒钟，偷偷把你的所有数据保存到设备里！
-// 这样不管是删后台、刷新还是直接退出，你的聊天记录、个人资料、API设置永远不会丢！
 setInterval(() => {
     localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     localStorage.setItem('os_config', JSON.stringify(config));
+    
+    // 【新增】：一秒保存一次你的音乐列表和点赞
+    localStorage.setItem('os_playlist', JSON.stringify(playlist));
+    localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
+    
+    // 【新增】：一秒保存一次论坛和朋友圈的所有画面！
+    const momentsFeed = document.getElementById('moments-feed');
+    if(momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
+    
+    const forumFeed = document.getElementById('forum-feed');
+    if(forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
+    
+    const profileFeed = document.getElementById('profile-posts-feed');
+    if(profileFeed) localStorage.setItem('os_profile_feed_html', profileFeed.innerHTML);
 }, 1000);
 
 // 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
@@ -2567,7 +2588,9 @@ function changeAvatar(side){
         reader.onload=ev=>{ 
             const newSrc = ev.target.result;
             document.getElementById(`avatar-${side}`).src=newSrc; 
-            // 移除了全局同步，让桌面头像独立
+            // 【新增：把桌面头像存到底层记忆】
+            deskAvatars[side] = newSrc;
+            localStorage.setItem('os_desk_avatars', JSON.stringify(deskAvatars));
         };
         reader.readAsDataURL(file);
     };
@@ -4047,7 +4070,12 @@ function editAnyText(id) {
     const el = document.getElementById(id);
     if (!el) return;
     const res = prompt("修改文本内容", el.innerText);
-    if (res !== null && res.trim() !== '') el.innerText = res;
+    if (res !== null && res.trim() !== '') {
+        el.innerText = res.trim();
+        // 【新增】：把改过的文字存进记忆
+        customDOMText[id] = res.trim();
+        localStorage.setItem('os_custom_text', JSON.stringify(customDOMText));
+    }
 }
 
 function changeAnyImage(el) {
@@ -4058,10 +4086,20 @@ function changeAnyImage(el) {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = ev => {
-            el.style.backgroundImage = `url(${ev.target.result})`;
-            el.style.backgroundSize = 'cover';
-            el.style.backgroundPosition = 'center';
-            el.innerHTML = '';
+            const img = el.querySelector('img');
+            if (img) {
+                img.src = ev.target.result;
+            } else {
+                el.innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover pointer-events-none">`;
+            }
+            
+            // 【新增】：自动追踪这是第几个图片，并存入记忆
+            const all = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
+            const idx = Array.from(all).indexOf(el);
+            if (idx !== -1) {
+                customDOMImage[idx] = ev.target.result;
+                localStorage.setItem('os_custom_image', JSON.stringify(customDOMImage));
+            }
         };
         reader.readAsDataURL(file);
     };
@@ -4786,8 +4824,9 @@ function saveAppearanceApp() {
     // 1. 应用壁纸
     if (tempAppearance.wallpaper) {
         document.getElementById('desktop-body').style.backgroundImage = `url(${tempAppearance.wallpaper})`;
+        appliedAppearance.wallpaper = tempAppearance.wallpaper;
     }
-    
+
     // 2. 应用所有更改过的图标到真实桌面
     for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
         const desktopImg = document.getElementById(iconId);
@@ -4795,14 +4834,19 @@ function saveAppearanceApp() {
             desktopImg.src = imgSrc;
             // 如果原本是纯色占位的背景，现在去除了
             if(desktopImg.style.backgroundColor) desktopImg.style.backgroundColor = 'transparent';
+            appliedAppearance.icons[iconId] = imgSrc;
         }
     }
+    
+    // 【新增】：真正把外观存进手机底层记忆里
+    localStorage.setItem('os_appearance', JSON.stringify(appliedAppearance));
     
     // 保存全局聊天背景到缓存
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
         localStorage.setItem('globalChatBg', tempAppearance.chatBg);
     }
+    
     alert("✅ 外观设置已应用到桌面！");
     closeAppearanceApp();
 }
@@ -4810,12 +4854,56 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-window.onload = () => { 
-    switchWechatTab('messages'); 
+window.onload = () => {
+    switchWechatTab('messages');
     syncProfileToAI();
-    renderFriendList(); 
-    applyDarkModeStyle(); 
-    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
+    renderFriendList();
+    applyDarkModeStyle();
+    
+    // === 【新增：开机自动恢复你的桌面外观和图标】 ===
+    if (appliedAppearance.wallpaper) {
+        document.getElementById('desktop-body').style.backgroundImage = `url(${appliedAppearance.wallpaper})`;
+    }
+    for (const [iconId, imgSrc] of Object.entries(appliedAppearance.icons)) {
+        const el = document.getElementById(iconId);
+        if (el) {
+            el.src = imgSrc;
+            el.style.backgroundColor = 'transparent';
+        }
+    }
+    
+    // === 【新增：开机恢复桌面的左右心情小头像】 ===
+    if (deskAvatars.left) document.getElementById('avatar-left').src = deskAvatars.left;
+    if (deskAvatars.right) document.getElementById('avatar-right').src = deskAvatars.right;
+    
+    // === 【新增：开机自动恢复你改过的所有文字】 ===
+    for (const id in customDOMText) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = customDOMText[id];
+    }
+    
+    // === 【新增：开机自动恢复你改过的所有图片(相册等)】 ===
+    const allCustomImgs = document.querySelectorAll('[onclick="changeAnyImage(this)"]');
+    for (const idx in customDOMImage) {
+        const el = allCustomImgs[idx];
+        if (el) {
+            if (el.querySelector('img')) {
+                el.querySelector('img').src = customDOMImage[idx];
+            } else {
+                el.innerHTML = `<img src="${customDOMImage[idx]}" class="w-full h-full object-cover pointer-events-none">`;
+            }
+        }
+    }
+    
+    // === 【新增：开机自动恢复朋友圈和推文的历史动态】 ===
+    const savedMoments = localStorage.getItem('os_moments_html');
+    if(savedMoments && savedMoments.trim() !== '') document.getElementById('moments-feed').innerHTML = savedMoments;
+    
+    const savedForum = localStorage.getItem('os_forum_html');
+    if(savedForum && savedForum.trim() !== '') document.getElementById('forum-feed').innerHTML = savedForum;
+    
+    const savedProfileFeed = localStorage.getItem('os_profile_feed_html');
+    if(savedProfileFeed && savedProfileFeed.trim() !== '') document.getElementById('profile-posts-feed').innerHTML = savedProfileFeed;
 };
 
 // ================= 新增：短信(iMessage)功能模块 =================
@@ -6083,7 +6171,7 @@ function applyDarkModeStyle() {
 }
 
 // ================= 终极版：真·音乐播放器控制引擎 =================
-let playlist = [];
+// playlist 已经在最上面声明并读取了，这里不需要再声明空数组了
 let currentSongIndex = -1;
 let isPlaying = false;
 let playMode = 'list'; // 播放模式：'list'列表循环, 'single'单曲循环, 'random'随机播放
