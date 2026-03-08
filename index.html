@@ -1244,7 +1244,7 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
                 <input type="file" id="global-chat-bg-input" class="hidden" accept="image/*" onchange="handleGlobalChatBg(this)">
             </div>
-            <h3 class="text-gray-500 text-xs font-bold mb-2 ml-2 uppercase">更改桌面图标 (点击更换)</h3>
+            <h3 class="text-gray-500 text-xs font-bold mb-2 ml-2 uppercase">更改桌面图标和名称 (点击图片换图标，点击文字换名称)</h3>
             <div class="bg-white rounded-xl p-4 mb-6 shadow-sm grid grid-cols-4 gap-4 place-items-center" id="icon-edit-grid">
                 </div>
             <input type="file" id="icon-file-input" class="hidden" accept="image/*" onchange="handleIconSelect(this)">
@@ -2049,9 +2049,19 @@ let fontPresets = JSON.parse(localStorage.getItem('fontPresets_data')) || {};
 // 新增：用于暂存外观设置的变量
 let tempAppearance = {
     wallpaper: '',
-    icons: {}
+    icons: {},
+    names: {} // 新增：用来暂存改过的名字
 };
 let currentEditingIconId = '';
+
+// 新增：专门修改外观设置里APP名称的函数
+function editAppearanceAppName(iconId, currentName) {
+    const newName = prompt("修改APP名称：", currentName);
+    if (newName !== null && newName.trim() !== '') {
+        document.getElementById(`preview-name-${iconId}`).innerText = newName.trim();
+        tempAppearance.names[iconId] = newName.trim();
+    }
+}
 
 // 【修改开始】让个人资料每次从手机记忆里读取，读不到才用默认的
 let userProfile = JSON.parse(localStorage.getItem('os_user_profile')) || {
@@ -4963,27 +4973,33 @@ function openAppearanceApp() {
     // 生成图标网格
     const iconGrid = document.getElementById('icon-edit-grid');
     iconGrid.innerHTML = '';
-    const desktopIcons = [
+    const iconsList = [
         { id: 'icon-wechat', name: '微信' },
         { id: 'icon-lorebook', name: '世界书' },
+        { id: 'icon-placeholder2', name: '记录' },
         { id: 'icon-forum', name: '论坛' },
-        { id: 'icon-placeholder2', name: '占位2' },
-        { id: 'icon-sms', name: '短信' },
+        { id: 'icon-sms', name: '信息' },
         { id: 'icon-settings', name: '设置' },
         { id: 'icon-appearance', name: '外观' },
         { id: 'icon-placeholder4', name: '查手机' }
     ];
-
-    desktopIcons.forEach(icon => {
+    
+    // 获取已经保存过的自定义名称
+    const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
+    
+    iconsList.forEach(icon => {
         const desktopImg = document.getElementById(icon.id);
         const currentSrc = tempAppearance.icons[icon.id] || (desktopImg ? desktopImg.src : '');
         
+        // 决定显示的名字：优先用刚刚暂存的，其次用以前保存过的，最后用默认的
+        const displayName = tempAppearance.names[icon.id] || savedAppNames[icon.id] || icon.name;
+
         iconGrid.innerHTML += `
-            <div class="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="triggerIconEdit('${icon.id}')">
-                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200">
+            <div class="flex flex-col items-center gap-1">
+                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200 cursor-pointer active:scale-95 transition-transform" onclick="triggerIconEdit('${icon.id}')">
                     <img id="preview-${icon.id}" src="${currentSrc}" class="w-full h-full object-cover">
                 </div>
-                <span class="text-[10px] text-gray-500">${icon.name}</span>
+                <span id="preview-name-${icon.id}" class="text-[10px] text-gray-500 cursor-pointer hover:text-black underline decoration-gray-300 underline-offset-2 px-1" onclick="editAppearanceAppName('${icon.id}', '${displayName}')">${displayName}</span>
             </div>
         `;
     });
@@ -4992,6 +5008,7 @@ function openAppearanceApp() {
 function closeAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.add('slide-hidden');
     tempAppearance.icons = {}; // 清除未保存的暂存状态
+    tempAppearance.names = {}; // 新增：清除未保存的文字状态
 }
 
 // 处理壁纸选择
@@ -5037,7 +5054,6 @@ function saveAppearanceApp() {
     if (tempAppearance.wallpaper) {
         document.getElementById('desktop-body').style.backgroundImage = `url(${tempAppearance.wallpaper})`;
     }
-    
     // 2. 应用所有更改过的图标到真实桌面
     for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
         const desktopImg = document.getElementById(iconId);
@@ -5048,11 +5064,27 @@ function saveAppearanceApp() {
         }
     }
     
+    // 3. 新增：应用所有更改过的名称到真实桌面
+    let savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
+    for (const [iconId, newName] of Object.entries(tempAppearance.names)) {
+        savedAppNames[iconId] = newName;
+        const desktopImg = document.getElementById(iconId);
+        if (desktopImg) {
+            // 通过图片往上找父元素，再找旁边的文字元素
+            const iconContainer = desktopImg.closest('.app-icon');
+            if (iconContainer && iconContainer.nextElementSibling) {
+                iconContainer.nextElementSibling.innerText = newName;
+            }
+        }
+    }
+    localStorage.setItem('os_app_names', JSON.stringify(savedAppNames));
+    
     // 保存全局聊天背景到缓存
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
         localStorage.setItem('globalChatBg', tempAppearance.chatBg);
     }
+    
     alert("✅ 外观设置已应用到桌面！");
     closeAppearanceApp();
 }
@@ -5139,6 +5171,19 @@ window.onload = () => {
     syncProfileToAI();
     renderFriendList();
     applyDarkModeStyle();
+
+    // 【新增】：一开网页就恢复你之前改过的所有桌面APP名称
+    const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
+    for (const [iconId, newName] of Object.entries(savedAppNames)) {
+        const desktopImg = document.getElementById(iconId);
+        if (desktopImg) {
+            const iconContainer = desktopImg.closest('.app-icon');
+            if (iconContainer && iconContainer.nextElementSibling) {
+                iconContainer.nextElementSibling.innerText = newName;
+            }
+        }
+    }
+
     // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 };
 
