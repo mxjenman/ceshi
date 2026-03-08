@@ -4497,23 +4497,105 @@ function openMomentComment(momentId) {
 function appendComment(momentId, name, text, isAI) {
     const interactionArea = document.getElementById(`interaction-area-${momentId}`);
     const commentsArea = document.getElementById(`comments-area-${momentId}`);
-    
     interactionArea.classList.remove('hidden');
     commentsArea.classList.remove('hidden');
-    
+
+    // 给每条评论生成一个唯一的身份证号，防止删错
+    const commentId = 'cmt_' + Date.now() + Math.floor(Math.random() * 1000);
     const div = document.createElement('div');
-    div.className = "mb-0.5 break-words";
     
-    if (isAI) {
-        // AI 的名字可以点击，点击就能回复他
-        div.innerHTML = `<span class="text-[#576b95] font-bold cursor-pointer active:opacity-50" onclick="replyToComment('${momentId}', '${name}')">${name}</span>: <span class="text-gray-800">${text}</span>`;
-    } else {
-        // 自己发的不带点击
-        div.innerHTML = `<span class="text-[#576b95] font-bold">${name}</span>: <span class="text-gray-800">${text}</span>`;
-    }
-    
+    // 增加点击反馈颜色，增加内边距让它更好点
+    div.className = "mb-0.5 break-words cursor-pointer active:bg-gray-200 transition-colors rounded px-1";
+    div.id = commentId;
+
+    // 绑定防刷新的魔法点击和长按事件
+    div.setAttribute('onclick', `handleCommentClick('${momentId}', '${name}', '${commentId}')`);
+    div.setAttribute('ontouchstart', `startCommentPress(event, '${momentId}', '${commentId}')`);
+    div.setAttribute('ontouchend', `cancelCommentPress('${commentId}')`);
+    div.setAttribute('ontouchmove', `cancelCommentPress('${commentId}')`);
+    div.setAttribute('onmousedown', `startCommentPress(event, '${momentId}', '${commentId}')`);
+    div.setAttribute('onmouseup', `cancelCommentPress('${commentId}')`);
+    div.setAttribute('onmouseleave', `cancelCommentPress('${commentId}')`);
+
+    // 统一格式，不需要区分AI还是自己了，大家都能点
+    div.innerHTML = `<span class="text-[#576b95] font-bold">${name}</span><span class="text-gray-800">：${text}</span>`;
     commentsArea.appendChild(div);
 }
+
+// ================= 新增：处理评论短按回复和长按删除的全局魔法 =================
+window.handleCommentClick = function(momentId, name, commentId) {
+    const el = document.getElementById(commentId);
+    // 如果刚刚是长按操作，就拦截掉，不要弹出回复框
+    if (el && el.getAttribute('data-longpressed') === 'true') return;
+    
+    const replyText = prompt(`回复 ${name}：`);
+    if (replyText && replyText.trim() !== "") {
+        // 组装成微信那种 “回复 xxx：内容” 的样式
+        const finalReply = `回复 <span class="text-[#576b95] font-bold">${name}</span>：${replyText.trim()}`;
+        appendComment(momentId, userProfile.name, finalReply, false);
+        
+        // 如果是在回复AI，也顺便呼叫AI，让它有可能继续回复你
+        const aiFriends = friendList.filter(f => f.remark === name || f.realName === name);
+        if(aiFriends.length > 0) {
+             // 假装思考一小会儿再回复
+             setTimeout(() => {
+                 if (typeof generateAIComment === 'function') {
+                     generateAIComment(momentId, aiFriends[0].id, finalReply, null);
+                 }
+             }, 1500);
+        }
+    }
+};
+
+window.startCommentPress = function(e, momentId, commentId) {
+    const el = document.getElementById(commentId);
+    if(!el) return;
+    el.removeAttribute('data-longpressed');
+    
+    el.pressTimer = setTimeout(() => {
+        el.setAttribute('data-longpressed', 'true');
+        // 呼出酷炫的黑色气泡菜单
+        if (typeof showContextMenu === 'function') {
+            showContextMenu(e, [
+                { label: '删除评论', action: () => {
+                    const commentsArea = el.parentElement;
+                    const interactionArea = document.getElementById(`interaction-area-${momentId}`);
+                    el.remove(); // 直接把评论从页面上拔掉
+                    
+                    // 如果删完之后发现评论区空了，就把评论区藏起来
+                    if (commentsArea && commentsArea.children.length === 0) {
+                        commentsArea.classList.add('hidden');
+                        // 如果连上面的点赞区也是隐藏的，那就把整个灰色大背景全藏起来
+                        const likesArea = document.getElementById(`likes-area-${momentId}`);
+                        if (likesArea && likesArea.classList.contains('hidden')) {
+                            interactionArea.classList.add('hidden');
+                        }
+                    }
+                }}
+            ], el);
+        } else {
+            // 万一找不到黑色菜单，用普通弹窗做备用
+            if (confirm("要删除这条评论吗？")) {
+                const commentsArea = el.parentElement;
+                const interactionArea = document.getElementById(`interaction-area-${momentId}`);
+                el.remove();
+                if (commentsArea && commentsArea.children.length === 0) {
+                    commentsArea.classList.add('hidden');
+                    const likesArea = document.getElementById(`likes-area-${momentId}`);
+                    if (likesArea && likesArea.classList.contains('hidden')) {
+                        interactionArea.classList.add('hidden');
+                    }
+                }
+            }
+        }
+    }, 500); // 500毫秒（半秒）算作长按
+};
+
+window.cancelCommentPress = function(commentId) {
+    const el = document.getElementById(commentId);
+    if(el && el.pressTimer) clearTimeout(el.pressTimer);
+};
+// ========================================================================
 
 // 用户回复某条 AI 的评论
 function replyToComment(momentId, targetName) {
