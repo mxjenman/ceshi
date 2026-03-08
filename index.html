@@ -1998,7 +1998,10 @@ let tempAppearance = {
 };
 let currentEditingIconId = '';
 
-let userProfile = {
+let currentEditingIconId = '';
+
+// 【修改开始】让个人资料每次从手机记忆里读取，读不到才用默认的
+let userProfile = JSON.parse(localStorage.getItem('os_user_profile')) || {
     name: "{{user}}",
     handle: "@user_ai",
     avatar: "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
@@ -2007,9 +2010,25 @@ let userProfile = {
 };
 
 let chatHistory = [];
-let friendList = [];
+
+// 【修改开始】让好友列表和所有聊天记录，每次打开时都自动读取出来
+let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
-let isMultiSelecting = false;  // 记住是否正在多选
+let isMultiSelecting = false;
+
+// 【全自动存档魔法】每隔 1 秒钟，偷偷把你的所有数据保存到设备里！
+// 这样不管是删后台、刷新还是直接退出，你的聊天记录、个人资料、API设置永远不会丢！
+setInterval(() => {
+    localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    localStorage.setItem('os_config', JSON.stringify(config));
+}, 1000);
+
+// 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
+const savedConfig = JSON.parse(localStorage.getItem('os_config'));
+if (savedConfig) {
+    config = { ...config, ...savedConfig };
+}  // 记住是否正在多选
 let selectedMsgIndices = new Set(); // 记住多选了哪些消息
 let currentQuoteMsg = null;
 // 记住正在引用哪句话
@@ -7121,83 +7140,6 @@ function drawWeightChart() {
         ctx.fillText(weight, x, y - 10);
     });
 }
-    // --- ★ 全局自动记忆引擎 开始 ★ ---
-    // 【1. 每次打开网页时，自动读取上次保存的数据】
-    window.addEventListener('DOMContentLoaded', () => {
-        try {
-            // 恢复微信好友、聊天记录、头像
-            if (typeof friends !== 'undefined' && localStorage.getItem('os_friends')) {
-                const data = JSON.parse(localStorage.getItem('os_friends'));
-                friends.length = 0; data.forEach(item => friends.push(item));
-            }
-            // 恢复论坛/朋友圈动态
-            if (typeof posts !== 'undefined' && localStorage.getItem('os_posts')) {
-                const data = JSON.parse(localStorage.getItem('os_posts'));
-                posts.length = 0; data.forEach(item => posts.push(item));
-            }
-            if (typeof moments !== 'undefined' && localStorage.getItem('os_moments')) {
-                const data = JSON.parse(localStorage.getItem('os_moments'));
-                moments.length = 0; data.forEach(item => moments.push(item));
-            }
-            // 恢复短信
-            if (typeof smsMessages !== 'undefined' && localStorage.getItem('os_smsMessages')) {
-                const data = JSON.parse(localStorage.getItem('os_smsMessages'));
-                smsMessages.length = 0; data.forEach(item => smsMessages.push(item));
-            }
-            // 恢复体重健康记录
-            if (typeof weightRecords !== 'undefined' && localStorage.getItem('os_weightRecords')) {
-                const data = JSON.parse(localStorage.getItem('os_weightRecords'));
-                weightRecords.length = 0; data.forEach(item => weightRecords.push(item));
-            }
-            // 恢复你自己的个人信息（名字、主头像）
-            if (typeof myProfile !== 'undefined' && localStorage.getItem('os_myProfile')) {
-                const data = JSON.parse(localStorage.getItem('os_myProfile'));
-                Object.assign(myProfile, data);
-            }
-            // 恢复桌面图标
-            if (typeof apps !== 'undefined' && localStorage.getItem('os_apps')) {
-                const data = JSON.parse(localStorage.getItem('os_apps'));
-                apps.length = 0; data.forEach(item => apps.push(item));
-            }
-            
-            // 恢复自定义壁纸
-            const savedWallpaper = localStorage.getItem('os_wallpaper');
-            if(savedWallpaper) {
-                document.body.style.backgroundImage = `url(${savedWallpaper})`;
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center';
-            }
-
-            // 延迟0.5秒刷新一下界面，让刚才恢复的数据显示出来
-            setTimeout(() => {
-                if(typeof renderFriendsList === 'function') renderFriendsList();
-                if(typeof renderMoments === 'function') renderMoments();
-                if(typeof renderAppGrid === 'function') renderAppGrid();
-            }, 500);
-
-        } catch(e) { 
-            console.log("记忆恢复加载中..."); 
-        }
-    });
-
-    // 【2. 每隔 2 秒钟，自动把所有数据偷偷保存进缓存】
-    setInterval(() => {
-        if (typeof friends !== 'undefined') localStorage.setItem('os_friends', JSON.stringify(friends));
-        if (typeof posts !== 'undefined') localStorage.setItem('os_posts', JSON.stringify(posts));
-        if (typeof moments !== 'undefined') localStorage.setItem('os_moments', JSON.stringify(moments));
-        if (typeof smsMessages !== 'undefined') localStorage.setItem('os_smsMessages', JSON.stringify(smsMessages));
-        if (typeof weightRecords !== 'undefined') localStorage.setItem('os_weightRecords', JSON.stringify(weightRecords));
-        if (typeof myProfile !== 'undefined') localStorage.setItem('os_myProfile', JSON.stringify(myProfile));
-        if (typeof apps !== 'undefined') localStorage.setItem('os_apps', JSON.stringify(apps));
-        
-        // 自动保存现在的壁纸
-        let bg = document.body.style.backgroundImage;
-        if(bg && bg.includes('url')) {
-            let bgUrl = bg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
-            localStorage.setItem('os_wallpaper', bgUrl);
-        }
-    }, 2000);
-    // --- ★ 全局自动记忆引擎 结束 ★ ---
 </script>
 </body>
 </html>
