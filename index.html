@@ -4234,7 +4234,6 @@ ${charDetails}
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
         currentForumPostsData = parsed.posts || [];
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
 
         // 随机打乱数组，让角色和陌生人帖子混合显示
         currentForumPostsData.sort(() => Math.random() - 0.5);
@@ -4251,9 +4250,11 @@ ${charDetails}
                 avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
             }
             p.finalAvatar = avatar;
-            
             feed.appendChild(createForumPostNode(p));
         });
+
+        // 【关键修复】等系统把所有推文的头像和顺序都算好之后，再存入记忆！
+        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
         
     } catch(e) {
         console.error(e);
