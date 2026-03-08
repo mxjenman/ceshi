@@ -4119,8 +4119,8 @@ function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     if(isUserPost) profileFeed.prepend(createNode());
 }
 
-// 全局保存当前生成的帖子，用于详情页展示
-let currentForumPostsData = [];
+// 全局保存当前生成的帖子，用于详情页展示（增加记忆功能，防止前后台切换丢失）
+let currentForumPostsData = JSON.parse(localStorage.getItem('os_forum_posts_data') || '[]');
 
 // 呼出选择角色菜单
 function openForumCharSelect() {
@@ -4159,7 +4159,7 @@ async function executeForumGenerate() {
     closeForumCharSelect();
     
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">正在生成中 请等待...</div>';
     
     let prompt = "";
     if (selectedIds.length === 0) {
@@ -4235,8 +4235,19 @@ ${charDetails}
         const parsed = JSON.parse(data.choices[0].message.content);
         currentForumPostsData = parsed.posts || [];
         
+        const data = await response.json();
+        const parsed = JSON.parse(data.choices[0].message.content);
+        currentForumPostsData = parsed.posts || [];
+        
+        const data = await response.json();
+        const parsed = JSON.parse(data.choices[0].message.content);
+        currentForumPostsData = parsed.posts || [];
+        
         // 随机打乱数组，让角色和陌生人帖子混合显示
         currentForumPostsData.sort(() => Math.random() - 0.5);
+        
+        // 【核心修复1】：把生成好的帖子数据死死存在手机里，这样前后台切换就不会丢了
+        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
         
         feed.innerHTML = "";
         currentForumPostsData.forEach((p, index) => {
@@ -4264,7 +4275,8 @@ ${charDetails}
 function createForumPostNode(post) {
     const div = document.createElement('div');
     div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
-    div.onclick = () => openForumDetail(post.listIndex);
+    // 【核心修复2】：把点击事件变成写死在网页里的代码，这样网页哪怕被系统杀后台重新加载，也能认出点击动作
+    div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
     
     div.innerHTML = `
         <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
@@ -4337,7 +4349,7 @@ function openForumDetail(index) {
                 </div>
             </div>
             <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${post.text.replace(/\n/g, '<br>')}</div>
-            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · 智能生成</div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · ip xx</div>
             <div class="flex justify-around items-center pt-3 text-gray-500">
                 <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
                 <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
