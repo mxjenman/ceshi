@@ -5163,15 +5163,11 @@ function changePreviewFontSize(size) {
     document.getElementById('font-size-display').innerText = size;
     document.getElementById('font-preview-box').style.fontSize = size + 'px';
     config.fontSize = size;
-    
-    // 【这句是新加的魔法】让整个APP立刻应用你更改的字体大小！
-    if (typeof applySystemFontAndSize === 'function') {
-        applySystemFontAndSize();
-    }
+    applySystemFontAndSize(); // 新增这一行，让你在滑动字体大小时，聊天界面立刻跟着变大变小
 }
 
 function saveFontPreset() {
-    const presetName = prompt("请输入要保存的预设名称 (例如: 少女字体)：", "预设1");
+    const presetName = prompt("请输入要保存的预设名称 (例如: 小皇帝字体)：", "预设1");
     if (!presetName) return;
     
     fontPresets[presetName] = {
@@ -5232,8 +5228,10 @@ function applySystemFontAndSize() {
         style.id = 'global-font-style';
         document.head.appendChild(style);
     }
+    
     let fontFaceCss = '';
     let fontFamilyCss = '';
+    
     if (config.fontSrc) {
         fontFaceCss = `@font-face {
             font-family: '${config.fontFamily}';
@@ -5243,13 +5241,15 @@ function applySystemFontAndSize() {
         fontFamilyCss = `* { font-family: '${config.fontFamily}', sans-serif !important; }`;
     }
     
-    // 把所有地方的字号都强制改成你设置的尺寸
+    // 只让微信聊天界面的气泡文字变大变小，其他地方保持原样
     let fontSizeCss = `
-        * {
+        .chat-msg-user, 
+        .chat-msg-ai {
             font-size: ${config.fontSize}px !important;
             line-height: 1.5 !important;
         }
     `;
+    
     style.innerHTML = fontFaceCss + fontFamilyCss + fontSizeCss;
 }
 
@@ -7997,4 +7997,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
- 
