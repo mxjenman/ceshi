@@ -4328,34 +4328,56 @@ ${charDetails}
 // 绘制广场帖子卡片
 function createForumPostNode(post) {
     const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
-    div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
+    // 设置为 relative 相对定位，方便右上角放置删除按钮
+    div.className = "tweet-card flex gap-3 animate-in relative"; 
+    
+    // 生成一个推文内唯一的评论容器ID
+    const commentAreaId = 'forum-cm-' + Math.random().toString(36).substr(2, 9);
+    
     div.innerHTML = `
         <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
         <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1">
-                <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
-                <span class="text-gray-500 text-[14px] truncate">${post.handle} · 刚刚</span>
-            </div>
-            <div class="text-[15px] text-[#0f1419] mt-0.5 leading-snug break-words pr-2">${post.text}</div>
-            ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
-            <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] max-w-[200px]">
-                <div class="flex items-center gap-1.5">
-                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                    <span>${post.comments ? post.comments.length : 0}</span>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1 min-w-0">
+                    <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
+                    <span class="text-gray-500 text-[14px] truncate">${post.handle}</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    <span>0</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    <span>0</span>
+                <div class="p-1 cursor-pointer text-gray-400 hover:text-red-500" onclick="deleteForumTweet(this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                    </svg>
                 </div>
             </div>
+            
+            <p class="text-[15px] text-[#0f1419] leading-snug break-words mt-0.5 cursor-pointer" onclick="openForumDetail(${post.listIndex})">${post.text}</p>
+            ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-60 w-full object-cover cursor-pointer" onclick="openForumDetail(${post.listIndex})">` : ''}
+            
+            <div class="flex justify-between mt-3 max-w-[220px] text-gray-500">
+                <div class="flex items-center gap-1.5 cursor-pointer" onclick="openForumDetail(${post.listIndex})">
+                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    <span class="text-xs">${post.comments ? post.comments.length : 0}</span>
+                </div>
+                <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500" onclick="openForumCharReplySelect('${commentAreaId}', \`${post.text.replace(/`/g, '\\`')}\`, '${post.img || ''}')">
+                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </div>
+                <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500">
+                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                </div>
+            </div>
+            <div id="${commentAreaId}" class="mt-3 space-y-2"></div>
         </div>
     `;
     return div;
+}
+
+// 删除推文逻辑
+function deleteForumTweet(btn) {
+    if(confirm("确定要删除这条内容吗？")) {
+        const card = btn.closest('.tweet-card');
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => card.remove(), 300);
+    }
 }
 
 // 打开全屏详情页并渲染评论
@@ -8039,6 +8061,66 @@ document.addEventListener('mousedown', startPress);
 document.addEventListener('mousemove', cancelPress);
 document.addEventListener('mouseup', cancelPress);
 // =====================================================================
+// 弹出角色选择框，用于基于人设评论推文
+async function openForumCharReplySelect(areaId, text, img) {
+    const list = document.getElementById('weight-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    
+    if (friends.length === 0) return alert("还没有添加角色哦");
+
+    // 复用已有的角色选择弹窗样式
+    friends.forEach(f => {
+        list.innerHTML += `
+            <div class="flex items-center gap-3 p-2 cursor-pointer hover:bg-gray-50 rounded-lg" 
+                 onclick="executeForumReply('${areaId}', '${f.id}', \`${text.replace(/`/g, '\\`')}\`, '${img}')">
+                <img src="${f.avatar}" class="w-10 h-10 rounded-full object-cover">
+                <span class="font-medium text-[14px] text-gray-700 flex-1">${f.remark}</span>
+                <span class="text-blue-500 text-xs font-bold">评论</span>
+            </div>
+        `;
+    });
+    document.getElementById('weight-char-modal').classList.remove('hidden');
+}
+
+// 执行AI评论生成
+async function executeForumReply(areaId, friendId, postText, postImg) {
+    closeWeightCharSelect();
+    const friend = friendList.find(f => f.id === friendId);
+    const container = document.getElementById(areaId);
+    
+    const loading = document.createElement('div');
+    loading.className = "text-[12px] text-gray-400 italic";
+    loading.innerText = `${friend.remark} 正在思考评论...`;
+    container.appendChild(loading);
+
+    let prompt = `你扮演 ${friend.realName}。设定：${friend.persona}。\n`;
+    prompt += `【推文内容】：${postText}\n`;
+    if(postImg) prompt += `（推文附带了图片）\n`;
+    prompt += `【任务】：基于你的人设，写一条随性、自然的短评论。不超过15字。直接输出内容。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'system', content: prompt }],
+                temperature: 0.8
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        loading.remove();
+        const commentDiv = document.createElement('div');
+        commentDiv.className = "bg-gray-50 p-2 rounded-xl text-[13px] animate-in";
+        commentDiv.innerHTML = `<span class="font-bold text-black">${friend.remark}：</span><span class="text-gray-700">${reply}</span>`;
+        container.appendChild(commentDiv);
+    } catch (e) {
+        loading.innerText = "评论失败，请检查API";
+    }
+}
 </script>
 </body>
 </html>
