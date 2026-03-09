@@ -4040,42 +4040,36 @@ function submitPost(){
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
     
+    // --- 修改开始：获取当前的真实时间 ---
     const now = new Date();
+    // 获取小时和分钟，并确保分钟小于10的时候前面带个0（比如 09:05）
     const timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
-    
-    // 【修改】将自己发布的帖子也加入系统记忆，变得和AI帖子一模一样
+    // --- 修改结束 ---
+
+    // 【修改】将自己发布的帖子也加入系统记忆
     const newPost = {
         isChar: false,
-        charId: "",
+        charId: null,
         name: userProfile.name,
         handle: userProfile.handle,
         text: text,
         img: imgSrc,
-        time: timeStr,
-        comments: [],
-        finalAvatar: userProfile.avatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
-        isUserPost: true
+        time: timeStr, // 这里现在会显示具体的发布时间，比如 14:30
+        finalAvatar: document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : userProfile.avatar,
+        comments: []
     };
-    
-    currentForumPostsData.unshift(newPost); // 放到记忆最前面
-    currentForumPostsData.forEach((p, i) => p.listIndex = i); // 重新排队号
-    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-    
-    // 重新刷新广场显示
-    const feed = document.getElementById('forum-feed');
+
+    const squareFeed = document.getElementById('forum-feed');
+    const profileFeed = document.getElementById('profile-posts-feed');
     const hint = document.getElementById('empty-hint');
     if(hint) hint.remove();
-    feed.innerHTML = "";
-    currentForumPostsData.forEach(p => {
-        feed.appendChild(createForumPostNode(p));
-    });
-    
-    // 如果有个人主页，也放进去
-    const profileFeed = document.getElementById('profile-posts-feed');
+
+    if (squareFeed) {
+        squareFeed.prepend(createForumPostNode(newPost));
+    }
     if (profileFeed) {
         profileFeed.prepend(createForumPostNode(newPost));
     }
-    
     closeCompose();
 }
 
