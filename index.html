@@ -6942,12 +6942,6 @@ function openPlaylist() {
     setTimeout(() => container.classList.remove('translate-y-full'), 10);
 }
 
-function closePlaylist() {
-    const container = document.getElementById('playlist-container');
-    container.classList.add('translate-y-full');
-    setTimeout(() => document.getElementById('playlist-modal').classList.add('hidden'), 300);
-}
-
 function renderPlaylist() {
     const container = document.getElementById('playlist-items');
     container.innerHTML = '';
@@ -6958,8 +6952,36 @@ function renderPlaylist() {
     playlist.forEach((song, idx) => {
         const isActive = idx === currentSongIndex;
         const div = document.createElement('div');
-        div.className = `flex items-center p-3 cursor-pointer rounded-xl transition-colors ${isActive ? 'bg-black/10 dark:bg-white/10' : 'active:bg-black/5 dark:active:bg-white/5'}`;
-        div.onclick = () => playSong(idx);
+        // 增加了 select-none 防止长按选中文本
+        div.className = `flex items-center p-3 cursor-pointer rounded-xl transition-colors select-none ${isActive ? 'bg-black/10 dark:bg-white/10' : 'active:bg-black/5 dark:active:bg-white/5'}`;
+        
+        // 短按播放
+        div.onclick = () => {
+            if (!div.getAttribute('data-longpressed')) {
+                playSong(idx);
+            }
+        };
+
+        // 【新增】：长按逻辑，呼出删除菜单
+        let pressTimer;
+        const startPress = (e) => {
+            div.removeAttribute('data-longpressed');
+            pressTimer = setTimeout(() => {
+                div.setAttribute('data-longpressed', 'true');
+                // 调用我们的黑色气泡菜单
+                showContextMenu(e, [
+                    { label: '彻底删除此曲', action: () => deleteSong(idx) }
+                ], div);
+            }, 600); // 600毫秒算作长按
+        };
+        const cancelPress = () => clearTimeout(pressTimer);
+        div.addEventListener('touchstart', startPress);
+        div.addEventListener('touchend', cancelPress);
+        div.addEventListener('touchmove', cancelPress);
+        div.addEventListener('mousedown', startPress);
+        div.addEventListener('mouseup', cancelPress);
+        div.addEventListener('mouseleave', cancelPress);
+
         div.innerHTML = `
             <span class="${isActive ? 'text-blue-500 font-bold' : 'player-text-muted'} w-6 text-center shrink-0 mr-3">${isActive ? '▶' : (idx + 1)}</span>
             <div class="flex-1 min-w-0">
@@ -7977,6 +7999,32 @@ setInterval(() => {
     } catch(e) {}
 }, 500);
 // =====================================================================
+// 【新增】：删除音乐的执行逻辑
+function deleteSong(index) {
+    if (confirm(`确定要从播放列表中移除《${playlist[index].title}》吗？`)) {
+        // 如果删掉的是当前正在播的歌，先停掉音乐
+        if (index === currentSongIndex) {
+            audioEl.pause();
+            isPlaying = false;
+            currentSongIndex = -1;
+            document.getElementById('music-title').innerText = "暂无歌曲";
+            document.getElementById('music-artist').innerText = "请从列表选择播放";
+            updatePlayPauseUI();
+        } else if (index < currentSongIndex) {
+            // 如果删的是前面的歌，当前播的歌序号要往前挪一位，防止错乱
+            currentSongIndex--;
+        }
+        
+        // 从数组里删掉
+        playlist.splice(index, 1);
+        // 立即同步到“大仓库”数据库
+        if (typeof dbStore !== 'undefined') {
+            dbStore.save('os_playlist', playlist);
+        }
+        // 刷新列表画面
+        renderPlaylist();
+    }
+}
 </script>
 </body>
 </html>
