@@ -2116,81 +2116,64 @@ let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
-// 【全自动存档魔法】超级补丁版：确保音乐、碎碎念、心声和字体全部能存住
+// 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
 function performGlobalSave() {
     try {
-        // 1. 基础核心数据保存（用户信息、好友列表、API配置）
+        // 基础核心数据保存
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
         localStorage.setItem('friend_list', JSON.stringify(friendList));
         localStorage.setItem('os_config', JSON.stringify(config));
         
-        // 2. 【核心修复】保存音乐播放列表（解决删后台音乐消失问题）
-        if (typeof playlist !== 'undefined') {
-            localStorage.setItem('os_playlist', JSON.stringify(playlist));
-        }
+        // 1. 保存音乐列表和点赞状态
+        if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
+        if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
         
-        // 3. 【核心修复】保存钱包和账单数据
-        if (typeof walletBalance !== 'undefined') {
-            localStorage.setItem('wx_wallet_balance', walletBalance.toFixed(2));
-            localStorage.setItem('wx_wallet_transactions', JSON.stringify(walletTransactions));
-        }
-
-        // 4. 【核心修复】保存设置里的字体和预览状态
-        if (config.fontSrc) {
-            localStorage.setItem('os_font_data', config.fontSrc);
-        }
-        
-        // 5. 保存朋友圈和论坛的实时画面
+        // 2. 保存朋友圈和论坛推文的画面
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
         const forumFeed = document.getElementById('forum-feed');
         if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
-        
-        // 6. 保存主屏幕换过的壁纸
+        const profilePostsFeed = document.getElementById('profile-posts-feed');
+        if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
+        // 3. 保存主屏幕换过的壁纸
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody && desktopBody.style.backgroundImage) {
             localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
         }
 
-        // 7. 【核心修复】自动搜集并保存“碎碎念”和“查手机小心思”里的文字
+        // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
         let customDOMState = {};
-        
-        // 搜集所有可编辑的元素 ID
-        const specialIds = [
-            'widget-text',               // 桌面那个碎碎念
-            'char-phone-widget-text',    // 查手机里TA的小心思
-            'weight-feeling-input',      // 记录APP里的体重碎碎念
-            'daily-feeling-input',       // 记录APP里的日常碎碎念
-            'widget-date-display', 
-            'widget-time-display',
-            'app-font-url'               // 字体链接输入框
-        ];
-
-        specialIds.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) {
-                // 如果是输入框存它的内容，如果是普通文字存它的HTML
-                if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-                    customDOMState[id + '_val'] = el.value;
-                } else {
-                    customDOMState[id + '_html'] = el.innerHTML;
-                }
+        const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+        editableElements.forEach((el, index) => {
+            if (!el.id) el.id = 'auto_save_id_' + index;
+            if (el.tagName === 'IMG') {
+                customDOMState[el.id] = el.src;
+            } else {
+                customDOMState[el.id + '_html'] = el.innerHTML;
+                if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
             }
         });
+        
+        // 额外强制保存一些特殊文字 (【新增修复】把查手机的小想法 char-phone-widget-text 也加进来了)
+        const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio', 'char-phone-widget-text'];
+        specialIds.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) customDOMState[id + '_html'] = el.innerHTML;
+        });
 
-        // 搜集所有的图片（包括你换过的图标和头像）
-        const allImgs = document.querySelectorAll('img[id*="icon-"], img[id*="avatar-"], img[id*="char-icon-"]');
-        allImgs.forEach(img => {
-            if (img.id) customDOMState[img.id] = img.src;
+        // 【新增修复】专门把你写在“碎碎念”输入框里的文字也抓取保存下来！
+        const textareaIds = ['weight-feeling-input', 'daily-feeling-input'];
+        textareaIds.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) customDOMState[id + '_value'] = el.value;
         });
 
         localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
-        
     } catch (e) {
         // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
         if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
             if (!window.hasShownQuotaAlert) {
-                alert('⚠️ 警告：数据太多撑爆存储空间了！请导出备份并清理不必要的照片。');
+                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
                 window.hasShownQuotaAlert = true;
             }
         }
@@ -2206,11 +2189,17 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', performGlobalSave);
 
-// 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
-const savedConfig = JSON.parse(localStorage.getItem('os_config'));
-if (savedConfig) {
-    config = { ...config, ...savedConfig };
-}  // 记住是否正在多选
+    // 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
+    const savedConfig = JSON.parse(localStorage.getItem('os_config'));
+    if (savedConfig) {
+        config = { ...config, ...savedConfig };
+    }
+    
+    // 【新增恢复】在页面加载完毕时，如果有保存过的字体和大小，直接自动生效应用到全局！
+    if (typeof applySystemFontAndSize === 'function') {
+        applySystemFontAndSize();
+    }
+    // 记住是否正在多选
 let selectedMsgIndices = new Set(); // 记住多选了哪些消息
 let currentQuoteMsg = null;
 // 记住正在引用哪句话
@@ -7091,7 +7080,7 @@ function openAddSongModal() {
     document.getElementById('new-song-artist').value = '';
     document.getElementById('new-song-audio-url').value = '';
     document.getElementById('new-song-lrc-text').value = '';
-    document.getElementById('new-song-cover').value = '';
+    ).value = '';
     document.getElementById('new-song-audio-file').value = '';
     document.getElementById('new-song-lrc-file').value = '';
     tempCoverBase64 = null;
@@ -7104,11 +7093,21 @@ function closeAddSongModal() {
 }
 
 document.getElementById('new-song-cover').addEventListener('change', e => {
-    if (e.target.files[0]) tempCoverBase64 = URL.createObjectURL(e.target.files[0]);
+    if (e.target.files[0]) {
+        // 【新增修复】把封面转成永久格式存入浏览器
+        const reader = new FileReader();
+        reader.onload = ev => tempCoverBase64 = ev.target.result;
+        reader.readAsDataURL(e.target.files[0]);
+    }
 });
 
 document.getElementById('new-song-audio-file').addEventListener('change', e => {
-    if (e.target.files[0]) tempAudioBase64 = URL.createObjectURL(e.target.files[0]);
+    if (e.target.files[0]) {
+        // 【核心修复】不使用临时链接，直接转成永久格式存入浏览器记忆，防止删后台后音乐消失
+        const reader = new FileReader();
+        reader.onload = ev => tempAudioBase64 = ev.target.result;
+        reader.readAsDataURL(e.target.files[0]);
+    }
 });
 
 document.getElementById('new-song-lrc-file').addEventListener('change', e => {
