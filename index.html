@@ -6386,8 +6386,10 @@ function clearFriendHistory() {
 
 function exportFriendData() {
     if (!currentFriendId) return;
-    const friend = friendList.find(f => f.id === currentFriendId);
+    // 【核心修复】：强行存档一次，保证你的最新消息被记录进去
+    if (typeof performGlobalSave === 'function') performGlobalSave();
     
+    const friend = friendList.find(f => f.id === currentFriendId);
     const blob = new Blob([JSON.stringify(friend, null, 2)], {type: "application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -6407,11 +6409,13 @@ function importFriendData(input) {
                     const imported = JSON.parse(e.target.result);
                     if (!imported.id || !imported.remark) throw new Error("文件格式不对");
                     
+                    // 【核心修复】：点晕自动保存！让它在刷新瞬间闭嘴，不准用老画面覆盖我们的数据
+                    window.performGlobalSave = function() {};
+                    
                     const idx = friendList.findIndex(f => f.id === currentFriendId);
                     // 强制保持当前的 ID，防止列表错乱
-                    imported.id = friendList[idx].id; 
+                    imported.id = friendList[idx].id;
                     friendList[idx] = imported;
-                    
                     localStorage.setItem('friend_list', JSON.stringify(friendList));
                     alert("🎉 存档导入成功！");
                     location.reload(); // 强制刷新页面应用全部新数据
@@ -7980,6 +7984,9 @@ setInterval(() => {
 // 导出所有数据
 function exportAllAppGlobalData() {
     try {
+        // 【核心修复】：导出前，先强行把现在的进度存一下！
+        if (typeof performGlobalSave === 'function') performGlobalSave();
+        
         let allData = {};
         // 把浏览器里存的这个网站的所有东西都打包起来
         for (let i = 0; i < localStorage.length; i++) {
@@ -8021,6 +8028,9 @@ function importAllAppGlobalData(input) {
             try {
                 let importedData = JSON.parse(e.target.result);
                 
+                // 【核心修复】：点晕自动保存！让它在刷新瞬间闭嘴，绝不准用旧画面覆盖我们的新数据
+                window.performGlobalSave = function() {};
+                
                 // 1. 先清空当前的所有旧数据
                 localStorage.clear();
                 
@@ -8029,11 +8039,9 @@ function importAllAppGlobalData(input) {
                     localStorage.setItem(key, importedData[key]);
                 }
                 
-                alert("🎉 数据导入成功！点击确定后页面将自动刷新，加载你的备份数据！");
-// 延迟0.5秒再刷新，给浏览器一点时间把数据存稳
-setTimeout(function() {
-    window.location.reload();
-}, 500);
+                alert("🎉 数据导入成功！点击确定后页面将立刻刷新，加载你的备份数据！");
+                // 3. 立即刷新！因为内鬼已经被我们干掉了，不用再延迟了
+                window.location.reload();
                 
             } catch(error) {
                 alert("❌ 导入失败，这个文件可能不是正确的备份文件哦！");
