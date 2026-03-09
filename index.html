@@ -4297,26 +4297,24 @@ ${charDetails}
 }
 
 // 绘制广场帖子卡片
-// ================= 新增和修改的论坛逻辑开始 =================
-let currentForumReplyTarget = null;
-let currentForumPostIndex = null;
-
 function createForumPostNode(post) {
     const div = document.createElement('div');
     div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
-    div.onclick = () => openForumDetail(post.listIndex);
+    div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
+    
     div.innerHTML = `
-        <img src="${post.finalAvatar}" class="tweet-avatar">
+        <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1">
                 <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
-                <span class="text-gray-500 text-[14px] truncate">${post.handle} · ${post.time || '刚刚'}</span>
+                <span class="text-gray-500 text-[14px] truncate">${post.handle} · 刚刚</span>
             </div>
             <div class="text-[15px] text-[#0f1419] mt-0.5 leading-snug break-words pr-2">${post.text}</div>
+            
             <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] max-w-[200px]">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                    <span id="feed-comment-count-${post.listIndex}">${post.comments ? post.comments.length : 0}</span>
+                    <span>${post.comments ? post.comments.length : 0}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -4332,18 +4330,17 @@ function createForumPostNode(post) {
     return div;
 }
 
+// 打开全屏详情页并渲染评论
 function openForumDetail(index) {
     const post = currentForumPostsData[index];
     if (!post) return;
-    currentForumPostIndex = index;
-    currentForumReplyTarget = null;
-    const container = document.getElementById('forum-detail-content');
     
-    const isStranger = !post.isChar && post.name !== userProfile.name;
+    const container = document.getElementById('forum-detail-content');
     
     let commentsHtml = '';
     if (post.comments && post.comments.length > 0) {
         post.comments.forEach(c => {
+            // 评论头像匹配：如果是贴主自己回复，沿用贴主头像；如果恰好匹配上已有角色，用角色头像；其余用随机像素头像
             let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
             if (c.name === post.name) {
                 cAvatar = post.finalAvatar;
@@ -4352,62 +4349,43 @@ function openForumDetail(index) {
                 if (f && f.avatar) cAvatar = f.avatar;
             }
             
-            let replyAction = isStranger ? "" : `onclick="setForumReplyTarget('${c.name}')"`;
-            let cursorClass = isStranger ? "" : "cursor-pointer active:bg-gray-50";
-
             commentsHtml += `
-                <div class="flex gap-3 px-4 py-3 border-b border-gray-100 ${cursorClass} transition-colors" ${replyAction}>
+                <div class="flex gap-3 px-4 py-3 border-b border-gray-100">
                     <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
                     <div class="flex-1">
                         <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
-                        <div class="text-[14px] text-black mt-0.5">${c.text}</div>
+                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
                     </div>
                 </div>
             `;
         });
     } else {
-        commentsHtml = '<div class="text-center text-gray-400 py-10 text-[13px]">暂无评论</div>';
+        commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
     }
 
-    let forwardAction = isStranger ? `alert('分享功能暂未开放')` : `openForumCommentCharSelect()`;
-
     container.innerHTML = `
-        <div class="p-4 border-b-[8px] border-gray-100 relative pb-4">
-            <div class="flex items-center gap-3">
+        <div class="p-4 border-b-8 border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
                 <img src="${post.finalAvatar}" class="w-12 h-12 rounded-full object-cover">
                 <div>
                     <div class="font-bold text-[16px] text-black">${post.name}</div>
                     <div class="text-gray-500 text-[14px]">${post.handle}</div>
                 </div>
             </div>
-            <div class="text-[17px] text-black mt-3 leading-relaxed break-words">${post.text}</div>
-            ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-96 w-full object-cover">` : ""}
-            <div class="text-gray-500 text-[14px] mt-4">${post.time || '刚刚'}</div>
-            
-            <div class="border-t border-gray-100 mt-4 pt-4 flex justify-around text-gray-500">
-                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> <span>${post.comments ? post.comments.length : 0}</span></div>
+            <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${post.text.replace(/\n/g, '<br>')}</div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · 智能生成</div>
+            <div class="flex justify-around items-center pt-3 text-gray-500">
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
                 <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
-                <div class="flex items-center gap-2 cursor-pointer active:text-blue-500" onclick="${forwardAction}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg></div>
                 <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></div>
             </div>
         </div>
-        <div class="font-bold text-[16px] p-4 pb-2 border-b border-gray-100">评论区</div>
-        <div class="pb-32">
+        <div class="font-bold text-[16px] p-4 border-b border-gray-100">评论区</div>
+        <div class="pb-10">
             ${commentsHtml}
         </div>
-        ${isStranger ? '' : `
-        <div class="fixed bottom-0 left-0 right-0 bg-[#f7f7f7] border-t px-4 py-3 flex flex-col gap-2 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-            <div id="forum-reply-hint" class="text-[12px] text-[#1d9bf0] font-bold hidden flex justify-between">
-                <span>正在回复：<span id="forum-reply-name"></span></span>
-                <span onclick="cancelForumReply()" class="text-gray-400 cursor-pointer">取消</span>
-            </div>
-            <div class="flex items-center gap-2 w-full">
-                <input type="text" id="forum-comment-input" class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-[15px] outline-none" placeholder="发布你的回复..." onkeydown="if(event.key === 'Enter') submitForumUserComment()">
-                <button onclick="submitForumUserComment()" class="bg-black text-white px-4 py-1.5 rounded-full font-bold text-[14px] active:scale-95 transition-transform">发送</button>
-            </div>
-        </div>
-        `}
     `;
+    
     document.getElementById('forum-detail-screen').classList.remove('slide-hidden');
 }
 
@@ -4415,273 +4393,7 @@ function closeForumDetail() {
     document.getElementById('forum-detail-screen').classList.add('slide-hidden');
 }
 
-function setForumReplyTarget(name) {
-    currentForumReplyTarget = name;
-    document.getElementById('forum-reply-hint').classList.remove('hidden');
-    document.getElementById('forum-reply-name').innerText = name;
-    const input = document.getElementById('forum-comment-input');
-    if (input) {
-        input.placeholder = `回复 ${name}...`;
-        input.focus();
-    }
-}
-
-function cancelForumReply() {
-    currentForumReplyTarget = null;
-    document.getElementById('forum-reply-hint').classList.add('hidden');
-    const input = document.getElementById('forum-comment-input');
-    if (input) {
-        input.placeholder = "发布你的回复...";
-    }
-}
-
-function submitForumUserComment() {
-    const input = document.getElementById('forum-comment-input');
-    const text = input.value.trim();
-    if (!text || currentForumPostIndex === null) return;
-    
-    const post = currentForumPostsData[currentForumPostIndex];
-    if (!post.comments) post.comments = [];
-    
-    let finalContent = text;
-    if (currentForumReplyTarget) {
-        finalContent = `回复 @${currentForumReplyTarget} : ${text}`;
-    }
-    
-    post.comments.push({
-        name: userProfile.name,
-        text: finalContent
-    });
-    
-    const countEl = document.getElementById(`feed-comment-count-${currentForumPostIndex}`);
-    if (countEl) countEl.innerText = post.comments.length;
-
-    input.value = '';
-    cancelForumReply();
-    openForumDetail(currentForumPostIndex);
-    
-    if (post.isChar && post.charId && !currentForumReplyTarget) {
-        setTimeout(() => {
-            generateForumAICommentReply(currentForumPostIndex, post.charId, finalContent);
-        }, 1500);
-    }
-}
-
-function openForumCommentCharSelect() {
-    if (currentForumPostIndex === null) return;
-    const post = currentForumPostsData[currentForumPostIndex];
-
-    const userComments = post.comments ? post.comments.filter(c => c.name === userProfile.name) : [];
-    
-    // 1. 如果用户最新的一条评论是“回复 @某人”，优先让被回复的那个角色来回答！
-    if (userComments.length > 0) {
-        const lastUserComment = userComments[userComments.length - 1].text;
-        if (lastUserComment.startsWith('回复 @')) {
-            const replyTargetName = lastUserComment.substring(4, lastUserComment.indexOf(' :')).trim();
-            const targetFriend = friendList.find(f => (f.realName || f.remark) === replyTargetName);
-            if (targetFriend) {
-                document.getElementById('forum-detail-screen').classList.add('slide-hidden');
-                generateForumAICommentReply(currentForumPostIndex, targetFriend.id, lastUserComment);
-                alert(`正在让 ${replyTargetName} 生成对你最新评论的回复...`);
-                return;
-            }
-        }
-    }
-
-    // 2. 如果当前帖子是角色发的，并且用户没有指定回复谁，默认让发帖的角色回复用户最新的评论
-    if (post.isChar && post.charId) {
-        if (userComments.length > 0) {
-            const lastUserComment = userComments[userComments.length - 1].text;
-            document.getElementById('forum-detail-screen').classList.add('slide-hidden');
-            generateForumAICommentReply(currentForumPostIndex, post.charId, lastUserComment);
-            alert("正在让该角色生成对你最新评论的回复...");
-            return;
-        } else {
-            alert("你还没有评论，无法让角色回复你哦。请先在下方发一条评论。");
-            return;
-        }
-    }
-
-    // 3. 如果是用户自己发的推文，弹窗勾选角色去生成初次评论
-    let modal = document.getElementById('forum-comment-char-select-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'forum-comment-char-select-modal';
-        modal.className = "fixed inset-0 bg-black/50 hidden z-[150] flex items-center justify-center p-6";
-        document.body.appendChild(modal);
-    }
-    
-    let friendsHtml = '';
-    friendList.filter(f => !f.isGroup).forEach(f => {
-        friendsHtml += `
-            <label class="flex items-center justify-between p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div class="flex items-center gap-3">
-                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-[10px] object-cover">
-                    <span class="font-bold text-[14px] text-gray-800">${f.remark}</span>
-                </div>
-                <input type="checkbox" class="w-5 h-5 accent-black forum-comment-ai-checkbox" value="${f.id}">
-            </label>
-        `;
-    });
-
-    modal.innerHTML = `
-        <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
-            <h3 class="font-bold text-[#333] mb-2 text-center text-[16px]">让谁来评论？</h3>
-            <p class="text-[12px] text-gray-500 mb-4 text-center">勾选你想让Ta评论的好友</p>
-            <div class="overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2 flex-1">
-                ${friendsHtml || '<div class="text-center text-gray-400 py-4 text-xs">暂无好友</div>'}
-            </div>
-            <div class="flex gap-3 shrink-0">
-                <button onclick="document.getElementById('forum-comment-char-select-modal').classList.add('hidden')" class="w-1/3 py-2.5 bg-white border border-gray-300 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
-                <button onclick="executeForumCommentGenerate()" class="flex-1 py-2.5 bg-black text-white rounded-[30px] font-bold text-[15px] active:scale-95 shadow-sm">生成评论</button>
-            </div>
-        </div>
-    `;
-    modal.classList.remove('hidden');
-}
-
-async function executeForumCommentGenerate() {
-    if (!config.apiKey) return alert("请先配置 API Key");
-    const checkboxes = document.querySelectorAll('.forum-comment-ai-checkbox:checked');
-    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-    
-    if(selectedIds.length === 0) return alert("请至少勾选一个角色");
-    
-    document.getElementById('forum-comment-char-select-modal').classList.add('hidden');
-    document.getElementById('forum-detail-screen').classList.add('slide-hidden');
-    
-    const hintDiv = document.createElement('div');
-    hintDiv.className = "fixed top-16 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-xs z-[200] shadow-lg animate-pulse";
-    hintDiv.innerText = "角色正在赶来评论...";
-    document.body.appendChild(hintDiv);
-    
-    const post = currentForumPostsData[currentForumPostIndex];
-    let postContent = post.text || "";
-    if (post.img) postContent += "\n[包含配图]";
-
-    selectedIds.forEach((aiId, idx) => {
-        setTimeout(() => {
-            generateForumAIComment(currentForumPostIndex, aiId, postContent, post.img, hintDiv, idx === selectedIds.length - 1);
-        }, idx * 2500);
-    });
-}
-
-async function generateForumAICommentReply(postIndex, charId, userCommentText) {
-    const post = currentForumPostsData[postIndex];
-    const friend = friendList.find(f => f.id === charId);
-    if (!friend || !config.apiKey) return;
-
-    let memory = "";
-    if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
-
-    let prompt = `你现在是论坛里的网友，名字叫：${friend.realName || friend.remark}。性格设定是：${friend.persona}。\n`;
-    prompt += `你和当前用户的聊天记忆：${memory}。\n`;
-    
-    if (post.isChar && post.charId === charId) {
-        prompt += `你发了一条推文内容是：“${post.text}”\n`;
-        prompt += `用户刚刚在你的推文下评论/回复说：“${userCommentText}”。\n`;
-    } else if (post.name === userProfile.name) {
-        prompt += `用户发了一条推文内容是：“${post.text}”\n`;
-        prompt += `你在该推文下参与了评论，而用户刚刚回复你说：“${userCommentText}”。\n`;
-    } else {
-        prompt += `当前推文内容是：“${post.text}”\n`;
-        prompt += `用户刚刚回复你说：“${userCommentText}”。\n`;
-    }
-    
-    prompt += `请结合你的性格，继续回复用户的评论。要求口语化，自然，字数控制在20字内。只输出纯文本内容，不要带你的名字前缀或任何格式！`;
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{role: 'user', content: prompt}],
-                temperature: 0.8,
-                max_tokens: 150
-            })
-        });
-
-        const data = await response.json();
-        let reply = data.choices[0].message.content.trim();
-
-        if (!post.comments) post.comments = [];
-        post.comments.push({
-            name: friend.realName || friend.remark,
-            text: `回复 @${userProfile.name} : ${reply}`
-        });
-
-        const countEl = document.getElementById(`feed-comment-count-${postIndex}`);
-        if (countEl) countEl.innerText = post.comments.length;
-
-        if (currentForumPostIndex === postIndex) openForumDetail(postIndex);
-    } catch(e) {
-        console.log("AI回复生成失败", e);
-    }
-}
-
-async function generateForumAIComment(postIndex, aiId, postText, imgSrc, hintDiv, isLast) {
-    const post = currentForumPostsData[postIndex];
-    const friend = friendList.find(f => f.id === aiId);
-    if(!friend || !config.apiKey) return;
-
-    let memory = "";
-    if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
-
-    let systemPrompt = `你现在是论坛里的网友，名字叫：${friend.realName || friend.remark}。性格设定是：${friend.persona}。\n`;
-    if (memory) systemPrompt += `你和用户有这些记忆：${memory}。\n`;
-    systemPrompt += `用户发了一条推文。请根据推文内容，写一条符合你人设的简短评论（10-20字内，口语化，不要任何前缀和格式）。`;
-    
-    let formattedMessages = [{role: 'system', content: systemPrompt}];
-    let userPrompt = "推文内容是：\n" + (postText || "（仅发了图片，没有文字）");
-    
-    if (imgSrc) {
-        userPrompt += "\n【推文包含图片，请结合文字和图片画面进行评价或吐槽】";
-        formattedMessages.push({
-            role: 'user',
-            content: [
-                { type: "text", text: userPrompt },
-                { type: "image_url", image_url: { url: imgSrc } }
-            ]
-        });
-    } else {
-        formattedMessages.push({ role: 'user', content: userPrompt });
-    }
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                messages: formattedMessages,
-                temperature: 0.8,
-                max_tokens: 150
-            })
-        });
-        const data = await response.json();
-        let reply = data.choices[0].message.content.trim();
-        
-        if (!post.comments) post.comments = [];
-        post.comments.push({
-            name: friend.realName || friend.remark,
-            text: reply
-        });
-        
-        const countEl = document.getElementById(`feed-comment-count-${postIndex}`);
-        if (countEl) countEl.innerText = post.comments.length;
-        
-        if (isLast && hintDiv) {
-            hintDiv.remove();
-            alert("评论生成完毕！去详情页看看吧");
-        }
-    } catch(e) {
-        console.log("AI评论生成失败", e);
-        if (isLast && hintDiv) hintDiv.remove();
-    }
-}
-// ================= 新增和修改的论坛逻辑结束 =================
-nction openModal(type){
+function openModal(type){
     const content=document.getElementById('modal-content');
     document.getElementById('modal-overlay').classList.remove('hidden');
     if(type==='settings'){
@@ -8230,8 +7942,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-1.论坛中用户发布的推文点击进入后点击转发的按键弹出勾选角色 然后可以生成被勾选的角色基于人设聊天内容和推文配图文本内容的评论 并且用户可以回复角色的评论 
-2.生成的角色推文用户也要可以评论或者回复角色在推文中的评论 同样点击转发键可以生成角色对用户评论的回复
-3.注意 陌生网友的推文保持原样 不需要新增的可以评论也不需要可以再次生成回复
-4.用户发出的推文不要显示刚刚 要显示发布时的现实时间
-5.把代码给我并告诉我应该在文件代码哪里进行替换 我是纯小白 你不要用专业名词或者这个函数那个结尾之类的 仔细教我一下 要替换的那一段不管多长都给我完整的指出来 不要省略 我自己找不准开头结尾的 你不管多长都一定要给我完整指出来
