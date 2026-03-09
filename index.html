@@ -3814,33 +3814,25 @@ TimeChecklist:
             const data=await response.json();
             let reply=data.choices[0].message.content;
 
-        // --- ★ 优化版：强制捕捉并统一合并心声逻辑 ---
-        let extractedVoice = "";
-        const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
-        const voiceMatch = reply.match(voiceRegex);
+            // --- ★ 新增：拦截并提取AI在末尾生成的心声 ---
+            let extractedVoice = "";
+            const voiceRegex = /<心声>([\s\S]*?)<\/心声>/;
+            const voiceMatch = reply.match(voiceRegex);
+            if (voiceMatch) {
+                extractedVoice = voiceMatch[1].trim();
+                reply = reply.replace(voiceRegex, '').trim(); // 把心声从正文里抠出去，以免发给用户看到
+            }
+
+            // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+            let extraMessages = [];
+            let needsFullRender = false;
         
-        if (voiceMatch) {
-            extractedVoice = voiceMatch[1].trim();
-            reply = reply.replace(voiceRegex, '').trim(); 
-        }
-
-        // 【新增】：兜底逻辑，如果 AI 没写心声，根据回复内容强行生成一个，保证每轮必有
-        if (!extractedVoice) {
-            const fallbackVoices = [
-                "正在思考接下来的对话...",
-                "希望能让你感受到我的真实想法。",
-                "这一刻，内心有些微妙的触动。",
-                "在认真回应你的每一句话。"
-            ];
-            extractedVoice = fallbackVoices[Math.floor(Math.random() * fallbackVoices.length)];
-        }
-
-        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
-        let extraMessages = [];
-        let needsFullRender = false;
+        // 检查 AI 是否偷偷接受或退回了转账
         if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
             const isAccept = reply.includes('【接受转账】');
-            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
+            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim(); // 抹除暗号
+            
+            // 倒序查找你发给它的最近一笔还没领的钱
             for(let i = chatHistory.length - 1; i >= 0; i--) {
                 if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
                     const amt = chatHistory[i].content.split('|')[3];
@@ -3850,6 +3842,7 @@ TimeChecklist:
                     } else {
                         chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
                         extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
+                        // === 钱包功能：如果AI退回了你的转账，钱要退回你的余额里，并显示名字 ===
                         addTransaction(`${friend.remark} 退回转账`, amt, 'income');
                     }
                     needsFullRender = true;
@@ -3857,6 +3850,8 @@ TimeChecklist:
                 }
             }
         }
+        
+        // 检查 AI 是否主动向你发起转账
         const transferRegex = /【发起转账：([\d\.]+)，备注：(.*?)】/g;
         let match;
         while ((match = transferRegex.exec(reply)) !== null) {
@@ -3867,38 +3862,36 @@ TimeChecklist:
         }
         reply = reply.replace(/【发起转账：.*?】/g, '').trim();
 
-        if (needsFullRender) renderAllMessages(false);
+        if (needsFullRender) {
+            renderAllMessages(false); // 如果改了旧气泡的颜色状态，强制全局刷新一次画面
+        }
 
-        // --- 真正的多条消息拆分 ---
+        // --- 真正的多条消息拆分魔法 ---
         const imgRegex = /<img[^>]*>/g;
         const images = reply.match(imgRegex);
         const textOnly = reply.replace(imgRegex, '').trim();
 
+        // --- 新增：先把要发的消息收集起来放到一个列表里，不马上发 ---
         let newMessages = [];
-        newMessages = newMessages.concat(extraMessages); 
-
-        // 【核心修改】：拆分文字，但只把心声挂在最后一条气泡上，实现“每轮一个心声”
+        newMessages = newMessages.concat(extraMessages); // 先弹系统消息和转账气泡，再弹AI的回复
+        // 1. 把文字按换行符拆开
         if (textOnly) {
             const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            textLines.forEach((line, index) => {
-                const msgObj = { role: 'assistant', content: line };
-                // 只有这一轮回复的最后一行文字，才带上心声数据
-                if (index === textLines.length - 1 && (!images || images.length === 0)) {
-                    msgObj.innerVoice = extractedVoice;
-                }
-                newMessages.push(msgObj);
+            textLines.forEach(line => {
+                newMessages.push({role:'assistant', content: line});
             });
         }
         
+        // 2. 表情包依然单独发气泡
         if (images && images.length > 0) {
-            images.forEach((img, index) => {
-                const msgObj = { role: 'assistant', content: img };
-                // 如果最后是图片，就把心声挂在最后一张图上
-                if (index === images.length - 1) {
-                    msgObj.innerVoice = extractedVoice;
-                }
-                newMessages.push(msgObj);
+            images.forEach(img => {
+                newMessages.push({role:'assistant', content: img});
             });
+        }
+        
+        // 3. 兜底
+        if (!textOnly && (!images || images.length === 0)) {
+            newMessages.push({role:'assistant', content: reply});
         }
         
         // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
@@ -6463,14 +6456,14 @@ function openInnerVoice() {
     container.innerHTML = '';
     
     let hasVoice = false;
-    // 只显示那些真正带有心声记录的消息
     friend.chatHistory.forEach((msg, idx) => {
-        if (msg.role === 'assistant' && msg.innerVoice) {
+        if (msg.role === 'assistant') {
             hasVoice = true;
+            const voice = msg.innerVoice || "（此轮未捕捉到心声）";
             container.innerHTML += `
             <div class="bg-white rounded-[16px] p-4 shadow-sm relative border border-gray-50">
                 <div class="text-[11px] text-gray-400 mb-2 truncate">回复了：${msg.content.replace(/<[^>]+>/g, '[图片]').substring(0, 20)}...</div>
-                <div class="text-[14px] text-gray-800 font-medium leading-relaxed pr-10">${msg.innerVoice}</div>
+                <div class="text-[14px] text-gray-800 font-medium leading-relaxed pr-10">${voice}</div>
                 <div class="absolute top-3 right-3 flex flex-col gap-2">
                     <button onclick="editInnerVoice(${idx})" class="text-blue-500 font-bold text-[11px] bg-blue-50 px-2 py-1 rounded">编辑</button>
                     <button onclick="deleteInnerVoice(${idx})" class="text-red-400 font-bold text-[11px] bg-red-50 px-2 py-1 rounded">删除</button>
@@ -6479,9 +6472,7 @@ function openInnerVoice() {
         }
     });
 
-    if (!hasVoice) {
-        container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">还没有任何心声记录</div>';
-    }
+    if (!hasVoice) container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">还没有任何心声记录</div>';
     
     document.getElementById('inner-voice-page').classList.remove('slide-hidden');
 }
