@@ -5163,6 +5163,11 @@ function changePreviewFontSize(size) {
     document.getElementById('font-size-display').innerText = size;
     document.getElementById('font-preview-box').style.fontSize = size + 'px';
     config.fontSize = size;
+    
+    // 【这句是新加的魔法】让整个APP立刻应用你更改的字体大小！
+    if (typeof applySystemFontAndSize === 'function') {
+        applySystemFontAndSize();
+    }
 }
 
 function saveFontPreset() {
@@ -5227,23 +5232,24 @@ function applySystemFontAndSize() {
         style.id = 'global-font-style';
         document.head.appendChild(style);
     }
-    
     let fontFaceCss = '';
     let fontFamilyCss = '';
     if (config.fontSrc) {
-        fontFaceCss = `@font-face { font-family: '${config.fontFamily}'; src: url('${config.fontSrc}'); }`;
+        fontFaceCss = `@font-face {
+            font-family: '${config.fontFamily}';
+            src: url('${config.fontSrc}');
+        }`;
         // 强制所有文字变成这个字体
         fontFamilyCss = `* { font-family: '${config.fontFamily}', sans-serif !important; }`;
     }
-
-    // 只让聊天气泡、推文等主要内容变大，避免破坏小图标和按钮的排版
+    
+    // 把所有地方的字号都强制改成你设置的尺寸
     let fontSizeCss = `
-        .chat-msg-user, .chat-msg-ai, .tweet-card .text-[15px], #moments-feed .text-[15px] {
+        * {
             font-size: ${config.fontSize}px !important;
             line-height: 1.5 !important;
         }
     `;
-
     style.innerHTML = fontFaceCss + fontFamilyCss + fontSizeCss;
 }
 
@@ -7991,3 +7997,4 @@ setInterval(() => {
 </script>
 </body>
 </html>
+ 
