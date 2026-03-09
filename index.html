@@ -1707,41 +1707,6 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
     </div>
 
 <script>
-// =================【大仓库引擎：解决5MB空间限制】=================
-const dbStore = {
-    dbName: "AI_OS_BigData",
-    storeName: "DataStore",
-    db: null,
-    async init() {
-        return new Promise((resolve) => {
-            const request = indexedDB.open(this.dbName, 1);
-            request.onupgradeneeded = (e) => {
-                e.target.result.createObjectStore(this.storeName);
-            };
-            request.onsuccess = (e) => {
-                this.db = e.target.result;
-                resolve();
-            };
-        });
-    },
-    async save(key, value) {
-        if (!this.db) await this.init();
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(this.storeName, "readwrite");
-            tx.objectStore(this.storeName).put(value, key);
-            tx.oncomplete = () => resolve();
-        });
-    },
-    async get(key) {
-        if (!this.db) await this.init();
-        return new Promise((resolve) => {
-            const tx = this.db.transaction(this.storeName, "readonly");
-            const req = tx.objectStore(this.storeName).get(key);
-            req.onsuccess = () => resolve(req.result);
-        });
-    }
-};
-// ===============================================================
 // ================= 新增：全局图片极速压缩引擎（彻底解决相册图片太大撑爆内存导致无法保存的问题） =================
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
@@ -2138,27 +2103,36 @@ let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
-// 【全自动存档：无限空间版】
-async function performGlobalSave() {
+// 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
+function performGlobalSave() {
     try {
-        // 使用大仓库保存体积巨大的数据
-        await dbStore.save('friend_list', friendList);
-        if (typeof playlist !== 'undefined') await dbStore.save('os_playlist', playlist);
-
-        // 手机小空间只存配置信息
+        // 基础核心数据保存
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
         localStorage.setItem('os_config', JSON.stringify(config));
+        
+        // 1. 保存音乐列表和点赞状态
+        if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
         if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
         
-        // 保存画面 HTML
+        // 2. 保存朋友圈和论坛推文的画面
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
         const forumFeed = document.getElementById('forum-feed');
         if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
-        
-        // 自动搜集并保存 DOM 状态
+        const profilePostsFeed = document.getElementById('profile-posts-feed');
+        if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
+
+        // 3. 保存主屏幕换过的壁纸
+        const desktopBody = document.getElementById('desktop-body');
+        if (desktopBody && desktopBody.style.backgroundImage) {
+            localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
+        }
+
+        // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
         let customDOMState = {};
         const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+        
         editableElements.forEach((el, index) => {
             if (!el.id) el.id = 'auto_save_id_' + index;
             if (el.tagName === 'IMG') {
@@ -2168,10 +2142,23 @@ async function performGlobalSave() {
                 if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
             }
         });
-        await dbStore.save('os_custom_dom_state', customDOMState);
-        
+
+        // 额外强制保存一些特殊文字
+        const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
+        specialIds.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) customDOMState[id + '_html'] = el.innerHTML;
+        });
+
+        localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
     } catch (e) {
-        console.error("保存失败:", e);
+        // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
+        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+            if (!window.hasShownQuotaAlert) {
+                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
+                window.hasShownQuotaAlert = true;
+            }
+        }
     }
 }
 
@@ -5413,41 +5400,54 @@ window.onload = () => {
         }
     }
     
-    // 【无限空间版：数据恢复魔法】
-    (async () => {
-        await dbStore.init();
-        
-        // 1. 恢复音乐列表（大仓库读取）
-        const bigPlaylist = await dbStore.get('os_playlist');
-        if (bigPlaylist) {
-            playlist = bigPlaylist;
-            if (typeof renderPlaylist === 'function') renderPlaylist();
-        }
+    // 1. 恢复音乐列表
+    const savedPlaylist = localStorage.getItem('os_playlist');
+    if (savedPlaylist && typeof playlist !== 'undefined') {
+        playlist = JSON.parse(savedPlaylist);
+        if (typeof renderPlaylist === 'function') renderPlaylist();
+    }
+    const savedLikes = localStorage.getItem('os_moment_likes');
+    if (savedLikes && typeof momentLikes !== 'undefined') momentLikes = JSON.parse(savedLikes);
+    
+    // 2. 恢复朋友圈长相
+    const savedMoments = localStorage.getItem('os_moments_html');
+    if (savedMoments) {
+        const momentsFeed = document.getElementById('moments-feed');
+        if (momentsFeed) momentsFeed.innerHTML = savedMoments;
+    }
+    
+    // 3. 恢复论坛推文长相
+    const savedForum = localStorage.getItem('os_forum_html');
+    if (savedForum) {
+        const forumFeed = document.getElementById('forum-feed');
+        if (forumFeed) forumFeed.innerHTML = savedForum;
+    }
+    const savedProfilePosts = localStorage.getItem('os_profile_posts_html');
+    if (savedProfilePosts) {
+        const profilePostsFeed = document.getElementById('profile-posts-feed');
+        if (profilePostsFeed) profilePostsFeed.innerHTML = savedProfilePosts;
+    }
 
-        // 2. 恢复好友列表（大仓库读取）
-        const bigFriends = await dbStore.get('friend_list');
-        if (bigFriends) friendList = bigFriends;
+    // 4. 恢复桌面壁纸
+    const savedBg = localStorage.getItem('os_desktop_bg');
+    if (savedBg) {
+        const desktopBody = document.getElementById('desktop-body');
+        if (desktopBody) desktopBody.style.backgroundImage = savedBg;
+    }
 
-        // 3. 恢复其他基础状态
-        const savedLikes = localStorage.getItem('os_moment_likes');
-        if (savedLikes) momentLikes = JSON.parse(savedLikes);
-        
-        const savedMoments = localStorage.getItem('os_moments_html');
-        if (savedMoments) {
-            const feed = document.getElementById('moments-feed');
-            if (feed) feed.innerHTML = savedMoments;
-        }
+    // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
+    const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+    editableElements.forEach((el, index) => {
+        if (!el.id) el.id = 'auto_save_id_' + index;
+    });
 
-        // 4. 恢复自定义文本和图片（从大仓库读取）
-        const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-        editableElements.forEach((el, index) => { if (!el.id) el.id = 'auto_save_id_' + index; });
-        
-        const bigCustomState = await dbStore.get('os_custom_dom_state');
-        if (bigCustomState) {
-            for (const key in bigCustomState) {
-                if (key.endsWith('_html')) {
-                    const el = document.getElementById(key.replace('_html', ''));
-                    if (el) el.innerHTML = bigCustomState[key];
+    // 6. 恢复所有被更改过的自定义文本和图标图片
+    const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
+    if (savedCustomState) {
+        for (const key in savedCustomState) {
+            if (key.endsWith('_html')) {
+                const realId = key.replace('_html', '');
+                const el = document.getElementById(realId);
                 if (el) el.innerHTML = savedCustomState[key];
             } else if (key.endsWith('_bg')) {
                 const realId = key.replace('_bg', '');
@@ -6754,36 +6754,63 @@ function applyDarkModeStyle() {
     }
 }
 
-// ================= 终极版：真·音乐播放器控制引擎 =================
-let playlist = [];
+// ================= 终极版：真·音乐播放器控制引擎 (大容量 IndexedDB 修复版) =================
+// 1. 建立“无限容量”大仓库
+const musicDB = {
+    db: null,
+    async init() {
+        if (this.db) return;
+        return new Promise((resolve) => {
+            const request = indexedDB.open("MusicStorage", 1);
+            request.onupgradeneeded = e => e.target.result.createObjectStore("songs");
+            request.onsuccess = e => { this.db = e.target.result; resolve(); };
+        });
+    },
+    async save(id, data) {
+        await this.init();
+        return new Promise(res => {
+            const tx = this.db.transaction("songs", "readwrite");
+            tx.objectStore("songs").put(data, id);
+            tx.oncomplete = () => res();
+        });
+    },
+    async get(id) {
+        await this.init();
+        return new Promise(res => {
+            const tx = this.db.transaction("songs", "readonly");
+            const req = tx.objectStore("songs").get(id);
+            req.onsuccess = () => res(req.result);
+        });
+    },
+    async remove(id) {
+        await this.init();
+        const tx = this.db.transaction("songs", "readwrite");
+        tx.objectStore("songs").delete(id);
+    }
+};
+
+let playlist = JSON.parse(localStorage.getItem('os_playlist')) || [];
 let currentSongIndex = -1;
 let isPlaying = false;
-let playMode = 'list'; // 播放模式：'list'列表循环, 'single'单曲循环, 'random'随机播放
+let playMode = localStorage.getItem('music_play_mode') || 'loop'; // loop, one, random
 let audioEl = new Audio();
 let parsedLyrics = [];
 let isLyricsView = false;
 
-// 添加歌曲暂存变量
-let tempCoverBase64 = null;
-let tempAudioBase64 = null;
-let tempLrcText = null;
-
-// 更换播放器背景
-function changePlayerBg(input) {
-    if (input.files && input.files[0]) {
-        const url = URL.createObjectURL(input.files[0]);
-        const playerScreen = document.getElementById('music-player-screen');
-        playerScreen.style.backgroundImage = `url(${url})`;
-        // 清除背景色，优先显示背景图
-        playerScreen.style.backgroundColor = 'transparent';
-    }
+// 格式化时间
+function formatTime(s) {
+    if (isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-// 播放模式切换与图标更新
+// 切换播放模式
 function togglePlayMode() {
-    if (playMode === 'list') { playMode = 'single'; }
-    else if (playMode === 'single') { playMode = 'random'; }
-    else { playMode = 'list'; }
+    const modes = ['loop', 'one', 'random'];
+    let idx = modes.indexOf(playMode);
+    playMode = modes[(idx + 1) % modes.length];
+    localStorage.setItem('music_play_mode', playMode);
     updatePlayModeUI();
 }
 
@@ -6791,25 +6818,17 @@ function updatePlayModeUI() {
     const pIcon = document.getElementById('player-mode-icon');
     const wIcon = document.getElementById('widget-mode-icon');
     let svgHtml = '';
-    
-    // 列表循环
-    if (playMode === 'list') {
+    if (playMode === 'loop') {
         svgHtml = '<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>';
-    } 
-    // 单曲循环 (中间加个1)
-    else if (playMode === 'single') {
-        svgHtml = '<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path><text x="12" y="15.5" font-size="6.5" font-weight="bold" font-family="sans-serif" fill="currentColor" text-anchor="middle">1</text>';
-    } 
-    // 随机播放 (交叉箭头)
-    else if (playMode === 'random') {
+    } else if (playMode === 'one') {
+        svgHtml = '<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path><text x="12" y="15.5" font-size="6.5" font-weight="bold" fill="currentColor" text-anchor="middle">1</text>';
+    } else {
         svgHtml = '<polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line>';
     }
-    
     if (pIcon) pIcon.innerHTML = svgHtml;
     if (wIcon) wIcon.innerHTML = svgHtml;
 }
 
-// 播放上一首/下一首逻辑
 function playNext() {
     if (playlist.length === 0) return;
     if (playMode === 'random') {
@@ -6821,36 +6840,29 @@ function playNext() {
 
 function playPrev() {
     if (playlist.length === 0) return;
-    if (playMode === 'random') {
-        playSong(Math.floor(Math.random() * playlist.length));
-    } else {
-        playSong((currentSongIndex - 1 + playlist.length) % playlist.length);
-    }
+    playSong((currentSongIndex - 1 + playlist.length) % playlist.length);
 }
 
-// 1. 监听音乐播放，同步进度条和小组件
+// 播放监听
 audioEl.addEventListener('timeupdate', () => {
     if (!audioEl.duration) return;
     const current = audioEl.currentTime;
     const total = audioEl.duration;
     const percent = (current / total) * 100 + '%';
-    
     const currStr = formatTime(current);
     const totalStr = formatTime(total);
-
+    
     document.getElementById('player-curr-time').innerText = currStr;
     document.getElementById('player-total-time').innerText = totalStr;
     document.getElementById('player-progress').style.width = percent;
-
     document.getElementById('widget-curr-time').innerText = currStr;
     document.getElementById('widget-total-time').innerText = '-' + formatTime(total - current);
     document.getElementById('widget-progress').style.width = percent;
 
-    // 歌词滚动
     if (parsedLyrics.length > 0 && isLyricsView) {
         let activeIndex = -1;
         for (let i = 0; i < parsedLyrics.length; i++) {
-            if (current >= parsedLyrics[i].time - 0.3) activeIndex = i; // 提前0.3秒高亮，手感更好
+            if (current >= parsedLyrics[i].time - 0.3) activeIndex = i;
             else break;
         }
         if (activeIndex !== -1) {
@@ -6858,56 +6870,28 @@ audioEl.addEventListener('timeupdate', () => {
             lines.forEach((line, index) => {
                 if (index === activeIndex) {
                     if (!line.classList.contains('active-lyric')) {
-                        line.classList.add('active-lyric', 'text-black', 'dark:text-white', 'text-lg', 'scale-110', 'font-bold');
-                        line.classList.remove('player-text-muted', 'text-sm');
+                        line.classList.add('active-lyric', 'text-black', 'font-bold', 'scale-110');
                         line.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 } else {
-                    line.classList.remove('active-lyric', 'text-black', 'dark:text-white', 'text-lg', 'scale-110', 'font-bold');
-                    line.classList.add('player-text-muted', 'text-sm');
+                    line.classList.remove('active-lyric', 'text-black', 'font-bold', 'scale-110');
                 }
             });
         }
     }
 });
 
-// 音乐播放结束时，根据模式决定去向
 audioEl.addEventListener('ended', () => {
-    if (playlist.length === 0) return;
-    if (playMode === 'single') {
-        audioEl.currentTime = 0;
-        audioEl.play();
-    } else {
-        playNext();
-    }
+    if (playMode === 'one') { audioEl.currentTime = 0; audioEl.play(); }
+    else { playNext(); }
 });
 
-function formatTime(seconds) {
-    if (isNaN(seconds)) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-}
-
-// 2. 界面控制
-function openMusicPlayer() {
-    const player = document.getElementById('music-player-screen');
-    player.classList.remove('hidden');
-    setTimeout(() => player.classList.remove('translate-y-full'), 10);
-}
-
-function closeMusicPlayer() {
-    const player = document.getElementById('music-player-screen');
-    player.classList.add('translate-y-full');
-    setTimeout(() => player.classList.add('hidden'), 300);
-}
-
-// 3. 播放与暂停控制
 function togglePlay() {
-    if (playlist.length === 0) return alert("播放列表为空，请先点击播放列表的加号添加歌曲！");
-    if (currentSongIndex === -1) playSong(0);
-    else {
-        if (isPlaying) { audioEl.pause(); isPlaying = false; } 
+    if (playlist.length === 0) return;
+    if (currentSongIndex === -1) {
+        playSong(0);
+    } else {
+        if (isPlaying) { audioEl.pause(); isPlaying = false; }
         else { audioEl.play(); isPlaying = true; }
         updatePlayPauseUI();
     }
@@ -6915,25 +6899,34 @@ function togglePlay() {
 
 function updatePlayPauseUI() {
     const icon = document.getElementById('play-icon');
-    const widgetIcon = document.getElementById('widget-play-icon');
+    const wIcon = document.getElementById('widget-play-icon');
     const record = document.getElementById('record-player');
-    
     if (isPlaying) {
-        // 变成圆润的两条竖线
-        icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-        icon.classList.remove('ml-1');
-        if(widgetIcon) widgetIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-        record.style.animationPlayState = 'running';
+        const pauseSvg = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        icon.innerHTML = pauseSvg; icon.classList.remove('ml-1');
+        if(wIcon) wIcon.innerHTML = pauseSvg;
+        if(record) record.style.animationPlayState = 'running';
     } else {
-        // 变成圆润三角形
-        icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-        icon.classList.add('ml-1');
-        if(widgetIcon) widgetIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-        record.style.animationPlayState = 'paused';
+        const playSvg = '<path d="M8 5v14l11-7z"/>';
+        icon.innerHTML = playSvg; icon.classList.add('ml-1');
+        if(wIcon) wIcon.innerHTML = playSvg;
+        if(record) record.style.animationPlayState = 'paused';
     }
 }
 
-// 4. 播放列表管理
+function openMusicPlayer() {
+    const screen = document.getElementById('music-player-screen');
+    screen.classList.remove('hidden');
+    setTimeout(() => screen.classList.remove('translate-y-full'), 10);
+    updatePlayModeUI();
+}
+
+function closeMusicPlayer() {
+    const screen = document.getElementById('music-player-screen');
+    screen.classList.add('translate-y-full');
+    setTimeout(() => screen.classList.add('hidden'), 300);
+}
+
 function openPlaylist() {
     renderPlaylist();
     const modal = document.getElementById('playlist-modal');
@@ -6942,239 +6935,182 @@ function openPlaylist() {
     setTimeout(() => container.classList.remove('translate-y-full'), 10);
 }
 
+function closePlaylist() {
+    const container = document.getElementById('playlist-container');
+    container.classList.add('translate-y-full');
+    setTimeout(() => document.getElementById('playlist-modal').classList.add('hidden'), 300);
+}
+
 function renderPlaylist() {
     const container = document.getElementById('playlist-items');
     container.innerHTML = '';
     if (playlist.length === 0) {
-        container.innerHTML = '<div class="text-center player-text-muted text-xs mt-10">播放列表空空如也，点击右上角 "+" 添加音乐吧</div>';
+        container.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">列表为空</div>';
         return;
     }
     playlist.forEach((song, idx) => {
         const isActive = idx === currentSongIndex;
         const div = document.createElement('div');
-        // 增加了 select-none 防止长按选中文本
-        div.className = `flex items-center p-3 cursor-pointer rounded-xl transition-colors select-none ${isActive ? 'bg-black/10 dark:bg-white/10' : 'active:bg-black/5 dark:active:bg-white/5'}`;
-        
-        // 短按播放
-        div.onclick = () => {
-            if (!div.getAttribute('data-longpressed')) {
-                playSong(idx);
-            }
-        };
-
-        // 【新增】：长按逻辑，呼出删除菜单
-        let pressTimer;
-        const startPress = (e) => {
-            div.removeAttribute('data-longpressed');
-            pressTimer = setTimeout(() => {
-                div.setAttribute('data-longpressed', 'true');
-                // 调用我们的黑色气泡菜单
-                showContextMenu(e, [
-                    { label: '彻底删除此曲', action: () => deleteSong(idx) }
-                ], div);
-            }, 600); // 600毫秒算作长按
-        };
-        const cancelPress = () => clearTimeout(pressTimer);
-        div.addEventListener('touchstart', startPress);
-        div.addEventListener('touchend', cancelPress);
-        div.addEventListener('touchmove', cancelPress);
-        div.addEventListener('mousedown', startPress);
-        div.addEventListener('mouseup', cancelPress);
-        div.addEventListener('mouseleave', cancelPress);
-
+        div.className = `flex items-center p-3 cursor-pointer rounded-xl ${isActive ? 'bg-black/10' : 'active:bg-black/5'}`;
+        div.onclick = () => playSong(idx);
         div.innerHTML = `
-            <span class="${isActive ? 'text-blue-500 font-bold' : 'player-text-muted'} w-6 text-center shrink-0 mr-3">${isActive ? '▶' : (idx + 1)}</span>
+            <span class="w-6 text-center mr-3 ${isActive ? 'text-blue-500 font-bold' : 'text-gray-400'}">${isActive ? '▶' : (idx + 1)}</span>
             <div class="flex-1 min-w-0">
-                <div class="text-[15px] truncate ${isActive ? 'text-blue-500 font-bold' : 'player-text-adaptive'}">${song.title}</div>
-                <div class="text-[12px] truncate ${isActive ? 'text-blue-400' : 'player-text-muted'}">${song.artist}</div>
+                <div class="text-[15px] truncate ${isActive ? 'text-blue-500 font-bold' : ''}">${song.title}</div>
+                <div class="text-[12px] text-gray-400 truncate">${song.artist}</div>
             </div>
+            <button onclick="event.stopPropagation(); deleteSong(${idx});" class="text-gray-300 hover:text-red-500 px-2">✕</button>
         `;
         container.appendChild(div);
     });
 }
 
-// 5. 核心播放指令
-function playSong(index) {
+async function playSong(index) {
     if (index < 0 || index >= playlist.length) return;
     currentSongIndex = index;
     const song = playlist[index];
     
-    audioEl.src = song.audioSrc;
-    audioEl.play();
+    // 从大仓库读取音乐
+    const audioData = await musicDB.get(song.audioId);
+    audioEl.src = audioData || song.audioSrc;
+    audioEl.play().catch(() => {});
     isPlaying = true;
     updatePlayPauseUI();
 
-    const defaultCover = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
-    const coverSrc = song.cover || defaultCover;
-    
+    const coverSrc = song.cover || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
     document.getElementById('player-title').innerText = song.title;
     document.getElementById('player-artist').innerText = song.artist;
     document.getElementById('player-cover-img').src = coverSrc;
-    
     document.getElementById('music-title').innerText = song.title;
     document.getElementById('music-artist').innerText = song.artist;
     document.getElementById('widget-cover').src = coverSrc;
 
-    parseLyrics(song.lyrics);
-    
-    if(!document.getElementById('playlist-modal').classList.contains('hidden')) renderPlaylist();
+    parsedLyrics = [];
+    if (song.lrc) parseLyrics(song.lrc);
+    else document.getElementById('lyrics-content').innerHTML = '<div class="text-sm">暂无歌词</div>';
 }
 
-// 6. 歌词视图切换与解析
+function deleteSong(idx) {
+    if(confirm("确定要删除这首歌吗？")) {
+        const song = playlist[idx];
+        musicDB.remove(song.audioId);
+        playlist.splice(idx, 1);
+        if (currentSongIndex === idx) { audioEl.pause(); isPlaying = false; currentSongIndex = -1; updatePlayPauseUI(); }
+        else if (currentSongIndex > idx) { currentSongIndex--; }
+        localStorage.setItem('os_playlist', JSON.stringify(playlist));
+        renderPlaylist();
+    }
+}
+
 function toggleLyricsView() {
     isLyricsView = !isLyricsView;
     const record = document.getElementById('record-player');
-    const lyricsView = document.getElementById('lyrics-view');
-    
-    if (isLyricsView) {
-        record.classList.add('opacity-0', 'pointer-events-none');
-        lyricsView.classList.remove('opacity-0', 'pointer-events-none');
-        const activeLine = document.querySelector('.lyric-line.active-lyric');
-        if(activeLine) activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-        record.classList.remove('opacity-0', 'pointer-events-none');
-        lyricsView.classList.add('opacity-0', 'pointer-events-none');
-    }
+    const lyrics = document.getElementById('lyrics-view');
+    if (isLyricsView) { record.style.opacity = '0'; lyrics.style.opacity = '1'; lyrics.style.pointerEvents = 'auto'; }
+    else { record.style.opacity = '1'; lyrics.style.opacity = '0'; lyrics.style.pointerEvents = 'none'; }
 }
 
-function parseLyrics(lrcText) {
-    parsedLyrics = [];
+function parseLyrics(lrc) {
     const container = document.getElementById('lyrics-content');
     container.innerHTML = '';
-    
-    if (!lrcText || !lrcText.trim()) {
-        container.innerHTML = '<div class="text-sm">这首歌暂无歌词~</div>';
-        return;
-    }
-
-    const lines = lrcText.split('\n');
-    const regex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/;
-    
+    const lines = lrc.split('\n');
+    const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
     lines.forEach(line => {
         const match = line.match(regex);
         if (match) {
-            const min = parseInt(match[1], 10);
-            const sec = parseInt(match[2], 10);
-            const ms = match[3] ? parseInt(match[3], 10) : 0;
+            const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / (match[3].length === 3 ? 1000 : 100);
             const text = match[4].trim();
-            if (text) {
-                const time = min * 60 + sec + ms / (match[3].length === 3 ? 1000 : 100);
-                parsedLyrics.push({ time, text });
-            }
+            if (text) parsedLyrics.push({ time, text });
         }
     });
-
-    if (parsedLyrics.length === 0) {
-        container.innerHTML = '<div class="text-sm pb-10">歌词格式未被识别哦</div>';
-    } else {
-        parsedLyrics.forEach((lyric) => {
+    if (parsedLyrics.length === 0) container.innerHTML = '<div class="text-sm">歌词解析失败</div>';
+    else {
+        parsedLyrics.forEach(l => {
             const div = document.createElement('div');
-            div.className = 'lyric-line text-sm player-text-muted transition-all duration-300 min-h-[24px]';
-            div.innerText = lyric.text;
+            div.className = 'lyric-line text-sm text-gray-400 transition-all py-1';
+            div.innerText = l.text;
             container.appendChild(div);
         });
         container.innerHTML += '<div class="h-40"></div>';
     }
 }
 
-// 7. 添加歌曲相关逻辑 (修复版：支持删后台永久保存)
+// 7. 添加歌曲相关逻辑
+let tempCoverBase64 = null;
+let tempAudioBase64 = null;
+
 function openAddSongModal() {
     document.getElementById('add-song-modal').classList.remove('hidden');
-    document.getElementById('new-song-title').value = '';
-    document.getElementById('new-song-artist').value = '';
-    document.getElementById('new-song-audio-url').value = '';
-    document.getElementById('new-song-lrc-text').value = '';
-    document.getElementById('new-song-cover').value = '';
-    document.getElementById('new-song-audio-file').value = '';
-    document.getElementById('new-song-lrc-file').value = '';
-    tempCoverBase64 = null;
-    tempAudioBase64 = null;
-    tempLrcText = null;
+    ['new-song-title', 'new-song-artist', 'new-song-audio-url', 'new-song-lrc-text', 'new-song-cover', 'new-song-audio-file'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.value = '';
+    });
+    tempCoverBase64 = null; tempAudioBase64 = null;
 }
 
-function closeAddSongModal() {
-    document.getElementById('add-song-modal').classList.add('hidden');
-}
+function closeAddSongModal() { document.getElementById('add-song-modal').classList.add('hidden'); }
 
-// 修复封面图片保存：使用 FileReader 转为永久 Base64 格式
-document.getElementById('new-song-cover').addEventListener('change', e => {
-    if (e.target.files[0]) {
+// 监听封面选择并极速压缩
+document.getElementById('new-song-cover').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
         const reader = new FileReader();
-        reader.onload = ev => { tempCoverBase64 = ev.target.result; };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.onload = function(ev) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const size = 300; // 封面只要300像素绝对够了，不占内存
+                canvas.width = size; canvas.height = size;
+                canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+                tempCoverBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 });
 
-// 修复音源保存：使用 FileReader 转为永久 Base64 格式
-document.getElementById('new-song-audio-file').addEventListener('change', e => {
-    if (e.target.files[0]) {
+// 监听音乐文件选择
+document.getElementById('new-song-audio-file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
         const reader = new FileReader();
         reader.onload = ev => { tempAudioBase64 = ev.target.result; };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsDataURL(file);
     }
 });
 
-document.getElementById('new-song-lrc-file').addEventListener('change', e => {
-    if (e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = ev => tempLrcText = ev.target.result;
-        reader.readAsText(e.target.files[0]);
-    }
-});
-
-function saveNewSong() {
+async function saveNewSong() {
     const title = document.getElementById('new-song-title').value.trim();
-    const artist = document.getElementById('new-song-artist').value.trim();
-    const urlAudio = document.getElementById('new-song-audio-url').value.trim();
-    const textLrc = document.getElementById('new-song-lrc-text').value.trim();
+    const artist = document.getElementById('new-song-artist').value.trim() || '未知歌手';
+    const audioUrl = document.getElementById('new-song-audio-url').value.trim();
+    const lrcText = document.getElementById('new-song-lrc-text').value.trim();
 
-    if (!title) return alert("写个歌名再提交吧！");
-    const finalAudioSrc = tempAudioBase64 || urlAudio;
-    if (!finalAudioSrc) return alert("需要提供本地音乐或音乐链接！");
+    if (!title) return alert("请填写歌曲名称");
+    if (!tempAudioBase64 && !audioUrl) return alert("请上传文件或填写链接");
 
-    playlist.push({
+    const songId = "m_" + Date.now();
+    // 如果是文件，存入大仓库
+    if (tempAudioBase64) {
+        await musicDB.save(songId, tempAudioBase64);
+    }
+
+    const newSong = {
         title: title,
-        artist: artist || '未知歌手',
-        cover: tempCoverBase64, // 现在的封面是永久的了
-        audioSrc: finalAudioSrc, // 现在的音源是永久的了
-        lyrics: tempLrcText || textLrc
-    });
-    alert("✅ 歌曲添加成功！删掉后台也不会丢啦！");
+        artist: artist,
+        cover: tempCoverBase64,
+        audioId: songId,
+        audioSrc: audioUrl || "", // 如果有URL优先用URL
+        lrc: lrcText
+    };
+
+    playlist.push(newSong);
+    localStorage.setItem('os_playlist', JSON.stringify(playlist));
+    alert("添加成功！已存入大容量仓库。");
     closeAddSongModal();
     renderPlaylist();
-    if (playlist.length === 1) playSong(0);
 }
+// =========================================================
 
-// 让唱片旋转的动画
-const spinStyle = document.createElement('style');
-spinStyle.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
-document.head.appendChild(spinStyle);
-
-// 【黑夜模式核心注入】拦截原来的暗色模式逻辑，加上我们音乐播放器的特调色彩
-const originalApplyDarkModeStyle = applyDarkModeStyle;
-applyDarkModeStyle = function() {
-    originalApplyDarkModeStyle();
-    let styleTag = document.getElementById('dark-mode-css');
-    if (config.isDarkMode) {
-        styleTag.innerHTML += `
-            /* 播放器界面的深色魔法 */
-            .player-bg-adaptive { background-color: #121212 !important; color: #fff !important; }
-            .player-text-adaptive { color: #fff !important; }
-            .player-text-muted { color: #aaa !important; }
-            .player-border-adaptive { border-color: rgba(255,255,255,0.1) !important; }
-            /* 弹窗高级黑夜毛玻璃 */
-            .glass-modal { background: rgba(30, 30, 30, 0.85) !important; border-top: 1px solid rgba(255,255,255,0.15) !important; color: #eee !important; }
-            .glass-input { background: rgba(0,0,0,0.5) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #eee !important; }
-            .glass-input::placeholder { color: #666 !important; }
-            /* 黑夜模式强制让歌词高亮变成纯白 */
-            .dark\\:text-white { color: white !important; }
-            .dark\\:bg-white { background-color: white !important; }
-            .dark\\:text-black { color: black !important; }
-            .dark\\:active\\:bg-white\\/5:active { background-color: rgba(255,255,255,0.05) !important; }
-            .dark\\:bg-white\\/10 { background-color: rgba(255,255,255,0.1) !important; }
-        `;
-    }
-};
 // ================= 新增：微信发送相册、相机和描述照片功能 =================
 
 // 处理“相册”和“相机”发送真实照片的功能
@@ -7999,32 +7935,6 @@ setInterval(() => {
     } catch(e) {}
 }, 500);
 // =====================================================================
-// 【新增】：删除音乐的执行逻辑
-function deleteSong(index) {
-    if (confirm(`确定要从播放列表中移除《${playlist[index].title}》吗？`)) {
-        // 如果删掉的是当前正在播的歌，先停掉音乐
-        if (index === currentSongIndex) {
-            audioEl.pause();
-            isPlaying = false;
-            currentSongIndex = -1;
-            document.getElementById('music-title').innerText = "暂无歌曲";
-            document.getElementById('music-artist').innerText = "请从列表选择播放";
-            updatePlayPauseUI();
-        } else if (index < currentSongIndex) {
-            // 如果删的是前面的歌，当前播的歌序号要往前挪一位，防止错乱
-            currentSongIndex--;
-        }
-        
-        // 从数组里删掉
-        playlist.splice(index, 1);
-        // 立即同步到“大仓库”数据库
-        if (typeof dbStore !== 'undefined') {
-            dbStore.save('os_playlist', playlist);
-        }
-        // 刷新列表画面
-        renderPlaylist();
-    }
-}
 </script>
 </body>
 </html>
