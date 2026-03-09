@@ -6412,23 +6412,26 @@ function importFriendData(input) {
                     const imported = JSON.parse(e.target.result);
                     if (!imported.id || !imported.remark) throw new Error("文件格式不对");
                     
-                    // 【终极护盾开启】：通知全系统，我在导入数据，谁也不许保存！
-                    window.isImportingData = true;
-                    
                     const idx = friendList.findIndex(f => f.id === currentFriendId);
                     // 强制保持当前的 ID，防止列表错乱
                     imported.id = friendList[idx].id;
                     friendList[idx] = imported;
+                    
                     localStorage.setItem('friend_list', JSON.stringify(friendList));
-                    alert("🎉 存档导入成功！");
-                    location.reload(); // 强制刷新页面应用全部新数据
+                    
+                    // 【终极修复】：没收保存功能，防止刷新时旧数据覆写
+                    Storage.prototype.setItem = function() {};
+                    window.performGlobalSave = function() {};
+                    
+                    alert("导入成功！点击确定后将刷新页面加载。");
+                    window.location.reload();
                 } catch(err) {
-                    alert("❌ 导入失败，似乎不是正确的存档文件。");
+                    alert("❌ 导入失败: " + err.message);
                 }
             };
             reader.readAsText(input.files[0]);
+            input.value = '';
         }
-        input.value = '';
     }
 }
 
@@ -8031,9 +8034,6 @@ function importAllAppGlobalData(input) {
             try {
                 let importedData = JSON.parse(e.target.result);
                 
-                // 【终极护盾开启】：通知全系统，我在导入数据，谁也不许保存覆盖！
-                window.isImportingData = true;
-                
                 // 1. 先清空当前的所有旧数据
                 localStorage.clear();
                 
@@ -8042,17 +8042,24 @@ function importAllAppGlobalData(input) {
                     localStorage.setItem(key, importedData[key]);
                 }
                 
-                alert("🎉 数据导入成功！点击确定后页面将立刻刷新，加载你的备份数据！");
-                // 3. 立即刷新！
-                window.location.reload();
+                // 【终极修复】：直接摧毁网页的临时保存功能（没收保安的笔）！
+                // 彻底阻止网页在刷新闭合瞬间，触发后台自动保存把屏幕上旧画面再存一遍
+                Storage.prototype.setItem = function() {};
+                window.performGlobalSave = function() {};
                 
+                alert("🎉 数据导入成功！点击确定后页面将立刻刷新，加载你的备份数据！");
+                
+                // 3. 立即刷新加载新数据
+                window.location.reload();
             } catch(error) {
-                alert("❌ 导入失败，这个文件可能不是正确的备份文件哦！");
+                alert("❌ 导入失败，文件格式不正确！");
             }
-            // 清空选择框，方便下次还能再点
-            input.value = "";
         };
         reader.readAsText(file);
+    }
+    input.value = ''; // 清空选择，允许重复导入同一个文件
+}
+       reader.readAsText(file);
     } else {
         // 取消了也清空选择框
         input.value = "";
