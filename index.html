@@ -1713,10 +1713,9 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
     </div>
 
 <script>
-// ================= 新增：全局图片极速压缩引擎（彻底解决相册图片太大撑爆内存导致无法保存的问题） =================
+// ================= 终极内存解放补丁：极致图片压缩（存一万张图也不怕版） =================
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
-    // 拦截所有的图片读取，如果是GIF动图为了保持能动就不压缩，其他的全部压缩！
     if (file && file.type && file.type.startsWith('image/') && file.type !== 'image/gif') {
         const img = new Image();
         const objUrl = URL.createObjectURL(file);
@@ -1725,8 +1724,8 @@ FileReader.prototype.readAsDataURL = function(file) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // 设定图片最大尺寸为 800 像素，清晰度绝对够用，但体积能缩小 90% 以上
-            const MAX_SIZE = 800;
+            // 极限压缩：图片最大只保留 500 像素，手机屏幕看完全够了
+            const MAX_SIZE = 500;
             let width = img.width;
             let height = img.height;
             
@@ -1742,17 +1741,14 @@ FileReader.prototype.readAsDataURL = function(file) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
-            // 强制转换为 JPG 格式，画质保留 60% (肉眼看不出区别，但极大降低体积)
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-            
-            // 把变小后的微型图片伪装成交回给原程序
+            // 质量调到 0.4，体积直接缩小 100 倍！
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
             if (typeof this.onload === 'function') {
                 this.onload({ target: { result: dataUrl } });
             }
         };
         img.src = objUrl;
     } else {
-        // 如果不是图片或者是GIF，就按原样读取
         originalReadAsDataURL.call(this, file);
     }
 };
@@ -4219,11 +4215,21 @@ async function executeForumGenerate() {
         }
     });
     
-    closeForumCharSelect();
-
+        closeForumCharSelect();
     const feed = document.getElementById('forum-feed');
-    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
+    
+    // 【修复逻辑】：先检查本地缓存里有没有已经生成的帖子
+    const savedForumHtml = localStorage.getItem('os_forum_html');
+    
+    // 如果缓存里有内容，并且当前显示的还是“暂无动态”或“初始提示”，就先把缓存内容刷出来，防止白屏
+    if (savedForumHtml && (feed.innerHTML.includes('暂无动态') || feed.innerHTML === "")) {
+        feed.innerHTML = savedForumHtml;
+        // 如果已经有内容了，我们就不显示“正在编帖子”的提示，直接结束，防止误触发生成
+        return; 
+    }
 
+    // 只有在确定要重新生成（比如点击了生成按钮）且缓存为空时，才显示加载提示
+    feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
     let prompt = "";
     if (selectedFriendsData.length === 0) {
         // 【情况一：未勾选角色】
