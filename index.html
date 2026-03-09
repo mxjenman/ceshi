@@ -2118,6 +2118,9 @@ let isMultiSelecting = false;
 
 // 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
 function performGlobalSave() {
+    // 【终极护盾】：如果在导入数据，强制命令存档功能停止一切工作！绝对不准覆盖！
+    if (window.isImportingData) return;
+
     try {
         // 基础核心数据保存
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
@@ -6409,8 +6412,8 @@ function importFriendData(input) {
                     const imported = JSON.parse(e.target.result);
                     if (!imported.id || !imported.remark) throw new Error("文件格式不对");
                     
-                    // 【核心修复】：点晕自动保存！让它在刷新瞬间闭嘴，不准用老画面覆盖我们的数据
-                    window.performGlobalSave = function() {};
+                    // 【终极护盾开启】：通知全系统，我在导入数据，谁也不许保存！
+                    window.isImportingData = true;
                     
                     const idx = friendList.findIndex(f => f.id === currentFriendId);
                     // 强制保持当前的 ID，防止列表错乱
@@ -8028,8 +8031,8 @@ function importAllAppGlobalData(input) {
             try {
                 let importedData = JSON.parse(e.target.result);
                 
-                // 【核心修复】：点晕自动保存！让它在刷新瞬间闭嘴，绝不准用旧画面覆盖我们的新数据
-                window.performGlobalSave = function() {};
+                // 【终极护盾开启】：通知全系统，我在导入数据，谁也不许保存覆盖！
+                window.isImportingData = true;
                 
                 // 1. 先清空当前的所有旧数据
                 localStorage.clear();
@@ -8040,7 +8043,7 @@ function importAllAppGlobalData(input) {
                 }
                 
                 alert("🎉 数据导入成功！点击确定后页面将立刻刷新，加载你的备份数据！");
-                // 3. 立即刷新！因为内鬼已经被我们干掉了，不用再延迟了
+                // 3. 立即刷新！
                 window.location.reload();
                 
             } catch(error) {
@@ -8055,7 +8058,7 @@ function importAllAppGlobalData(input) {
         input.value = "";
     }
 }
-// ================= 新增：全局导出和导入数据功能 结束 =================
+/ ================= 新增：全局导出和导入数据功能 结束 =================
 
 </script>
 </body>
