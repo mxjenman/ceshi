@@ -2109,7 +2109,6 @@ let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
-// 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
 function performGlobalSave() {
     try {
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
@@ -2122,7 +2121,6 @@ function performGlobalSave() {
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
         
-        // --- 核心保存修复：确保论坛主页的HTML代码被死死存入硬盘 ---
         const forumFeed = document.getElementById('forum-feed');
         if (forumFeed && forumFeed.innerHTML.trim() !== "" && !forumFeed.innerHTML.includes('暂无动态')) {
             localStorage.setItem('os_forum_html', forumFeed.innerHTML);
@@ -2130,7 +2128,6 @@ function performGlobalSave() {
         
         const profilePostsFeed = document.getElementById('profile-posts-feed');
         if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
-        // -----------------------------------------------------
 
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody && desktopBody.style.backgroundImage) {
@@ -2154,22 +2151,10 @@ function performGlobalSave() {
     }
 }
 
-// 1. 常规每隔1秒钟偷偷保存
 setInterval(performGlobalSave, 1000);
-
-// 2. 苹果系统专属救命稻草：在你上滑杀后台、切回桌面的那一瞬间，强制瞬间保存！
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') performGlobalSave();
-});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') performGlobalSave(); });
 window.addEventListener('pagehide', performGlobalSave);
 
-// 【设置读取魔法】在页面刚加载时，自动把你以前填好的 API Key 和模型都填回去
-const savedConfig = JSON.parse(localStorage.getItem('os_config'));
-if (savedConfig) {
-    config = { ...config, ...savedConfig };
-}  // 记住是否正在多选
-let selectedMsgIndices = new Set(); // 记住多选了哪些消息
-let currentQuoteMsg = null;
 // 记住正在引用哪句话
 
 // // ================= 新增：系统通知模块 =================
@@ -7740,7 +7725,7 @@ function saveMountMemory() {
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     closeMountMemoryModal();
     alert("✅ 记忆挂载成功！此后聊天将会带上你勾选的关联记忆。");
-}0
+}
 // ================= 新增：真正的后台自动活跃引擎 =================
 // 这个引擎会每隔30秒检查一次所有人（包括群聊）的时间
 setInterval(() => {
