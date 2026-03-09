@@ -2709,21 +2709,21 @@ Daddy参考：乖宝宝、摸头、怎么了，嗯？
     当前状态: ${userProfile.status}`;
 }
 
-function changeAvatar(side){
-    const input=document.createElement('input');
-    input.type='file'; input.accept='image/*';
-    input.onchange=e=>{
-        const file=e.target.files[0];
-        const reader=new FileReader();
-        reader.onload=ev=>{ 
-            const newSrc = ev.target.result;
-            document.getElementById(`avatar-${side}`).src=newSrc; 
-            // 移除了全局同步，让桌面头像独立
+window.changeAvatar = function(side) {
+    globalSafeImageInput.onchange = e => {
+        if (!e.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const el = document.getElementById(`avatar-${side}`);
+            if(el) el.setAttribute('src', ev.target.result);
+            // 【核心修复】：换完图立刻强制存档，防止闪烁变回原样！
+            setTimeout(performGlobalSave, 50); 
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(e.target.files[0]);
+        globalSafeImageInput.value = '';
     };
-    input.click();
-}
+    globalSafeImageInput.click();
+};
 function updateGlobalAvatar(src) {
     userProfile.avatar = src;
     // 只保留微信相关的头像同步，去掉论坛和桌面小组件
