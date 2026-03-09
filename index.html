@@ -1234,7 +1234,20 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
             </div>
 
-        </div>
+            <div class="bg-white rounded-xl p-4 mb-4 shadow-sm flex flex-col gap-3">
+                <h3 class="font-bold text-[15px] mb-1 text-gray-800">全部数据备份</h3>
+                <p class="text-[11px] text-gray-400 mb-2 leading-tight">可以将你所有的聊天记录、角色设定、相册、音乐等全部数据导出为一个文件进行备份，或者导入之前备份的文件（导入会彻底覆盖当前手机所有数据）。</p>
+                <button onclick="exportAllAppGlobalData()" class="w-full py-2.5 bg-gray-100 text-black rounded-[10px] font-bold text-[14px] active:scale-95 transition-transform">
+                    📥 导出全部数据备份
+                </button>
+                <div class="relative">
+                    <button onclick="document.getElementById('import-global-file-input').click()" class="w-full py-2.5 bg-red-50 text-red-500 rounded-[10px] font-bold text-[14px] active:scale-95 transition-transform">
+                        📤 导入全部数据备份
+                    </button>
+                    <input type="file" id="import-global-file-input" class="hidden" accept=".json" onchange="importAllAppGlobalData(this)">
+                </div>
+            </div>
+            </div>
     </div>
 
     <div id="appearance-app-screen" class="page-layer slide-hidden flex flex-col z-[90]">
@@ -4040,36 +4053,42 @@ function submitPost(){
     const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
     const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
     
-    // --- 修改开始：获取当前的真实时间 ---
     const now = new Date();
-    // 获取小时和分钟，并确保分钟小于10的时候前面带个0（比如 09:05）
     const timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
-    // --- 修改结束 ---
-
-    // 【修改】将自己发布的帖子也加入系统记忆
+    
+    // 【修改】将自己发布的帖子也加入系统记忆，变得和AI帖子一模一样
     const newPost = {
         isChar: false,
-        charId: null,
+        charId: "",
         name: userProfile.name,
         handle: userProfile.handle,
         text: text,
         img: imgSrc,
-        time: timeStr, // 这里现在会显示具体的发布时间，比如 14:30
-        finalAvatar: document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : userProfile.avatar,
-        comments: []
+        time: timeStr,
+        comments: [],
+        finalAvatar: userProfile.avatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg",
+        isUserPost: true
     };
-
-    const squareFeed = document.getElementById('forum-feed');
-    const profileFeed = document.getElementById('profile-posts-feed');
+    
+    currentForumPostsData.unshift(newPost); // 放到记忆最前面
+    currentForumPostsData.forEach((p, i) => p.listIndex = i); // 重新排队号
+    localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+    
+    // 重新刷新广场显示
+    const feed = document.getElementById('forum-feed');
     const hint = document.getElementById('empty-hint');
     if(hint) hint.remove();
-
-    if (squareFeed) {
-        squareFeed.prepend(createForumPostNode(newPost));
-    }
+    feed.innerHTML = "";
+    currentForumPostsData.forEach(p => {
+        feed.appendChild(createForumPostNode(p));
+    });
+    
+    // 如果有个人主页，也放进去
+    const profileFeed = document.getElementById('profile-posts-feed');
     if (profileFeed) {
         profileFeed.prepend(createForumPostNode(newPost));
     }
+    
     closeCompose();
 }
 
@@ -7956,6 +7975,78 @@ setInterval(() => {
     } catch(e) {}
 }, 500);
 // =====================================================================
+
+// ================= 新增：全局导出和导入数据功能 开始 =================
+// 导出所有数据
+function exportAllAppGlobalData() {
+    try {
+        let allData = {};
+        // 把浏览器里存的这个网站的所有东西都打包起来
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            allData[key] = localStorage.getItem(key);
+        }
+        
+        let dataStr = JSON.stringify(allData);
+        let blob = new Blob([dataStr], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        
+        let a = document.createElement('a');
+        a.href = url;
+        // 获取当前日期作为文件名的一部分
+        let date = new Date();
+        let dateString = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+        a.download = "全部数据备份_" + dateString + ".json";
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert("✅ 全部数据已成功导出！请妥善保管这个备份文件哦！");
+    } catch(e) {
+        alert("❌ 导出失败，可能是因为照片太多导致数据过大。错误信息：" + e.message);
+    }
+}
+
+// 导入所有数据
+function importAllAppGlobalData(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    let file = input.files[0];
+    if (confirm("⚠️ 警告：导入备份文件将会【彻底删除并覆盖】你当前APP里的所有聊天记录、照片、音乐和角色设定！\n\n如果现在的记录也很重要，请先点击上面的按钮导出一份备份。\n\n你确定要继续导入吗？")) {
+        
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let importedData = JSON.parse(e.target.result);
+                
+                // 1. 先清空当前的所有旧数据
+                localStorage.clear();
+                
+                // 2. 把备份文件里的数据一条条全部存进去
+                for (let key in importedData) {
+                    localStorage.setItem(key, importedData[key]);
+                }
+                
+                alert("🎉 数据导入成功！点击确定后页面将自动刷新，加载你的备份数据！");
+                // 3. 刷新页面让新数据立刻生效
+                window.location.reload();
+                
+            } catch(error) {
+                alert("❌ 导入失败，这个文件可能不是正确的备份文件哦！");
+            }
+            // 清空选择框，方便下次还能再点
+            input.value = "";
+        };
+        reader.readAsText(file);
+    } else {
+        // 取消了也清空选择框
+        input.value = "";
+    }
+}
+// ================= 新增：全局导出和导入数据功能 结束 =================
+
 </script>
 </body>
 </html>
