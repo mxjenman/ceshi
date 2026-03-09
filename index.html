@@ -4158,27 +4158,23 @@ let currentForumPostsData = JSON.parse(localStorage.getItem('os_forum_posts_data
 
 // 呼出选择角色菜单
 function openForumCharSelect() {
-    const titleEl = document.querySelector('#forum-char-select-modal h3');
-    const descEl = document.querySelector('#forum-char-select-modal p');
-    const btnEl = document.querySelector('#forum-char-select-modal button:last-child');
-    if(titleEl) titleEl.innerText = "选择要发帖的角色";
-    if(descEl) descEl.innerText = "不选则只生成陌生网友帖子";
-    if(btnEl) {
-        btnEl.innerText = "开始生成";
-        btnEl.onclick = executeForumGenerate;
-    }
-
     const list = document.getElementById('forum-char-list');
     list.innerHTML = '';
     const friends = friendList.filter(f => !f.isGroup);
     if(friends.length === 0) {
-        list.innerHTML = '<div class="text-xs text-gray-400 text-center py-4">请先去好友列表添加角色</div>';
+        list.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[14px]">暂无好友角色</div>';
     } else {
         friends.forEach(f => {
             list.innerHTML += `
-                <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer">
-                    <span class="text-[14px] text-gray-700">${f.remark}</span>
-                    <input type="checkbox" class="w-4 h-4 accent-black forum-char-checkbox" value="${f.id}">
+                <label class="flex items-center justify-between p-3 border-b border-gray-100 cursor-pointer active:bg-gray-50">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-[10px] object-cover flex-shrink-0">
+                        <span class="font-bold text-[14px] text-gray-800 truncate max-w-[80px]">${f.remark}</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <input type="text" id="forum-handle-${f.id}" class="border border-gray-300 rounded px-2 py-1 text-[12px] w-20 outline-none focus:border-black transition-colors" placeholder="@填写账号" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="w-5 h-5 accent-black forum-char-checkbox" value="${f.id}">
+                    </div>
                 </label>
             `;
         });
@@ -4186,203 +4182,37 @@ function openForumCharSelect() {
     document.getElementById('forum-char-select-modal').classList.remove('hidden');
 }
 
-unction closeForumCharSelect() {
+function closeForumCharSelect() {
     document.getElementById('forum-char-select-modal').classList.add('hidden');
 }
-// ================ 新增：推文评论与AI回复核心引擎 ================
-let currentForumTargetIndex = -1;
-
-// 1. 点击“转发”图标触发
-function handleForumForwardClick(index) {
-    const post = currentForumPostsData[index];
-    currentForumTargetIndex = index;
-    
-    if (post.name === userProfile.name) {
-        // 【情况一】是你发的推文：把弹窗文字临时替换掉，变成选角色来评论你
-        const titleEl = document.querySelector('#forum-char-select-modal h3');
-        const descEl = document.querySelector('#forum-char-select-modal p');
-        const btnEl = document.querySelector('#forum-char-select-modal button:last-child');
-        
-        if(titleEl) titleEl.innerText = "选择角色来评论你的推文";
-        if(descEl) descEl.innerText = "勾选的角色将根据推文和配图自动生成评论";
-        if(btnEl) {
-            btnEl.innerText = "生成角色评论";
-            btnEl.onclick = executeForumCommentGenerate; // 指向新魔法
-        }
-        
-        const list = document.getElementById('forum-char-list');
-        list.innerHTML = '';
-        friendList.filter(f => !f.isGroup).forEach(f => {
-            list.innerHTML += `
-                <label class="flex items-center justify-between p-2 border-b border-gray-50 cursor-pointer">
-                    <span class="text-[14px] text-gray-700">${f.remark}</span>
-                    <input type="checkbox" class="w-4 h-4 accent-black forum-char-checkbox" value="${f.id}">
-                </label>
-            `;
-        });
-        document.getElementById('forum-char-select-modal').classList.remove('hidden');
-        
-    } else if (post.isChar) {
-        // 【情况二】是角色发的推文：直接生成角色对评论区的回复
-        generateCharReplyForForum(index);
-    }
-}
-
-// 2. 点击“评论”图标触发（无论谁发的，你都可以手工写文字）
-function handleForumCommentClick(index) {
-    const post = currentForumPostsData[index];
-    const text = prompt("发表你的评论或回复：");
-    if (text && text.trim()) {
-        if (!post.comments) post.comments = [];
-        post.comments.push({ name: userProfile.name, text: text.trim() });
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        openForumDetail(index); // 刷新画面
-    }
-}
-
-// 3. AI生成选中角色对你推文的评论
-async function executeForumCommentGenerate() {
-    if (!config.apiKey) return alert("请先在设置中配置 API Key");
-    const checkboxes = document.querySelectorAll('.forum-char-checkbox');
-    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-    if (selectedIds.length === 0) return alert("请至少勾选一个角色！");
-    
-    closeForumCharSelect();
-    const post = currentForumPostsData[currentForumTargetIndex];
-    if (!post) return;
-    
-    // 让界面变成加载中
-    const container = document.getElementById('forum-detail-content');
-    container.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">角色正在绞尽脑汁构思评论...</div>';
-    
-    let charDetails = "";
-    selectedIds.forEach(id => {
-        const friend = friendList.find(f => f.id === id);
-        if (friend) {
-            let memory = (friend.memoryList && friend.memoryList.length > 0) ? friend.memoryList.join(';') : "";
-            charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。聊天记忆: ${memory}\n`;
-        }
-    });
-    
-    const postContext = `用户（我）发布了推文：“${post.text}”\n${post.img ? "并且附带了一张配图照片。" : ""}`;
-    const prompt = `你是社交平台上的网友。请让以下角色针对用户的推文进行评论。
-${postContext}
-【勾选的角色列表与记忆】：
-${charDetails}
-
-【任务】：
-根据各自的人设、语气和对用户的记忆，为每个选中角色生成一条简短的评论。
-请返回 JSON 格式，严格遵循以下结构：
-{
-  "comments": [
-    {"charId": "对应的角色ID", "name": "角色的名字", "text": "评论内容..."}
-  ]
-}`;
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{role: 'user', content: prompt}],
-                response_format: { type: "json_object" },
-                temperature: 0.8
-            })
-        });
-        const data = await response.json();
-        const parsed = JSON.parse(data.choices[0].message.content);
-        
-        if (!post.comments) post.comments = [];
-        if (parsed.comments) {
-            parsed.comments.forEach(c => {
-                post.comments.push({ name: c.name, text: c.text });
-            });
-        }
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        openForumDetail(currentForumTargetIndex); // 重新加载出来
-    } catch(e) {
-        alert("评论生成失败了，请检查网络！");
-        openForumDetail(currentForumTargetIndex);
-    }
-}
-
-// 4. 让角色自己回复评论区
-async function generateCharReplyForForum(index) {
-    if (!config.apiKey) return alert("请先在设置中配置 API Key");
-    const post = currentForumPostsData[index];
-    if (!post || !post.charId) return;
-    
-    const friend = friendList.find(f => f.id === post.charId);
-    if (!friend) return alert("抱歉，找不到这个角色对应的数据了！");
-    
-    let commentsContext = "";
-    if (post.comments && post.comments.length > 0) {
-        post.comments.forEach(c => {
-            commentsContext += `${c.name} 评论说: ${c.text}\n`;
-        });
-    }
-    
-    if (!commentsContext) {
-        return alert("帖子底下还没有人评论呢，先写点评论再让TA回复吧！");
-    }
-
-    const container = document.getElementById('forum-detail-content');
-    container.innerHTML = '<div class="p-10 text-center text-green-500 animate-pulse font-bold">TA正在思考如何回复这些评论...</div>';
-    
-    let memory = (friend.memoryList && friend.memoryList.length > 0) ? friend.memoryList.join(';') : "";
-    const prompt = `你是${friend.realName || friend.remark}。你的设定是：${friend.persona}。你和用户的聊天记忆：${memory}。
-你在社交平台上发布了这条推文：“${post.text}”
-现在收到了如下评论：
-${commentsContext}
-
-【任务】：请根据你的性格，挑选其中最新的一条评论（或综合大家的评论）给出一个简短的回复！可以直接在开头加上“回复某某：”的格式。
-直接输出你回复的纯文本内容，不需要任何排版格式，字数控制在50字以内。`;
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{role: 'user', content: prompt}],
-                temperature: 0.8
-            })
-        });
-        const data = await response.json();
-        const replyText = data.choices[0].message.content.trim();
-        
-        post.comments.push({
-            name: friend.realName || friend.remark,
-            text: replyText
-        });
-        
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        openForumDetail(index);
-    } catch(e) {
-        alert("回复生成失败了，请检查网络！");
-        openForumDetail(index);
-    }
-}
-// ================================================================
 
 // 核心：单次 API 请求生成全部内容
 async function executeForumGenerate() {
     if (!config.apiKey) return alert("请先配置 API Key");
-    
     const checkboxes = document.querySelectorAll('.forum-char-checkbox');
-    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    // 获取选中的 ID，同时获取用户在这个角色旁边填写的账号
+    const selectedFriendsData = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            const id = cb.value;
+            const handleInput = document.getElementById(`forum-handle-${id}`);
+            const handle = handleInput && handleInput.value.trim() ? handleInput.value.trim() : "";
+            selectedFriendsData.push({ id: id, handle: handle });
+        }
+    });
     
     closeForumCharSelect();
-    
+
     const feed = document.getElementById('forum-feed');
     feed.innerHTML = '<div class="p-10 text-center text-blue-500 animate-pulse font-bold">AI 正在绞尽脑汁编帖子，请耐心等待...</div>';
-    
+
     let prompt = "";
-    if (selectedIds.length === 0) {
+    if (selectedFriendsData.length === 0) {
         // 【情况一：未勾选角色】
         prompt = `你需要生成 10 到 15 个由不同陌生网友发布的论坛帖子。这些帖子应该来自不同的话题区域（比如生活吐槽、游戏、情感求助、工作等）。
 每个帖子需要附带 3 到 5 条评论，其中必须包含其他陌生网友的回复，以及贴主对评论的回复互动。
+
 请返回 JSON 格式，严格遵循以下结构：
 {
   "posts": [
@@ -4399,21 +4229,24 @@ async function executeForumGenerate() {
   ]
 }`;
     } else {
-        // 【情况二：勾选了角色】提取记忆和人设
+        // 【情况二：勾选了角色】提取记忆和人设，并加入推文账号指示
         let charDetails = "";
-        selectedIds.forEach(id => {
-            const friend = friendList.find(f => f.id === id);
+        selectedFriendsData.forEach(item => {
+            const friend = friendList.find(f => f.id === item.id);
             if (friend) {
                 let memory = "";
                 if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
-                charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
+                // 明确告诉AI指定的账号
+                let handleText = item.handle ? `，指定的推文账号为: ${item.handle}` : "";
+                charDetails += `- 角色ID: ${friend.id}, 名字: ${friend.realName || friend.remark}${handleText}, 设定: ${friend.persona}。与用户的聊天记忆: ${memory}\n`;
             }
         });
-        
+
         prompt = `你需要生成两部分论坛帖子：
 第一部分：7 到 10 个由不同陌生网友发布的随机帖子（话题区域随意，如搞笑、求助、分享等）。
 第二部分：针对以下每一个提供的角色，生成 3 到 5 个基于他们的人设、以及他们和用户之间聊天记忆的帖子（比如角色求助恋爱问题、秀恩爱、分享日常等）。
-【重要】：所有的帖子都需要附带 3 到 5 条评论。如果是陌生人的帖子，评论是陌生人和贴主互动；如果是角色的帖子，评论里要有陌生网友和该角色的回复互动。
+
+【重要】：所有的帖子都需要附带 3 到 5 条评论。如果是陌生人的帖子，评论是陌生人和贴主互动；如果是角色的帖子，评论里要有陌生网友和该角色的回复互动。如果角色有指定推文账号，请在生成时使用该账号（handle字段），否则你可以随意生成。
 角色列表及记忆如下：
 ${charDetails}
 
@@ -4424,7 +4257,7 @@ ${charDetails}
       "isChar": true或false,
       "charId": "如果isChar为true，填上面的角色ID；否则留空",
       "name": "昵称(如果是角色，必须使用角色的名字)",
-      "handle": "@账号",
+      "handle": "@账号(如果是角色且有指定账号，则使用指定的账号)",
       "text": "帖子正文内容...",
       "comments": [
         {"name": "评论者昵称", "text": "评论内容"}
@@ -4451,7 +4284,7 @@ ${charDetails}
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
         currentForumPostsData = parsed.posts || [];
-
+        
         // 随机打乱数组，让角色和陌生人帖子混合显示
         currentForumPostsData.sort(() => Math.random() - 0.5);
         
@@ -4463,40 +4296,44 @@ ${charDetails}
             if (p.isChar && p.charId) {
                 const f = friendList.find(x => x.id === p.charId);
                 if (f && f.avatar) avatar = f.avatar;
+                
+                // 【强制替换账号】：就算 AI 生成错了，在这里也会被强行换成你填写的账号
+                const charData = selectedFriendsData.find(x => x.id === p.charId);
+                if (charData && charData.handle) {
+                    p.handle = charData.handle;
+                    // 如果你填写账号的时候忘了打 @，这里会自动给你补上一个 @
+                    if (!p.handle.startsWith('@')) {
+                        p.handle = '@' + p.handle;
+                    }
+                }
             } else {
                 avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
             }
             p.finalAvatar = avatar;
+            
             feed.appendChild(createForumPostNode(p));
         });
-
-        // 【关键修复】等系统把所有推文的头像和顺序都算好之后，再存入记忆！
-        localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
-        
     } catch(e) {
+        feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，请检查网络或API Key，并稍后再试。</div>';
         console.error(e);
-        feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，可能是配置错误或返回结果超长被截断了</div>';
     }
 }
 
 // 绘制广场帖子卡片
 function createForumPostNode(post) {
     const div = document.createElement('div');
-    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50";
-    div.onclick = () => openForumDetail(post.listIndex);
-    
-    // ======== 修改：如果有真实时间就显示时间，没有才显示刚刚 ========
-    const displayTime = post.time ? post.time : "刚刚";
+    div.className = "tweet-card flex gap-3 animate-in cursor-pointer active:bg-gray-50 transition-colors";
+    div.setAttribute('onclick', `openForumDetail(${post.listIndex})`);
     
     div.innerHTML = `
-        <img src="${post.finalAvatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(post.name) + "&background=random"}" class="tweet-avatar">
+        <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1">
                 <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
-                <span class="text-gray-500 text-[14px] truncate">${post.handle} · ${displayTime}</span>
+                <span class="text-gray-500 text-[14px] truncate">${post.handle} · 刚刚</span>
             </div>
             <div class="text-[15px] text-[#0f1419] mt-0.5 leading-snug break-words pr-2">${post.text}</div>
-            ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
+            
             <div class="flex justify-between items-center mt-3 text-gray-500 text-[13px] max-w-[200px]">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[18px] h-[18px] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
@@ -4520,70 +4357,50 @@ function createForumPostNode(post) {
 function openForumDetail(index) {
     const post = currentForumPostsData[index];
     if (!post) return;
+    
     const container = document.getElementById('forum-detail-content');
     
     let commentsHtml = '';
     if (post.comments && post.comments.length > 0) {
         post.comments.forEach(c => {
+            // 评论头像匹配：如果是贴主自己回复，沿用贴主头像；如果恰好匹配上已有角色，用角色头像；其余用随机像素头像
             let cAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(c.name) + "&background=random";
             if (c.name === post.name) {
                 cAvatar = post.finalAvatar;
-            } else if (c.name === userProfile.name) {
-                cAvatar = userProfile.avatar || "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
             } else {
                 const f = friendList.find(x => x.realName === c.name || x.remark === c.name);
                 if (f && f.avatar) cAvatar = f.avatar;
             }
+            
             commentsHtml += `
                 <div class="flex gap-3 px-4 py-3 border-b border-gray-100">
                     <img src="${cAvatar}" class="w-9 h-9 rounded-full object-cover shrink-0">
                     <div class="flex-1">
                         <div class="font-bold text-[14px] text-gray-800">${c.name}</div>
-                        <div class="text-[14px] text-gray-600 mt-0.5 leading-snug break-words">${c.text}</div>
+                        <div class="text-[14px] text-[#0f1419] mt-0.5 break-words">${c.text}</div>
                     </div>
                 </div>
             `;
         });
+    } else {
+        commentsHtml = '<div class="p-6 text-center text-gray-400 text-sm">暂无评论</div>';
     }
 
-    // 判断这篇帖子是不是“我发的”或者是“角色发的”
-    const isInteractive = (post.name === userProfile.name || post.isChar);
-    
-    // 如果可以互动，绑定我们的新功能；如果是陌生人，点击会提示不能评论
-    const replyAction = isInteractive ? `onclick="handleForumCommentClick(${index})"` : `onclick="alert('陌生人的推文保持原样，不能评论哦')"` ;
-    const forwardAction = isInteractive ? `onclick="handleForumForwardClick(${index})"` : `onclick="alert('陌生人的推文保持原样，不能生成互动')"` ;
-    
-    const postTimeStr = post.time ? `今天 ${post.time}` : `刚刚`;
-
     container.innerHTML = `
-        <div class="p-4 bg-white">
+        <div class="p-4 border-b-8 border-gray-100">
             <div class="flex items-center gap-3 mb-3">
                 <img src="${post.finalAvatar}" class="w-12 h-12 rounded-full object-cover">
                 <div>
-                    <div class="font-bold text-[15px] text-black">${post.name}</div>
+                    <div class="font-bold text-[16px] text-black">${post.name}</div>
                     <div class="text-gray-500 text-[14px]">${post.handle}</div>
                 </div>
             </div>
-            <div class="text-[17px] text-[#0f1419] leading-normal break-words">${post.text}</div>
-            ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 w-full object-cover">` : ''}
-            <div class="text-gray-500 text-[14px] mt-4 border-b border-gray-100 pb-4">
-                <span>${postTimeStr}</span>
-            </div>
-            <div class="flex border-b border-gray-100 py-3 text-gray-500 text-[14px]">
-                <div class="mr-6"><span class="font-bold text-black">${post.comments ? post.comments.length : 0}</span> 评论</div>
-                <div class="mr-6"><span class="font-bold text-black">0</span> 引用</div>
-                <div><span class="font-bold text-black">${Math.floor(Math.random() * 500) + 10}</span> 喜欢</div>
-            </div>
-            <div class="flex justify-around py-3 border-b border-gray-100 text-gray-500">
-                <div class="flex items-center gap-2 cursor-pointer active:text-blue-500 transition-colors" ${replyAction}>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                </div>
-                <div class="flex items-center gap-2 cursor-pointer active:text-green-500 transition-colors" ${forwardAction}>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                </div>
-                <div class="flex items-center gap-2 cursor-pointer active:text-red-500 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                </div>
+            <div class="text-[17px] text-[#0f1419] leading-relaxed break-words pr-2">${post.text.replace(/\n/g, '<br>')}</div>
+            <div class="text-gray-500 text-[13px] mt-3 border-b border-gray-100 pb-3">刚刚 · 智能生成</div>
+            <div class="flex justify-around items-center pt-3 text-gray-500">
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></div>
             </div>
         </div>
         <div class="font-bold text-[16px] p-4 border-b border-gray-100">评论区</div>
@@ -4591,10 +4408,11 @@ function openForumDetail(index) {
             ${commentsHtml}
         </div>
     `;
+    
     document.getElementById('forum-detail-screen').classList.remove('slide-hidden');
 }
 
-unction closeForumDetail() {
+function closeForumDetail() {
     document.getElementById('forum-detail-screen').classList.add('slide-hidden');
 }
 
