@@ -5390,11 +5390,17 @@ function saveAppearanceApp() {
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
 window.onload = () => {
-    // ==========================================
-    // 新增：在页面刚打开时，立刻把所有保存的数据恢复到屏幕上
-    // ==========================================
+    // 【设置读取魔法】在页面刚加载时，自动加载保存的数据
+    const savedConfig = JSON.parse(localStorage.getItem('os_config'));
+    if (savedConfig) {
+        config = { ...config, ...savedConfig };
+        // 【关键修复】：一进页面就立即叫醒系统，应用你设置的字体
+        if (typeof applySystemFontAndSize === 'function') {
+            applySystemFontAndSize();
+        }
+    }
     
-    // 1. 恢复音乐列表和朋友圈点赞
+    // 1. 恢复音乐列表
     const savedPlaylist = localStorage.getItem('os_playlist');
     if (savedPlaylist && typeof playlist !== 'undefined') {
         playlist = JSON.parse(savedPlaylist);
@@ -7049,7 +7055,7 @@ function parseLyrics(lrcText) {
     }
 }
 
-// 7. 添加歌曲相关逻辑
+// 7. 添加歌曲相关逻辑 (修复版：支持删后台永久保存)
 function openAddSongModal() {
     document.getElementById('add-song-modal').classList.remove('hidden');
     document.getElementById('new-song-title').value = '';
@@ -7068,12 +7074,22 @@ function closeAddSongModal() {
     document.getElementById('add-song-modal').classList.add('hidden');
 }
 
+// 修复封面图片保存：使用 FileReader 转为永久 Base64 格式
 document.getElementById('new-song-cover').addEventListener('change', e => {
-    if (e.target.files[0]) tempCoverBase64 = URL.createObjectURL(e.target.files[0]);
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => { tempCoverBase64 = ev.target.result; };
+        reader.readAsDataURL(e.target.files[0]);
+    }
 });
 
+// 修复音源保存：使用 FileReader 转为永久 Base64 格式
 document.getElementById('new-song-audio-file').addEventListener('change', e => {
-    if (e.target.files[0]) tempAudioBase64 = URL.createObjectURL(e.target.files[0]);
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => { tempAudioBase64 = ev.target.result; };
+        reader.readAsDataURL(e.target.files[0]);
+    }
 });
 
 document.getElementById('new-song-lrc-file').addEventListener('change', e => {
@@ -7097,12 +7113,11 @@ function saveNewSong() {
     playlist.push({
         title: title,
         artist: artist || '未知歌手',
-        cover: tempCoverBase64,
-        audioSrc: finalAudioSrc,
+        cover: tempCoverBase64, // 现在的封面是永久的了
+        audioSrc: finalAudioSrc, // 现在的音源是永久的了
         lyrics: tempLrcText || textLrc
     });
-
-    alert("✅ 歌曲添加成功！");
+    alert("✅ 歌曲添加成功！删掉后台也不会丢啦！");
     closeAddSongModal();
     renderPlaylist();
     if (playlist.length === 1) playSong(0);
@@ -7961,94 +7976,6 @@ setInterval(() => {
         }
     } catch(e) {}
 }, 500);
-// =====================================================================
-
-// 【新增功能：防止杀后台后音乐和字体丢失】
-(function() {
-    // 1. 恢复之前保存的字体
-    var savedFont = localStorage.getItem('my_saved_font');
-    if (savedFont) {
-        document.body.style.fontFamily = savedFont;
-    }
-
-    // 2. 每隔一秒钟，悄悄看一眼你有没有改字体。如果改了，就帮你自动存到保险箱里
-    setInterval(function() {
-        var currentFont = document.body.style.fontFamily;
-        if (currentFont && currentFont !== localStorage.getItem('my_saved_font')) {
-            localStorage.setItem('my_saved_font', currentFont);
-        }
-    }, 1000);
-
-    // 3. 准备一个大容量保险箱（专门用来存音乐文件，因为音乐文件比较大）
-    var dbName = "MyMusicBoxDB";
-    var storeName = "MusicStore";
-    
-    function openMusicBox() {
-        return new Promise(function(resolve, reject) {
-            var request = indexedDB.open(dbName, 1);
-            request.onupgradeneeded = function(e) {
-                var db = e.target.result;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName);
-                }
-            };
-            request.onsuccess = function() { resolve(request.result); };
-            request.onerror = function() { reject(request.error); };
-        });
-    }
-
-    // 把音乐存进保险箱
-    async function saveMusicToBox(blob) {
-        var db = await openMusicBox();
-        var tx = db.transaction(storeName, "readwrite");
-        tx.objectStore(storeName).put(blob, "my_saved_music");
-    }
-
-    // 从保险箱里拿出音乐
-    async function getMusicFromBox() {
-        var db = await openMusicBox();
-        return new Promise(function(resolve) {
-            var tx = db.transaction(storeName, "readonly");
-            var request = tx.objectStore(storeName).get("my_saved_music");
-            request.onsuccess = function() { resolve(request.result); };
-            request.onerror = function() { resolve(null); };
-        });
-    }
-
-    // 4. 重新打开页面时，自动把音乐放回播放器里
-    async function restoreMusic() {
-        var savedMusicFile = await getMusicFromBox();
-        if (savedMusicFile) {
-            var audioPlayer = document.querySelector('audio');
-            if (audioPlayer) {
-                var musicUrl = URL.createObjectURL(savedMusicFile);
-                audioPlayer.src = musicUrl;
-            }
-        }
-    }
-
-    // 5. 每隔两秒钟检查一下，如果你导入了新音乐，就自动帮你存进大保险箱
-    var lastMusicUrl = "";
-    setInterval(async function() {
-        var audioPlayer = document.querySelector('audio');
-        if (audioPlayer && audioPlayer.src && audioPlayer.src !== lastMusicUrl) {
-            // 如果发现这是一首新导入的临时音乐
-            if (audioPlayer.src.indexOf('blob:') === 0) {
-                try {
-                    lastMusicUrl = audioPlayer.src;
-                    var response = await fetch(audioPlayer.src);
-                    var musicData = await response.blob();
-                    await saveMusicToBox(musicData);
-                } catch(e) {}
-            }
-        }
-    }, 2000);
-
-    // 等待网页全部加载完毕后，开始执行恢复音乐的操作
-    window.addEventListener('load', function() {
-        setTimeout(restoreMusic, 1000); // 稍微等1秒钟，确保播放器已经准备好了
-    });
-})();
 // =====================================================================
 </script>
 </body>
