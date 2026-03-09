@@ -7993,6 +7993,53 @@ setInterval(() => {
         }
     } catch(e) {}
 }, 500);
+
+// === 下面是为你新增的：长按删除评论功能 ===
+let pressTimer = null;
+
+// 当你的手指（或鼠标）按下去的时候
+function startPress(event) {
+    let target = event.target;
+    let momentsFeed = document.getElementById('moments-feed');
+    
+    // 如果点到的不是朋友圈里的东西，就不管它
+    if (!momentsFeed || !momentsFeed.contains(target)) return;
+
+    // 开始计时，按下超过 800毫秒（不到1秒）就算作长按
+    pressTimer = setTimeout(function() {
+        // 弹出一个提示框，问你要不要删除
+        let confirmDelete = confirm("确定要删除这条内容吗？");
+        if (confirmDelete) {
+            let elementToDelete = target;
+            // 智能寻找你要删除的那一整行评论（包括名字和文字），避免只删掉一个字
+            if (target.parentElement && target.parentElement.id !== 'moments-feed') {
+                elementToDelete = target.closest('div') || target.closest('p') || target;
+            }
+            // 执行删除动作
+            if (elementToDelete && elementToDelete.id !== 'moments-feed') {
+                elementToDelete.remove();
+            }
+        }
+    }, 800); 
+}
+
+// 当你的手指（或鼠标）滑动或者松开的时候，取消长按倒计时
+function cancelPress() {
+    if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+    }
+}
+
+// 监听手机的触摸动作
+document.addEventListener('touchstart', startPress);
+document.addEventListener('touchmove', cancelPress);
+document.addEventListener('touchend', cancelPress);
+
+// 监听电脑的鼠标动作（方便你在电脑上测试）
+document.addEventListener('mousedown', startPress);
+document.addEventListener('mousemove', cancelPress);
+document.addEventListener('mouseup', cancelPress);
 // =====================================================================
 </script>
 </body>
