@@ -2112,33 +2112,33 @@ let isMultiSelecting = false;
 // 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
 function performGlobalSave() {
     try {
-        // 基础核心数据保存
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
         localStorage.setItem('friend_list', JSON.stringify(friendList));
         localStorage.setItem('os_config', JSON.stringify(config));
         
-        // 1. 保存音乐列表和点赞状态
         if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
         if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
         
-        // 2. 保存朋友圈和论坛推文的画面
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
+        
+        // --- 核心保存修复：确保论坛主页的HTML代码被死死存入硬盘 ---
         const forumFeed = document.getElementById('forum-feed');
-        if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
+        if (forumFeed && forumFeed.innerHTML.trim() !== "" && !forumFeed.innerHTML.includes('暂无动态')) {
+            localStorage.setItem('os_forum_html', forumFeed.innerHTML);
+        }
+        
         const profilePostsFeed = document.getElementById('profile-posts-feed');
         if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
+        // -----------------------------------------------------
 
-        // 3. 保存主屏幕换过的壁纸
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody && desktopBody.style.backgroundImage) {
             localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
         }
 
-        // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
         let customDOMState = {};
         const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-        
         editableElements.forEach((el, index) => {
             if (!el.id) el.id = 'auto_save_id_' + index;
             if (el.tagName === 'IMG') {
@@ -2148,23 +2148,9 @@ function performGlobalSave() {
                 if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
             }
         });
-
-        // 额外强制保存一些特殊文字
-        const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
-        specialIds.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) customDOMState[id + '_html'] = el.innerHTML;
-        });
-
         localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
     } catch (e) {
-        // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
-        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-            if (!window.hasShownQuotaAlert) {
-                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
-                window.hasShownQuotaAlert = true;
-            }
-        }
+        console.error("保存失败", e);
     }
 }
 
@@ -5487,17 +5473,11 @@ function saveAppearanceApp() {
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
 window.onload = () => {
-    // 【设置读取魔法】在页面刚加载时，自动加载保存的数据
     const savedConfig = JSON.parse(localStorage.getItem('os_config'));
     if (savedConfig) {
         config = { ...config, ...savedConfig };
-        // 【关键修复】：一进页面就立即叫醒系统，应用你设置的字体
-        if (typeof applySystemFontAndSize === 'function') {
-            applySystemFontAndSize();
-        }
+        if (typeof applySystemFontAndSize === 'function') applySystemFontAndSize();
     }
-    
-    // 1. 恢复音乐列表
     const savedPlaylist = localStorage.getItem('os_playlist');
     if (savedPlaylist && typeof playlist !== 'undefined') {
         playlist = JSON.parse(savedPlaylist);
@@ -5506,52 +5486,46 @@ window.onload = () => {
     const savedLikes = localStorage.getItem('os_moment_likes');
     if (savedLikes && typeof momentLikes !== 'undefined') momentLikes = JSON.parse(savedLikes);
     
-    // 2. 恢复朋友圈长相
+    // 恢复朋友圈
     const savedMoments = localStorage.getItem('os_moments_html');
     if (savedMoments) {
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) momentsFeed.innerHTML = savedMoments;
     }
-    
-    // 3. 恢复论坛推文长相
+
+    // --- 核心修复：启动时立即恢复论坛首页，防止它因为找不到内容而自动生成 ---
     const savedForum = localStorage.getItem('os_forum_html');
-    if (savedForum) {
-        const forumFeed = document.getElementById('forum-feed');
-        if (forumFeed) forumFeed.innerHTML = savedForum;
-    }
-    const savedProfilePosts = localStorage.getItem('os_profile_posts_html');
-    if (savedProfilePosts) {
-        const profilePostsFeed = document.getElementById('profile-posts-feed');
-        if (profilePostsFeed) profilePostsFeed.innerHTML = savedProfilePosts;
+    const forumFeed = document.getElementById('forum-feed');
+    if (savedForum && forumFeed) {
+        forumFeed.innerHTML = savedForum;
+        const hint = document.getElementById('empty-hint');
+        if(hint) hint.remove(); // 有内容就删掉那个“暂无动态”的提示
     }
 
-    // 4. 恢复桌面壁纸
+    const savedProfilePosts = localStorage.getItem('os_profile_posts_html');
+    const profilePostsFeed = document.getElementById('profile-posts-feed');
+    if (savedProfilePosts && profilePostsFeed) {
+        profilePostsFeed.innerHTML = savedProfilePosts;
+    }
+    // -----------------------------------------------------------------
+
     const savedBg = localStorage.getItem('os_desktop_bg');
     if (savedBg) {
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody) desktopBody.style.backgroundImage = savedBg;
     }
-
-    // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
     const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-    editableElements.forEach((el, index) => {
-        if (!el.id) el.id = 'auto_save_id_' + index;
-    });
-
-    // 6. 恢复所有被更改过的自定义文本和图标图片
+    editableElements.forEach((el, index) => { if (!el.id) el.id = 'auto_save_id_' + index; });
     const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
     if (savedCustomState) {
         for (const key in savedCustomState) {
             if (key.endsWith('_html')) {
-                const realId = key.replace('_html', '');
-                const el = document.getElementById(realId);
+                const el = document.getElementById(key.replace('_html', ''));
                 if (el) el.innerHTML = savedCustomState[key];
             } else if (key.endsWith('_bg')) {
-                const realId = key.replace('_bg', '');
-                const el = document.getElementById(realId);
+                const el = document.getElementById(key.replace('_bg', ''));
                 if (el) {
                     el.style.backgroundImage = savedCustomState[key];
-                    // 【关键修复】：恢复时强制要求图片保持完美缩放和居中！
                     el.style.backgroundSize = 'cover';
                     el.style.backgroundPosition = 'center';
                     el.style.backgroundRepeat = 'no-repeat';
@@ -5565,24 +5539,11 @@ window.onload = () => {
             }
         }
     }
-    // ==========================================
-
     switchWechatTab('messages');
     syncProfileToAI();
     renderFriendList();
-    applyDarkModeStyle();
-
-    // 【新增】：一开网页就恢复你之前改过的所有桌面APP名称
-    const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
-    for (const [iconId, newName] of Object.entries(savedAppNames)) {
-        const desktopImg = document.getElementById(iconId);
-        if (desktopImg) {
-            const iconContainer = desktopImg.closest('.app-icon');
-            if (iconContainer && iconContainer.nextElementSibling) {
-                iconContainer.nextElementSibling.innerText = newName;
-            }
-        }
-    }
+    if(typeof applyDarkModeStyle === 'function') applyDarkModeStyle();
+};
 
     // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 };
