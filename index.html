@@ -1707,6 +1707,41 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
     </div>
 
 <script>
+// =================【大仓库引擎：解决5MB空间限制】=================
+const dbStore = {
+    dbName: "AI_OS_BigData",
+    storeName: "DataStore",
+    db: null,
+    async init() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(this.dbName, 1);
+            request.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore(this.storeName);
+            };
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve();
+            };
+        });
+    },
+    async save(key, value) {
+        if (!this.db) await this.init();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(this.storeName, "readwrite");
+            tx.objectStore(this.storeName).put(value, key);
+            tx.oncomplete = () => resolve();
+        });
+    },
+    async get(key) {
+        if (!this.db) await this.init();
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(this.storeName, "readonly");
+            const req = tx.objectStore(this.storeName).get(key);
+            req.onsuccess = () => resolve(req.result);
+        });
+    }
+};
+// ===============================================================
 // ================= 新增：全局图片极速压缩引擎（彻底解决相册图片太大撑爆内存导致无法保存的问题） =================
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
@@ -2103,36 +2138,27 @@ let friendList = JSON.parse(localStorage.getItem('friend_list')) || [];
 let currentFriendId = null;
 let isMultiSelecting = false;
 
-// 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
-function performGlobalSave() {
+// 【全自动存档：无限空间版】
+async function performGlobalSave() {
     try {
-        // 基础核心数据保存
+        // 使用大仓库保存体积巨大的数据
+        await dbStore.save('friend_list', friendList);
+        if (typeof playlist !== 'undefined') await dbStore.save('os_playlist', playlist);
+
+        // 手机小空间只存配置信息
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
-        localStorage.setItem('friend_list', JSON.stringify(friendList));
         localStorage.setItem('os_config', JSON.stringify(config));
-        
-        // 1. 保存音乐列表和点赞状态
-        if (typeof playlist !== 'undefined') localStorage.setItem('os_playlist', JSON.stringify(playlist));
         if (typeof momentLikes !== 'undefined') localStorage.setItem('os_moment_likes', JSON.stringify(momentLikes));
         
-        // 2. 保存朋友圈和论坛推文的画面
+        // 保存画面 HTML
         const momentsFeed = document.getElementById('moments-feed');
         if (momentsFeed) localStorage.setItem('os_moments_html', momentsFeed.innerHTML);
         const forumFeed = document.getElementById('forum-feed');
         if (forumFeed) localStorage.setItem('os_forum_html', forumFeed.innerHTML);
-        const profilePostsFeed = document.getElementById('profile-posts-feed');
-        if (profilePostsFeed) localStorage.setItem('os_profile_posts_html', profilePostsFeed.innerHTML);
-
-        // 3. 保存主屏幕换过的壁纸
-        const desktopBody = document.getElementById('desktop-body');
-        if (desktopBody && desktopBody.style.backgroundImage) {
-            localStorage.setItem('os_desktop_bg', desktopBody.style.backgroundImage);
-        }
-
-        // 4. 自动搜集并保存你更改的所有文本和桌面图标、照片
+        
+        // 自动搜集并保存 DOM 状态
         let customDOMState = {};
         const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-        
         editableElements.forEach((el, index) => {
             if (!el.id) el.id = 'auto_save_id_' + index;
             if (el.tagName === 'IMG') {
@@ -2142,23 +2168,10 @@ function performGlobalSave() {
                 if (el.style.backgroundImage) customDOMState[el.id + '_bg'] = el.style.backgroundImage;
             }
         });
-
-        // 额外强制保存一些特殊文字
-        const specialIds = ['widget-text', 'widget-date-display', 'widget-time-display', 'widget-text-btn', 'mock-msg-1', 'mock-status-1', 'mock-msg-2', 'mock-status-2', 'profile-following-count', 'profile-followers-count', 'profile-name', 'profile-handle', 'profile-bio'];
-        specialIds.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) customDOMState[id + '_html'] = el.innerHTML;
-        });
-
-        localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+        await dbStore.save('os_custom_dom_state', customDOMState);
+        
     } catch (e) {
-        // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
-        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-            if (!window.hasShownQuotaAlert) {
-                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
-                window.hasShownQuotaAlert = true;
-            }
-        }
+        console.error("保存失败:", e);
     }
 }
 
@@ -5400,54 +5413,41 @@ window.onload = () => {
         }
     }
     
-    // 1. 恢复音乐列表
-    const savedPlaylist = localStorage.getItem('os_playlist');
-    if (savedPlaylist && typeof playlist !== 'undefined') {
-        playlist = JSON.parse(savedPlaylist);
-        if (typeof renderPlaylist === 'function') renderPlaylist();
-    }
-    const savedLikes = localStorage.getItem('os_moment_likes');
-    if (savedLikes && typeof momentLikes !== 'undefined') momentLikes = JSON.parse(savedLikes);
-    
-    // 2. 恢复朋友圈长相
-    const savedMoments = localStorage.getItem('os_moments_html');
-    if (savedMoments) {
-        const momentsFeed = document.getElementById('moments-feed');
-        if (momentsFeed) momentsFeed.innerHTML = savedMoments;
-    }
-    
-    // 3. 恢复论坛推文长相
-    const savedForum = localStorage.getItem('os_forum_html');
-    if (savedForum) {
-        const forumFeed = document.getElementById('forum-feed');
-        if (forumFeed) forumFeed.innerHTML = savedForum;
-    }
-    const savedProfilePosts = localStorage.getItem('os_profile_posts_html');
-    if (savedProfilePosts) {
-        const profilePostsFeed = document.getElementById('profile-posts-feed');
-        if (profilePostsFeed) profilePostsFeed.innerHTML = savedProfilePosts;
-    }
+    // 【无限空间版：数据恢复魔法】
+    (async () => {
+        await dbStore.init();
+        
+        // 1. 恢复音乐列表（大仓库读取）
+        const bigPlaylist = await dbStore.get('os_playlist');
+        if (bigPlaylist) {
+            playlist = bigPlaylist;
+            if (typeof renderPlaylist === 'function') renderPlaylist();
+        }
 
-    // 4. 恢复桌面壁纸
-    const savedBg = localStorage.getItem('os_desktop_bg');
-    if (savedBg) {
-        const desktopBody = document.getElementById('desktop-body');
-        if (desktopBody) desktopBody.style.backgroundImage = savedBg;
-    }
+        // 2. 恢复好友列表（大仓库读取）
+        const bigFriends = await dbStore.get('friend_list');
+        if (bigFriends) friendList = bigFriends;
 
-    // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
-    const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
-    editableElements.forEach((el, index) => {
-        if (!el.id) el.id = 'auto_save_id_' + index;
-    });
+        // 3. 恢复其他基础状态
+        const savedLikes = localStorage.getItem('os_moment_likes');
+        if (savedLikes) momentLikes = JSON.parse(savedLikes);
+        
+        const savedMoments = localStorage.getItem('os_moments_html');
+        if (savedMoments) {
+            const feed = document.getElementById('moments-feed');
+            if (feed) feed.innerHTML = savedMoments;
+        }
 
-    // 6. 恢复所有被更改过的自定义文本和图标图片
-    const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
-    if (savedCustomState) {
-        for (const key in savedCustomState) {
-            if (key.endsWith('_html')) {
-                const realId = key.replace('_html', '');
-                const el = document.getElementById(realId);
+        // 4. 恢复自定义文本和图片（从大仓库读取）
+        const editableElements = document.querySelectorAll('[onclick*="editAnyText"], [onclick*="editWidgetText"], [onclick*="editEmoji"], [onclick*="changeAnyImage"], [onclick*="changeAvatar"], [onclick*="editProfilePart"], img[id*="icon-"], img[id*="avatar-"]');
+        editableElements.forEach((el, index) => { if (!el.id) el.id = 'auto_save_id_' + index; });
+        
+        const bigCustomState = await dbStore.get('os_custom_dom_state');
+        if (bigCustomState) {
+            for (const key in bigCustomState) {
+                if (key.endsWith('_html')) {
+                    const el = document.getElementById(key.replace('_html', ''));
+                    if (el) el.innerHTML = bigCustomState[key];
                 if (el) el.innerHTML = savedCustomState[key];
             } else if (key.endsWith('_bg')) {
                 const realId = key.replace('_bg', '');
