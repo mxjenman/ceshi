@@ -8030,8 +8030,10 @@ function importAllAppGlobalData(input) {
                 }
                 
                 alert("🎉 数据导入成功！点击确定后页面将自动刷新，加载你的备份数据！");
-                // 3. 刷新页面让新数据立刻生效
-                window.location.reload();
+// 延迟0.5秒再刷新，给浏览器一点时间把数据存稳
+setTimeout(function() {
+    window.location.reload();
+}, 500);
                 
             } catch(error) {
                 alert("❌ 导入失败，这个文件可能不是正确的备份文件哦！");
