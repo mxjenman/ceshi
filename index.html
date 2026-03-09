@@ -4470,10 +4470,26 @@ function submitForumUserComment() {
 function openForumCommentCharSelect() {
     if (currentForumPostIndex === null) return;
     const post = currentForumPostsData[currentForumPostIndex];
+
+    const userComments = post.comments ? post.comments.filter(c => c.name === userProfile.name) : [];
     
-    // 如果当前帖子是角色发的，点击转发键生成角色对自己评论的回复
+    // 1. 如果用户最新的一条评论是“回复 @某人”，优先让被回复的那个角色来回答！
+    if (userComments.length > 0) {
+        const lastUserComment = userComments[userComments.length - 1].text;
+        if (lastUserComment.startsWith('回复 @')) {
+            const replyTargetName = lastUserComment.substring(4, lastUserComment.indexOf(' :')).trim();
+            const targetFriend = friendList.find(f => (f.realName || f.remark) === replyTargetName);
+            if (targetFriend) {
+                document.getElementById('forum-detail-screen').classList.add('slide-hidden');
+                generateForumAICommentReply(currentForumPostIndex, targetFriend.id, lastUserComment);
+                alert(`正在让 ${replyTargetName} 生成对你最新评论的回复...`);
+                return;
+            }
+        }
+    }
+
+    // 2. 如果当前帖子是角色发的，并且用户没有指定回复谁，默认让发帖的角色回复用户最新的评论
     if (post.isChar && post.charId) {
-        const userComments = post.comments ? post.comments.filter(c => c.name === userProfile.name) : [];
         if (userComments.length > 0) {
             const lastUserComment = userComments[userComments.length - 1].text;
             document.getElementById('forum-detail-screen').classList.add('slide-hidden');
@@ -4485,8 +4501,8 @@ function openForumCommentCharSelect() {
             return;
         }
     }
-    
-    // 如果是用户自己发的推文，弹窗勾选角色去生成评论
+
+    // 3. 如果是用户自己发的推文，弹窗勾选角色去生成初次评论
     let modal = document.getElementById('forum-comment-char-select-modal');
     if (!modal) {
         modal = document.createElement('div');
@@ -4507,7 +4523,7 @@ function openForumCommentCharSelect() {
             </label>
         `;
     });
-    
+
     modal.innerHTML = `
         <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[80vh]">
             <h3 class="font-bold text-[#333] mb-2 text-center text-[16px]">让谁来评论？</h3>
@@ -4550,20 +4566,30 @@ async function executeForumCommentGenerate() {
     });
 }
 
-async function generateForumAICommentReply(postIndex, aiId, userCommentText) {
+async function generateForumAICommentReply(postIndex, charId, userCommentText) {
     const post = currentForumPostsData[postIndex];
-    const friend = friendList.find(f => f.id === aiId);
-    if(!friend || !config.apiKey) return;
-    
+    const friend = friendList.find(f => f.id === charId);
+    if (!friend || !config.apiKey) return;
+
     let memory = "";
     if (friend.memoryList && friend.memoryList.length > 0) memory = friend.memoryList.join(';');
 
-    let prompt = `你现在是论坛里的真实网友，名字叫：${friend.realName || friend.remark}。性格设定是：${friend.persona}。\n`;
-    if (memory) prompt += `你和当前用户的聊天记忆：${memory}。\n`;
-    prompt += `你发了一条推文内容是：“${post.text}”\n`;
-    prompt += `用户刚刚在你的推文下评论说：“${userCommentText}”。\n`;
-    prompt += `请结合你的性格，回复用户的评论。要求口语化，自然，字数控制在20字内。只输出纯文本内容，不要带你的名字前缀或任何格式！`;
+    let prompt = `你现在是论坛里的网友，名字叫：${friend.realName || friend.remark}。性格设定是：${friend.persona}。\n`;
+    prompt += `你和当前用户的聊天记忆：${memory}。\n`;
     
+    if (post.isChar && post.charId === charId) {
+        prompt += `你发了一条推文内容是：“${post.text}”\n`;
+        prompt += `用户刚刚在你的推文下评论/回复说：“${userCommentText}”。\n`;
+    } else if (post.name === userProfile.name) {
+        prompt += `用户发了一条推文内容是：“${post.text}”\n`;
+        prompt += `你在该推文下参与了评论，而用户刚刚回复你说：“${userCommentText}”。\n`;
+    } else {
+        prompt += `当前推文内容是：“${post.text}”\n`;
+        prompt += `用户刚刚回复你说：“${userCommentText}”。\n`;
+    }
+    
+    prompt += `请结合你的性格，继续回复用户的评论。要求口语化，自然，字数控制在20字内。只输出纯文本内容，不要带你的名字前缀或任何格式！`;
+
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
@@ -4575,17 +4601,19 @@ async function generateForumAICommentReply(postIndex, aiId, userCommentText) {
                 max_tokens: 150
             })
         });
+
         const data = await response.json();
         let reply = data.choices[0].message.content.trim();
-        
+
         if (!post.comments) post.comments = [];
         post.comments.push({
             name: friend.realName || friend.remark,
             text: `回复 @${userProfile.name} : ${reply}`
         });
-        
+
         const countEl = document.getElementById(`feed-comment-count-${postIndex}`);
         if (countEl) countEl.innerText = post.comments.length;
+
         if (currentForumPostIndex === postIndex) openForumDetail(postIndex);
     } catch(e) {
         console.log("AI回复生成失败", e);
@@ -8202,3 +8230,8 @@ setInterval(() => {
 </script>
 </body>
 </html>
+1.论坛中用户发布的推文点击进入后点击转发的按键弹出勾选角色 然后可以生成被勾选的角色基于人设聊天内容和推文配图文本内容的评论 并且用户可以回复角色的评论 
+2.生成的角色推文用户也要可以评论或者回复角色在推文中的评论 同样点击转发键可以生成角色对用户评论的回复
+3.注意 陌生网友的推文保持原样 不需要新增的可以评论也不需要可以再次生成回复
+4.用户发出的推文不要显示刚刚 要显示发布时的现实时间
+5.把代码给我并告诉我应该在文件代码哪里进行替换 我是纯小白 你不要用专业名词或者这个函数那个结尾之类的 仔细教我一下 要替换的那一段不管多长都给我完整的指出来 不要省略 我自己找不准开头结尾的 你不管多长都一定要给我完整指出来
