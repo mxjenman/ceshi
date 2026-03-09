@@ -6755,6 +6755,36 @@ function applyDarkModeStyle() {
 }
 
 // ================= 终极版：真·音乐播放器控制引擎 (大容量 IndexedDB 修复版) =================
+// --- 修复：音乐播放器背景更换逻辑 ---
+function changePlayerBg(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const bgData = e.target.result;
+            const playerScreen = document.getElementById('music-player-screen');
+            // 立即应用背景
+            playerScreen.style.backgroundImage = `url(${bgData})`;
+            playerScreen.style.backgroundSize = 'cover';
+            playerScreen.style.backgroundPosition = 'center';
+            // 存入本地记忆，下次打开还有
+            localStorage.setItem('music_player_custom_bg', bgData);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 页面启动时自动加载已保存的背景
+window.addEventListener('load', () => {
+    const savedBg = localStorage.getItem('music_player_custom_bg');
+    if (savedBg) {
+        const playerScreen = document.getElementById('music-player-screen');
+        if (playerScreen) {
+            playerScreen.style.backgroundImage = `url(${savedBg})`;
+            playerScreen.style.backgroundSize = 'cover';
+            playerScreen.style.backgroundPosition = 'center';
+        }
+    }
+});
 // 1. 建立“无限容量”大仓库
 const musicDB = {
     db: null,
@@ -6951,22 +6981,20 @@ function renderPlaylist() {
     playlist.forEach((song, idx) => {
         const isActive = idx === currentSongIndex;
         const div = document.createElement('div');
-        div.className = `flex items-center p-3 cursor-pointer rounded-xl ${isActive ? 'bg-black/10' : 'active:bg-black/5'}`;
         
-        // --- 新增：长按删除逻辑开始 ---
+        // 【关键改动】：增加了 select-none (禁止选择) 和 oncontextmenu (禁用系统菜单)
+        div.className = `flex items-center p-3 cursor-pointer rounded-xl select-none ${isActive ? 'bg-black/10' : 'active:bg-black/5'}`;
+        div.oncontextmenu = function(e) { e.preventDefault(); return false; }; // 彻底禁用系统长按菜单
+
         let longPressTimer;
-        // 当手指按下时，开始倒计时 800 毫秒（0.8秒）
         div.addEventListener('touchstart', (e) => {
             longPressTimer = setTimeout(() => {
-                // 如果手机支持，长按成功时会轻微震动一下
                 if (navigator.vibrate) navigator.vibrate(50);
-                deleteSong(idx); // 触发删除确认弹窗
+                deleteSong(idx);
             }, 800); 
         });
-        // 如果手指松开或滑动了，就取消倒计时，防止误触发
         div.addEventListener('touchend', () => clearTimeout(longPressTimer));
         div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-        // --- 长按逻辑结束 ---
 
         div.onclick = () => playSong(idx);
         div.innerHTML = `
