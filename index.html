@@ -2118,9 +2118,6 @@ let isMultiSelecting = false;
 
 // 【全自动存档魔法】升级版：加入防杀后台抢救机制与内存报警
 function performGlobalSave() {
-    // 【终极护盾】：如果在导入数据，强制命令存档功能停止一切工作！绝对不准覆盖！
-    if (window.isImportingData) return;
-
     try {
         // 基础核心数据保存
         localStorage.setItem('os_user_profile', JSON.stringify(userProfile));
@@ -8058,12 +8055,6 @@ function importAllAppGlobalData(input) {
         reader.readAsText(file);
     }
     input.value = ''; // 清空选择，允许重复导入同一个文件
-}
-       reader.readAsText(file);
-    } else {
-        // 取消了也清空选择框
-        input.value = "";
-    }
 }
 / ================= 新增：全局导出和导入数据功能 结束 =================
 
