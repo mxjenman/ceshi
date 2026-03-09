@@ -657,13 +657,24 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                 </div>
             </div>
 
-            <div class="bg-white rounded-[16px] p-4 shadow-sm">
-                <div class="font-bold text-[#333] mb-1">后台主动活跃 (不拉黑时生效)</div>
-                <div class="text-[11px] text-gray-400 mb-3">当你不说话时，TA多久主动找你聊天一次</div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[14px] text-gray-700">每隔</span>
-                    <input type="number" id="os-bg-activity" class="w-16 border border-gray-200 rounded-lg text-center outline-none py-1" placeholder="0">
-                    <span class="text-[14px] text-gray-700">分钟主动发微信 <span class="text-gray-400 text-xs">(0为关闭)</span></span>
+<div class="bg-white rounded-[16px] p-4 shadow-sm flex flex-col gap-4">
+                <div>
+                    <div class="font-bold text-[#333] mb-1">后台主动发微信</div>
+                    <div class="text-[11px] text-gray-400 mb-3">当你不说话时，TA多久主动找你聊天一次</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[14px] text-gray-700">每隔</span>
+                        <input type="number" id="os-bg-activity" class="w-16 border border-gray-200 rounded-lg text-center outline-none py-1" placeholder="0">
+                        <span class="text-[14px] text-gray-700">分钟 <span class="text-gray-400 text-xs">(0为关闭)</span></span>
+                    </div>
+                </div>
+                <div class="border-t border-gray-50 pt-3">
+                    <div class="font-bold text-[#333] mb-1">后台主动发朋友圈</div>
+                    <div class="text-[11px] text-gray-400 mb-3">TA会基于人设和最近聊天，自动发朋友圈并回你评论</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[14px] text-gray-700">每隔</span>
+                        <input type="number" id="os-moments-activity" class="w-16 border border-gray-200 rounded-lg text-center outline-none py-1" placeholder="0">
+                        <span class="text-[14px] text-gray-700">分钟 <span class="text-gray-400 text-xs">(0为关闭)</span></span>
+                    </div>
                 </div>
             </div>
 
@@ -4877,7 +4888,7 @@ function submitMomentsComment() {
     const input = document.getElementById('moments-comment-input');
     const text = input.value.trim();
     if (!text || !currentCommentMomentId) return;
-    
+
     if (currentReplyTargetName) {
         // 这是一个回复
         const finalReply = `回复 <span class="text-[#576b95] font-bold">${currentReplyTargetName}</span>：${text}`;
@@ -4895,9 +4906,62 @@ function submitMomentsComment() {
     } else {
         // 这是一个普通评论
         appendComment(currentCommentMomentId, userProfile.name, text, false);
+        
+        // 新增功能：检查这条朋友圈是不是AI在后台自己发的
+        const momentEl = document.getElementById(currentCommentMomentId);
+        const ownerId = momentEl ? momentEl.getAttribute('data-owner-id') : null;
+        
+        // 如果是AI发的，立刻召唤AI对你的评论进行回复
+        if (ownerId) {
+            setTimeout(() => {
+                generateAICommentReply(currentCommentMomentId, ownerId, text);
+            }, 1500); // 假装思考1.5秒
+        }
     }
-    
     hideMomentsCommentBar();
+}
+
+// 新增功能：AI 朋友圈专属回评引擎 (专门用来回复你的评论)
+async function generateAICommentReply(momentId, aiId, userComment) {
+    const friend = friendList.find(f => f.id === aiId);
+    if (!friend || !config.apiKey) return;
+
+    const interactionArea = document.getElementById(`interaction-area-${momentId}`);
+    const commentsArea = document.getElementById(`comments-area-${momentId}`);
+    interactionArea.classList.remove('hidden');
+    commentsArea.classList.remove('hidden');
+
+    // 显示“正在回复”的提示
+    const loading = document.createElement('div');
+    loading.className = "mb-0.5 text-gray-400 italic text-[12px]";
+    loading.innerText = `${friend.remark} 正在回复评论...`;
+    commentsArea.appendChild(loading);
+
+    // 给 AI 发送指令
+    let prompt = `你扮演${friend.realName}。设定：${friend.persona}。\n`;
+    prompt += `【场景】：你在朋友圈发了一条动态。用户在这条动态下评论了你：“${userComment}”。\n`;
+    prompt += `【任务】：请根据你的人设和用户的评论，写一条自然简短的回评（20字以内）。非常口语化，不要带名字，直接输出回评文字。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'system', content: prompt}],
+                temperature: 0.8
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        // 删掉加载提示，把 AI 的真实回复挂上去
+        loading.remove();
+        const finalReply = `回复 <span class="text-[#576b95] font-bold">${userProfile.name}</span>：${reply}`;
+        appendComment(momentId, friend.remark, finalReply, true);
+    } catch(e) { 
+        loading.innerText = "回复失败"; 
+    }
 }
 
 // 点击自己发表评论
@@ -6365,27 +6429,27 @@ function closeOtherSettings() {
     document.getElementById('other-settings-page').classList.add('slide-hidden');
 }
 
+// 这是你要贴进去的新函数
 function saveOtherSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
-
     friend.isTranslationEnabled = document.getElementById('os-translation').checked;
     friend.bgActivityInterval = parseInt(document.getElementById('os-bg-activity').value) || 0;
+    // 新增：保存朋友圈主动活跃的时间间隔
+    friend.momentsActivityInterval = parseInt(document.getElementById('os-moments-activity').value) || 0;
     
     const wasBlocked = friend.isBlocked;
     friend.isBlocked = document.getElementById('os-block-switch').checked;
     friend.blockDuration = parseInt(document.getElementById('os-block-duration').value) || 60;
     friend.blockSmsInterval = parseInt(document.getElementById('os-block-sms').value) || 10;
-
-    // 如果刚开启拉黑，记录拉黑的精确起始时间
+    
     if (friend.isBlocked && !wasBlocked) {
         friend.blockStartTime = Date.now();
-        friend.lastProactiveSmsTime = Date.now(); // 重新计时短信
+        friend.lastProactiveSmsTime = Date.now();
     } else if (!friend.isBlocked) {
         friend.blockStartTime = null;
     }
-
     localStorage.setItem('friend_list', JSON.stringify(friendList));
     closeOtherSettings();
     alert("✅ 高级设置保存成功！");
@@ -8120,6 +8184,86 @@ async function executeForumReply(areaId, friendId, postText, postImg) {
     } catch (e) {
         loading.innerText = "评论失败，请检查API";
     }
+}
+// ================= 新增：朋友圈后台自动活跃引擎 =================
+setInterval(async () => {
+    if (!config.apiKey) return;
+    const now = Date.now();
+
+    for (const friend of friendList) {
+        // 1. 如果角色没被拉黑，且设置了朋友圈主动活跃
+        if (!friend.isBlocked && friend.momentsActivityInterval > 0) {
+            const lastPostTime = friend.lastProactiveMomentTime || now;
+            const nextPostTime = lastPostTime + (friend.momentsActivityInterval * 60000);
+            
+            if (now >= nextPostTime) {
+                friend.lastProactiveMomentTime = now;
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
+                
+                // 执行发朋友圈的动作
+                await executeAutoMomentPost(friend);
+            }
+        }
+
+        // 2. 检查有没有还没回复的用户评论（针对这个角色发的朋友圈）
+        // 这一步逻辑会在用户提交评论后自动触发，见下方的 submitMomentsComment 修改
+    }
+}, 20000); // 每20秒巡逻一次
+
+// 核心：AI 自动编发朋友圈
+async function executeAutoMomentPost(friend) {
+    let prompt = `你是${friend.realName}。设定：${friend.persona}。\n`;
+    // 喂一点聊天记忆，让它发的内容更有针对性
+    const memory = (friend.memoryList || []).join('\n');
+    if(memory) prompt += `你们最近的聊天记忆点：${memory}\n`;
+    
+    prompt += `【强制任务】：请根据你的人设和最近的聊天内容，写一条你此刻发在朋友圈的动态内容。可以是一句感悟、一个生活分享或是一句想对用户（悄悄）说的话。
+【要求】：控制在30字以内，非常口语化，直接输出内容，不要带名字。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'system', content: prompt}],
+                temperature: 0.8
+            })
+        });
+        const data = await response.json();
+        const content = data.choices[0].message.content.trim();
+        
+        // 渲染到朋友圈画面（这里复用原本的 prepend 逻辑，但模拟是AI发的）
+        const momentId = 'moment_auto_' + Date.now();
+        const feed = document.getElementById('moments-feed');
+        if (document.getElementById('moments-empty-hint')) document.getElementById('moments-empty-hint').remove();
+        
+        const div = document.createElement('div');
+        div.className = "flex gap-3 border-b pb-6 animate-in";
+        div.id = momentId;
+        // 标记这个朋友圈的“主人”是哪个AI，方便后面回评论
+        div.setAttribute('data-owner-id', friend.id);
+        
+        div.innerHTML = `
+            <img src="${friend.avatar}" class="w-10 h-10 rounded-[4px] object-cover shrink-0">
+            <div class="flex-1">
+                <div class="text-[#576b95] font-bold text-[15px] mb-1">${friend.remark}</div>
+                <div class="text-black text-[15px]">${content}</div>
+                <div class="flex justify-between items-center mt-3 relative">
+                    <span class="text-gray-400 text-[12px]">刚刚</span>
+                    <span onclick="toggleMomentPopover('${momentId}')" class="bg-[#f7f7f7] px-2 py-0.5 rounded text-[#576b95] text-xs font-bold tracking-widest cursor-pointer">..</span>
+                    <div id="popover-${momentId}" class="hidden absolute right-8 top-[-5px] bg-[#4c4c4c] text-white rounded-md flex items-center py-1 z-30">
+                        <div class="px-4 py-1 text-xs font-bold border-r border-gray-600" onclick="toggleLike('${momentId}')">赞</div>
+                        <div class="px-4 py-1 text-xs font-bold" onclick="openMomentComment('${momentId}')">评论</div>
+                    </div>
+                </div>
+                <div id="interaction-area-${momentId}" class="bg-[#f7f7f7] mt-2 rounded hidden">
+                    <div id="comments-area-${momentId}" class="px-2 py-1.5 text-[13px] flex flex-col gap-1"></div>
+                </div>
+            </div>
+        `;
+        feed.prepend(div);
+    } catch(e) { console.error("AI自动发朋友圈失败:", e); }
 }
 </script>
 </body>
