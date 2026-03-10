@@ -303,9 +303,12 @@ openPlaylist();">
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('默契比心')">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-mqbx" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
-                    </div>
+                </div>
                     <span class="text-xs text-gray-600 font-bold drop-shadow-md">默契比心</span>
                 </div>
+                <script>
+                    document.querySelector('[onclick="openPlaceholder(\'默契比心\')"]').setAttribute('onclick', "document.getElementById('game-screen').classList.remove('hidden')");
+                </script>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('外卖')">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-waimai" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
@@ -339,6 +342,51 @@ openPlaylist();">
         </div>
     </div>
 
+    <div id="game-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[300]">
+        <div class="h-12 bg-white flex items-center px-4 border-b shrink-0">
+            <button onclick="document.getElementById('game-screen').classList.add('hidden')" class="w-10 text-2xl">×</button>
+            <div class="flex-1 text-center font-bold text-[17px]">默契比心</div>
+            <div class="w-10"></div>
+        </div>
+        
+        <div id="game-main" class="flex-1 flex flex-col items-center p-6 bg-[#fdf2f2]">
+            <div id="game-start-view" class="w-full flex flex-col items-center mt-20">
+                <div class="text-4xl mb-4">💓</div>
+                <h2 class="text-xl font-bold text-[#ff6b6b] mb-8">默契大考验</h2>
+                <button onclick="openGameCharSelect()" class="bg-[#ff6b6b] text-white px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition-transform">开始挑战</button>
+            </div>
+
+            <div id="game-play-view" class="hidden w-full flex flex-col items-center">
+                <div class="bg-white rounded-3xl p-6 shadow-md w-full mb-6 border-2 border-[#ffc9c9]">
+                    <div class="text-[#ff6b6b] text-xs font-bold mb-2">随机问题：</div>
+                    <div id="game-question" class="text-gray-800 text-lg font-medium leading-relaxed">正在抽取问题...</div>
+                </div>
+
+                <div class="w-full space-y-4">
+                    <div class="text-sm text-gray-400 text-center">—— 你的回答 ——</div>
+                    <textarea id="user-game-answer" class="w-full border-2 border-gray-100 rounded-2xl p-4 h-24 outline-none focus:border-[#ff6b6b] transition-colors bg-white/50" placeholder="写下你的答案..."></textarea>
+                    <button id="submit-answer-btn" onclick="submitUserGameAnswer()" class="w-full bg-black text-white py-3 rounded-xl font-bold shadow-md active:scale-95">我选好了</button>
+                </div>
+
+                <div id="ai-answer-area" class="hidden w-full mt-8 animate-in">
+                    <div class="text-sm text-gray-400 text-center mb-4">—— TA的回答 ——</div>
+                    <div class="bg-[#fff5f5] rounded-2xl p-5 border-2 border-dashed border-[#ffb3b3] relative">
+                        <div id="ai-game-answer" class="text-gray-700 italic">TA正在思考...</div>
+                    </div>
+                    <div id="ai-reaction" class="mt-4 p-4 bg-white rounded-xl text-sm text-[#ff6b6b] font-medium text-center shadow-sm"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-char-modal" class="fixed inset-0 bg-black/60 hidden z-[310] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[32px] w-full max-w-sm p-6 shadow-2xl relative">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">选择一个角色共同挑战</h3>
+            <div id="game-char-list" class="max-h-[300px] overflow-y-auto mb-6 flex flex-col gap-2 p-1">
+                </div>
+            <button onclick="startGamePlay()" class="w-full py-4 bg-[#ff6b6b] text-white rounded-full font-bold text-[16px] shadow-lg active:scale-95 transition-transform">开始挑战</button>
+        </div>
+    </div>
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
@@ -8291,161 +8339,116 @@ async function executeAutoMomentPost(friend) {
     } catch(e) { console.error("AI自动发朋友圈失败:", e); }
 }
 </script>
-    <div id="tacit-modal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="bg-[#ff6b81] text-white px-4 py-3 flex justify-between items-center relative">
-                <h3 class="font-bold text-lg mx-auto">默契比心大考验</h3>
-                <span onclick="closeTacitGame()" class="absolute right-4 top-2 text-3xl cursor-pointer hover:scale-110">&times;</span>
-            </div>
-            
-            <div class="p-5 overflow-y-auto flex-1">
-                <div id="tacit-setup" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">你想和谁玩？(角色名)</label>
-                        <input type="text" id="tacit-char-name" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#ff6b81]" placeholder="例如：傲娇女友、霸道总裁...">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">补充角色设定或聊天背景(选填)</label>
-                        <textarea id="tacit-char-setting" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#ff6b81]" rows="2" placeholder="例如：昨天我们刚去看了电影，她平时很毒舌..."></textarea>
-                    </div>
-                    <button onclick="startTacitGame()" class="w-full bg-[#ff6b81] text-white font-bold py-3 rounded-xl active:scale-95 transition-transform shadow-md hover:bg-[#ff4757]">开始游戏</button>
-                </div>
-                
-                <div id="tacit-playing" class="hidden space-y-4">
-                    <div class="bg-pink-50 rounded-xl p-4 border border-pink-100 shadow-sm">
-                        <span class="text-xs text-[#ff6b81] font-bold mb-1 block">TA的问题：</span>
-                        <div id="tacit-question" class="text-gray-800 font-medium min-h-[40px]">正在思考问题中...</div>
-                    </div>
-                    
-                    <div id="tacit-status" class="text-xs text-center text-gray-500 font-bold animate-pulse">请稍候...</div>
-                    
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">你的回答：</label>
-                        <textarea id="tacit-user-answer" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#ff6b81]" rows="2" placeholder="在这里写下你的答案..."></textarea>
-                    </div>
-                    
-                    <button id="btn-reveal-answer" onclick="revealTacitAnswer()" class="w-full bg-blue-500 text-white font-bold py-3 rounded-xl active:scale-95 transition-transform shadow-md hover:bg-blue-600">我答好了，查看TA的答案！</button>
-                    
-                    <div id="tacit-ai-answer-box" class="hidden bg-blue-50 rounded-xl p-4 border border-blue-100 shadow-sm mt-4">
-                        <span class="text-xs text-blue-500 font-bold mb-1 block">TA的答案是：</span>
-                        <div id="tacit-ai-answer-text" class="text-gray-800 font-medium"></div>
-                    </div>
-                    
-                    <div id="tacit-reaction-box" class="hidden mt-4 pt-4 border-t border-gray-200">
-                        <span class="text-xs text-purple-500 font-bold mb-1 block">TA的反应：</span>
-                        <div id="tacit-reaction-text" class="text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200"></div>
-                    </div>
-                    
-                    <button onclick="openTacitGame()" class="w-full mt-4 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl active:scale-95 transition-transform">重新开一局</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    // 拦截刚才那个APP图标的点击事件，导向我们的新游戏
-    const oldOpenPlaceholderTacit = window.openPlaceholder;
-    window.openPlaceholder = function(appName) {
-        if (appName === '默契比心') {
-            openTacitGame();
-        } else if (oldOpenPlaceholderTacit) {
-            oldOpenPlaceholderTacit(appName);
-        }
-    };
-
-    let currentTacitQuestion = "";
-    let currentTacitAiAnswer = "";
-    let selectedTacitChar = "";
-
-    function openTacitGame() {
-        document.getElementById('tacit-modal').classList.remove('hidden');
-        document.getElementById('tacit-setup').classList.remove('hidden');
-        document.getElementById('tacit-playing').classList.add('hidden');
-        document.getElementById('tacit-char-name').value = 'AI伴侣'; // 默认值
-    }
-
-    function closeTacitGame() {
-        document.getElementById('tacit-modal').classList.add('hidden');
-    }
-
-    // 调用 API 的核心功能（自动读取你系统里已存的 apiKey）
-    async function tacitAiCall(messages) {
-        const apiKey = localStorage.getItem('apiKey') || localStorage.getItem('api_key') || localStorage.getItem('API_KEY') || '';
-        const apiUrl = localStorage.getItem('apiUrl') || localStorage.getItem('api_url') || localStorage.getItem('API_URL') || 'https://api.openai.com/v1/chat/completions';
-        const model = localStorage.getItem('apiModel') || localStorage.getItem('model') || localStorage.getItem('API_MODEL') || 'gpt-3.5-turbo';
-        
-        if (!apiKey) return 'API未配置，请先在你的系统设置里填写大模型API。';
-
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({ model: model, messages: messages, temperature: 0.8 })
-            });
-            const data = await response.json();
-            return data.choices && data.choices[0] ? data.choices[0].message.content : '接口返回异常';
-        } catch (error) {
-            return '网络请求失败，请检查API。';
-        }
-    }
-
-    // 步骤一：开始游戏并生成问题
-    async function startTacitGame() {
-        selectedTacitChar = document.getElementById('tacit-char-name').value || 'AI伴侣';
-        const charSetting = document.getElementById('tacit-char-setting').value || '';
-        
-        document.getElementById('tacit-setup').classList.add('hidden');
-        document.getElementById('tacit-playing').classList.remove('hidden');
-        
-        document.getElementById('tacit-question').innerText = '正在绞尽脑汁想问题...';
-        document.getElementById('tacit-ai-answer-box').classList.add('hidden');
-        document.getElementById('tacit-reaction-box').classList.add('hidden');
-        document.getElementById('tacit-user-answer').value = '';
-        document.getElementById('btn-reveal-answer').classList.remove('hidden');
-        document.getElementById('btn-reveal-answer').disabled = true;
-        
-        // 第一次调用：提问
-        document.getElementById('tacit-status').innerText = '角色正在想问题...';
-        const qPrompt = `你是角色：${selectedTacitChar}。设定是：${charSetting}。请结合设定，向我提问一个简短的“情侣/朋友默契问答”问题（比如“我最喜欢吃什么？”“我们第一次见面的地方？”），只输出问题。`;
-        
-        currentTacitQuestion = await tacitAiCall([{role: "user", content: qPrompt}]);
-        document.getElementById('tacit-question').innerText = currentTacitQuestion;
-        
-        // 第二次调用：角色自己写下正确答案
-        document.getElementById('tacit-status').innerText = '角色正在偷偷写下TA的答案...';
-        const aPrompt = `你刚才问了：“${currentTacitQuestion}”。请以${selectedTacitChar}的口吻，简短写下你的标准答案。只输出答案本身，不要废话。`;
-        
-        currentTacitAiAnswer = await tacitAiCall([
-            {role: "user", content: qPrompt},
-            {role: "assistant", content: currentTacitQuestion},
-            {role: "user", content: aPrompt}
-        ]);
-        
-        document.getElementById('tacit-ai-answer-text').innerText = currentTacitAiAnswer;
-        document.getElementById('tacit-status').innerText = '角色已写好答案并盖住了！现在轮到你回答了。';
-        document.getElementById('btn-reveal-answer').disabled = false;
-    }
-
-    // 步骤二：用户回答完毕，揭晓AI答案并吐槽
-    async function revealTacitAnswer() {
-        const userAnswer = document.getElementById('tacit-user-answer').value;
-        if(!userAnswer) { alert('请先写下你的回答哦！'); return; }
-        
-        document.getElementById('tacit-ai-answer-box').classList.remove('hidden');
-        document.getElementById('btn-reveal-answer').classList.add('hidden');
-        
-        document.getElementById('tacit-status').innerText = '角色正在比对你们的回答...';
-        document.getElementById('tacit-reaction-box').classList.remove('hidden');
-        document.getElementById('tacit-reaction-text').innerText = '正在酝酿情绪...';
-        
-        // 第三次调用：根据答案异同进行吐槽或调侃
-        const rPrompt = `我们在玩默契问答。问题：“${currentTacitQuestion}”。\n作为${selectedTacitChar}，你的答案是：“${currentTacitAiAnswer}”。\n我的答案是：“${userAnswer}”。\n请判断这两个答案意思是否一致。如果一致，请傲娇/开心/调笑；如果不一致，请生气/吐槽/发牢骚。用符合你性格的一两句话回答。`;
-        
-        const reaction = await tacitAiCall([{role: "user", content: rPrompt}]);
-        
-        document.getElementById('tacit-reaction-text').innerText = reaction;
-        document.getElementById('tacit-status').innerText = '游戏结束！';
-    }
-    </script>
 </body>
+<script>
+// --- 默契挑战小游戏大脑逻辑 ---
+let selectedGameCharId = null;
+
+// 1. 打开选人弹窗
+function openGameCharSelect() {
+    const list = document.getElementById('game-char-list');
+    list.innerHTML = '';
+    // 只找单人角色，不找群聊
+    const friends = friendList.filter(f => !f.isGroup);
+    
+    if (friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 py-10">你还没有添加任何角色哦</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <label class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl cursor-pointer active:bg-pink-50 transition-colors border-2 border-transparent has-[:checked]:border-[#ff6b6b] has-[:checked]:bg-[#fff5f5]">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover">
+                    <span class="font-bold flex-1">${f.remark}</span>
+                    <input type="radio" name="game-char" value="${f.id}" class="w-5 h-5 accent-[#ff6b6b]" onchange="selectedGameCharId='${f.id}'">
+                </label>
+            `;
+        });
+    }
+    document.getElementById('game-char-modal').classList.remove('hidden');
+}
+
+// 2. 点击“开始挑战”
+async function startGamePlay() {
+    if (!selectedGameCharId) return alert("请先勾选一个角色！");
+    if (!config.apiKey) return alert("请先在设置里填好 API Key 哦！");
+
+    document.getElementById('game-char-modal').classList.add('hidden');
+    document.getElementById('game-start-view').classList.add('hidden');
+    document.getElementById('game-play-view').classList.remove('hidden');
+    
+    // 重置界面
+    document.getElementById('ai-answer-area').classList.add('hidden');
+    document.getElementById('user-game-answer').value = '';
+    document.getElementById('ai-reaction').innerText = '';
+    document.getElementById('game-question').innerText = "正在穿越时空抽取题目...";
+
+    const friend = friendList.find(f => f.id === selectedGameCharId);
+    
+    // 准备给AI的背景
+    let memory = friend.memoryList ? friend.memoryList.slice(-5).join(';') : "初次见面";
+    
+    // 向AI请求：生成一个问题 + 它的回答
+    let prompt = `你现在扮演 ${friend.realName}。设定是：${friend.persona}。你和用户的部分记忆是：${memory}。\n`;
+    prompt += `【任务】：现在你要和用户玩“默契大考验”。
+    1. 请基于你们的设定和记忆，随机出一个最能考验你们默契的选择题（例如：如果我们去旅游，你会带我去哪？/ 我最喜欢的颜色是什么？/ 如果天塌了，我会做什么？）。
+    2. 请写下你作为这个角色的【真实回答】。
+    
+    请严格返回JSON格式（不要带任何多余文字）：
+    {"question": "问题内容", "answer": "你的回答内容"}`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'system', content: prompt }],
+                response_format: { type: "json_object" }
+            })
+        });
+        const data = await response.json();
+        const result = JSON.parse(data.choices[0].message.content);
+        
+        // 存起来，等会儿对比
+        window.currentGameQuestion = result.question;
+        window.currentAiAnswer = result.answer;
+        
+        document.getElementById('game-question').innerText = result.question;
+    } catch (e) {
+        alert("网络开小差了，请重试！");
+    }
+}
+
+// 3. 用户提交答案并查看结果
+async function submitUserGameAnswer() {
+    const userAns = document.getElementById('user-game-answer').value.trim();
+    if (!userAns) return alert("写点什么吧，别交白卷呀！");
+    
+    document.getElementById('ai-answer-area').classList.remove('hidden');
+    document.getElementById('ai-game-answer').innerText = window.currentAiAnswer;
+    document.getElementById('ai-reaction').innerText = "TA正在对答案发表看法...";
+
+    const friend = friendList.find(f => f.id === selectedGameCharId);
+    
+    // 请求AI点评默契度
+    let prompt = `你是 ${friend.realName}。针对刚才的问题“${window.currentGameQuestion}”。\n`;
+    prompt += `你的回答是：“${window.currentAiAnswer}”；用户的回答是：“${userAns}”。\n`;
+    prompt += `请根据你的人设，对比两人的答案是否一致，给出一句充满人情味的吐槽、调笑或惊喜的感慨（50字以内）。`;
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+        const data = await response.json();
+        document.getElementById('ai-reaction').innerText = data.choices[0].message.content.trim();
+    } catch (e) {
+        document.getElementById('ai-reaction').innerText = "（TA已经无语到不想说话了）";
+    }
+}
+</script>
 </html>
