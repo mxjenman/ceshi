@@ -2976,15 +2976,12 @@ function renderFriendList() {
             
             // 2. 提取最后一条聊天记录用于展示
             let lastMsg = '暂无聊天记录';
+  
             if (f.chatHistory && f.chatHistory.length > 0) {
                 let lastContent = f.chatHistory[f.chatHistory.length - 1].content;
                 
-                // 【新增外卖代付卡片判断】优先把外卖卡片变成 [外卖…]
-                if (lastContent.includes('外卖代付请求') || lastContent.includes('waimai-no-bubble-trigger')) {
-                    lastMsg = '[外卖…]';
-                } 
                 // 【新增修复】优先把“描述照片”的超长代码变成干净的 [图片]
-                else if (lastContent.includes('<div class="desc-photo-container"')) {
+                if (lastContent.includes('<div class="desc-photo-container"')) {
                     lastMsg = '[图片]';
                 } else {
                     // 把真实的图片代码替换成干净的 [图片] 两个字
@@ -3443,20 +3440,21 @@ function sendWaimaiCardToChar(charId) {
     const friend = friendList.find(f => f.id === charId);
     if(!friend) return;
 
-    // 修改：去掉了烦人的文字前缀，并且用隐藏的 <img 标签欺骗系统这是一个无气泡的消息
-    // 注意：用 把告诉 AI 的悄悄话藏在了代码里，你看不见，但 AI 能读懂！
-    let cardHtml = `
-        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="display:none;" class="waimai-no-bubble-trigger">
-        <div class="bg-white rounded-[16px] shadow-sm border border-gray-200 p-3.5 w-[230px] flex flex-col gap-2 relative">
-            <div class="flex items-center gap-2 mb-1 border-b border-gray-50 pb-2">
-                <div class="w-7 h-7 bg-[#ff4a4a] rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0">代付</div>
-                <span class="text-[14px] font-bold text-gray-800">外卖代付请求</span>
-            </div>
-            <div class="text-[12px] text-gray-500 leading-tight line-clamp-2 text-left">${sumStr}</div>
-            <div class="text-[#ff4a4a] font-bold text-[18px] text-left mt-1">¥${total.toFixed(2)}</div>
-            <div class="text-[10px] text-gray-400 mt-2 text-center bg-gray-50 rounded-full py-1">等待TA付款...</div>
-        </div>
-    `;
+// 修改：去掉了烦人的文字前缀，并且用隐藏的 <img 标签欺骗系统这是一个无气泡的消息
+// 注意：用 把告诉 AI 的悄悄话藏在了代码里，你看不见，但 AI 能读懂！
+let cardHtml = `
+ <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="display:none;"
+class="waimai-no-bubble-trigger">
+ <div class="bg-white rounded-[16px] shadow-sm border border-gray-200 p-3.5 w-[230px] flex flex-col gap-2 relative">
+ <div class="flex items-center gap-2 mb-1 border-b border-gray-50 pb-2">
+ <div class="w-7 h-7 bg-[#ff4a4a] rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0">代付</div>
+ <span class="text-[14px] font-bold text-gray-800">外卖代付请求</span>
+ </div>
+ <div class="text-[12px] text-gray-500 leading-tight line-clamp-2 text-left">${sumStr}</div>
+ <div class="text-[#ff4a4a] font-bold text-[18px] text-left mt-1">¥${total.toFixed(2)}</div>
+ <div class="text-[10px] text-[#07c160] mt-2 text-center bg-[#f0faf5] rounded-full py-1 font-bold">${friend.remark}已成功付款</div>
+ </div>
+`;
 
     friend.chatHistory.push({
         role: 'user',
@@ -3904,20 +3902,13 @@ function renderAllMessages(isIncremental = false) {
                             renderAllMessages();
                         }
                      }},
-                    { label: '引用', action: () => {
+                    { label: '引用', action: () => { 
                         let quoteContent = displayContent;
-                        
-                        // 【新增外卖代付卡片引用拦截】把外卖卡片变成 [外卖…]
-                        if (quoteContent.includes('外卖代付请求') || quoteContent.includes('waimai-no-bubble-trigger')) {
-                            quoteContent = '[外卖…]';
-                        } 
                         // 【新增修复】拦截描述照片的恶心代码，直接变图片
-                        else if (quoteContent.includes('<div class="desc-photo-container"')) {
-                            quoteContent = '[图片]'; 
+                        if (quoteContent.includes('<div class="desc-photo-container"')) {
+                            quoteContent = '[图片]';
                         }
-                        
                         quoteContent = quoteContent.replace(/<img[^>]*>/g, '[图片]');
-
                         currentQuoteMsg = quoteContent;
                         document.getElementById('chat-input').placeholder = `引用: ${quoteContent.substring(0,8)}...`;
                         document.getElementById('chat-input').focus();
@@ -4340,109 +4331,78 @@ TimeChecklist:
             extractedVoice = fallbackVoices[Math.floor(Math.random() * fallbackVoices.length)];
         }
 
-            // ==== 拦截处理 AI 的收钱逻辑（修正稳定版） ====
-            let roleNameSafe = "TA";
-            if (currentFriendId && typeof friendList !== 'undefined') {
-                const f = friendList.find(x => x.id === currentFriendId);
-                if (f) roleNameSafe = f.remark || f.realName || "TA";
-            }
-
-            if (reply.includes('【接受转账】')) {
-                // 1. 尝试寻找普通转账并更新
-                const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
-                if (lastPending) {
-                    const parts = lastPending.content.split('|');
-                    const amt = parts[3];
-                    const tid = parts[1];
-                    lastPending.content = `[转账|${tid}|user|${amt}|${parts[4]}|accepted]`;
-                    if (typeof addTransaction === 'function') {
-                        addTransaction(`${roleNameSafe}收了你的转账`, parseFloat(amt), 'income');
+        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+        let extraMessages = [];
+        let needsFullRender = false;
+        if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
+            const isAccept = reply.includes('【接受转账】');
+            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
+            for(let i = chatHistory.length - 1; i >= 0; i--) {
+                if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
+                    const amt = chatHistory[i].content.split('|')[3];
+                    if (isAccept) {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
+                    } else {
+                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
+                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
+                        addTransaction(`${friend.remark} 退回转账`, amt, 'income');
                     }
                     needsFullRender = true;
+                    break;
                 }
+            }
+        }
+        const transferRegex = /【发起转账：([\d\.]+)，备注：(.*?)】/g;
+        let match;
+        while ((match = transferRegex.exec(reply)) !== null) {
+            const amt = match[1];
+            const note = match[2] || '转账';
+            const transferId = 'tr_' + Date.now() + Math.random().toString().substr(2,4);
+            extraMessages.push({ role: 'assistant', content: `[转账|${transferId}|ai|${amt}|${note}|pending]` });
+        }
+        reply = reply.replace(/【发起转账：.*?】/g, '').trim();
 
-                // 2. 尝试寻找外卖卡片并更新（把 TA 变成角色名）
-                const lastWaimai = [...chatHistory].reverse().find(m => m.content.includes('外卖代付请求') && (m.content.includes('等待TA付款') || m.content.includes('等待付款')));
-                if (lastWaimai) {
-                    lastWaimai.content = lastWaimai.content.replace(/等待TA付款\.{0,3}/g, `${roleNameSafe}已成功付款`);
-                    lastWaimai.content = lastWaimai.content.replace(/等待付款\.{0,3}/g, `${roleNameSafe}已成功付款`);
-                    
-                    const priceMatch = lastWaimai.content.match(/¥([\d\.]+)/);
-                    const wmPrice = priceMatch ? priceMatch[1] : "0.00";
-                    
-                    extraMessages.push({
-                        role: 'assistant',
-                        content: `
-                        <div class="bg-white rounded-[16px] shadow-sm border border-gray-100 p-3 w-[220px] flex items-center gap-3">
-                            <div class="w-10 h-10 bg-[#07c160] rounded-full flex items-center justify-center shrink-0">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[14px] font-bold text-gray-800">付款成功</span>
-                                <span class="text-[12px] text-gray-400">${roleNameSafe}已为你支付 ¥${wmPrice}</span>
-                            </div>
-                        </div>`
-                    });
-                    needsFullRender = true;
+        if (needsFullRender) renderAllMessages(false);
+
+        // --- 真正的多条消息拆分 ---
+        const imgRegex = /<img[^>]*>/g;
+        const images = reply.match(imgRegex);
+        const textOnly = reply.replace(imgRegex, '').trim();
+
+        let newMessages = [];
+        newMessages = newMessages.concat(extraMessages); 
+
+        // 【核心修改】：拆分文字，但只把心声挂在最后一条气泡上，实现“每轮一个心声”
+        if (textOnly) {
+            const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            textLines.forEach((line, index) => {
+                const msgObj = { role: 'assistant', content: line };
+                // 只有这一轮回复的最后一行文字，才带上心声数据
+                if (index === textLines.length - 1 && (!images || images.length === 0)) {
+                    msgObj.innerVoice = extractedVoice;
                 }
-                reply = reply.replace('【接受转账】', '').trim();
-            }
-
-            if (reply.includes('【退回转账】')) {
-                const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
-                if (lastPending) {
-                    const parts = lastPending.content.split('|');
-                    const tid = parts[1];
-                    lastPending.content = `[转账|${tid}|user|${parts[3]}|${parts[4]}|returned]`;
-                    needsFullRender = true;
+                newMessages.push(msgObj);
+            });
+        }
+        
+        if (images && images.length > 0) {
+            images.forEach((img, index) => {
+                const msgObj = { role: 'assistant', content: img };
+                // 如果最后是图片，就把心声挂在最后一张图上
+                if (index === images.length - 1) {
+                    msgObj.innerVoice = extractedVoice;
                 }
-                reply = reply.replace('【退回转账】', '').trim();
-            }
-
-            const aiPayMatch = reply.match(/【发起转账：([\d\.]+)，备注：(.*?)】/);
-            if (aiPayMatch) {
-                const amt = aiPayMatch[1];
-                const note = aiPayMatch[2] || "转账";
-                const transferId = 'tr_' + Date.now() + Math.random().toString().substr(2,4);
-                extraMessages.push({ role: 'assistant', content: `[转账|${transferId}|ai|${amt}|${note}|pending]` });
-            }
-            reply = reply.replace(/【发起转账：.*?】/g, '').trim();
-
-            if (needsFullRender) renderAllMessages(false);
-
-            const imgRegex = /<img[^>]*>/g;
-            const images = reply.match(imgRegex);
-            const textOnly = reply.replace(imgRegex, '').trim();
-
-            let newMessages = [];
-            newMessages = newMessages.concat(extraMessages);
-
-            if (textOnly) {
-                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                textLines.forEach((line, index) => {
-                    const msgObj = { role: 'assistant', content: line };
-                    if (index === textLines.length - 1 && (!images || images.length === 0)) {
-                        msgObj.innerVoice = typeof extractedVoice !== 'undefined' ? extractedVoice : '';
-                    }
-                    newMessages.push(msgObj);
-                });
-            }
-
-            if (images && images.length > 0) {
-                images.forEach((img, index) => {
-                    const msgObj = { role: 'assistant', content: img };
-                    if (index === images.length - 1) {
-                        msgObj.innerVoice = typeof extractedVoice !== 'undefined' ? extractedVoice : '';
-                    }
-                    newMessages.push(msgObj);
-                });
-            }
-
-            let msgIndex = 0;
-            function showNextMsg() {
-                if (msgIndex < newMessages.length) {
-                    const currentMsg = newMessages[msgIndex];
-
+                newMessages.push(msgObj);
+            });
+        }
+        
+        // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
+        let msgIndex = 0;
+        function showNextMsg() {
+            if (msgIndex < newMessages.length) {
+                // 拿走当前的一条消息，放到聊天记录里
+                const currentMsg = newMessages[msgIndex];
                 chatHistory.push(currentMsg);
                 renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
                 
