@@ -306,7 +306,7 @@ openPlaylist();">
                     </div>
                     <span class="text-xs text-gray-600 font-bold drop-shadow-md">默契比心</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('外卖')">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openWaimaiApp()">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-waimai" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
@@ -988,6 +988,99 @@ openPlaylist();">
             <div class="w-6"></div>
         </div>
         <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
+    </div>
+
+    <div id="waimai-app-screen" class="fixed inset-0 bg-[#f7f7f7] hidden flex flex-col z-[80]">
+        <div id="waimai-home-tab" class="flex-1 flex flex-col relative h-full">
+            <div class="h-12 bg-white flex items-center px-4 border-b shadow-sm shrink-0">
+                <button onclick="closeWaimaiApp()" class="back-icon w-10 flex justify-start">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="flex-1 text-center font-bold text-[17px] text-black">外卖</div>
+                <button class="w-10 flex justify-end items-center cursor-pointer active:scale-90 transition-transform" onclick="generateWaimaiItems()">
+                    <img src="https://i.postimg.cc/BntTBs0P/IMG_3094.png" class="w-[22px] h-[22px] object-contain">
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 bg-[#f4f5f7] pb-24 relative" id="waimai-items-container">
+                <div class="text-center text-gray-400 text-[13px] mt-10">点击右上角按钮生成外卖商品...</div>
+            </div>
+
+            <div id="waimai-cart-bar" class="absolute bottom-16 left-4 right-4 bg-[#1e1e1e] rounded-full h-14 flex items-center px-4 shadow-[0_8px_20px_rgba(0,0,0,0.2)] hidden z-20">
+                <div class="relative w-12 h-12 bg-white rounded-full flex items-center justify-center border-[3px] border-[#1e1e1e] -translate-y-3 shadow-md" onclick="waimaiCheckout()">
+                    <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="waimai-cart-badge" class="absolute -top-1 -right-1 bg-[#ff4a4a] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">0</span>
+                </div>
+                <div class="flex-1 ml-4 text-white font-bold text-[18px]">
+                    <span class="text-[12px] font-normal mr-0.5">¥</span><span id="waimai-total-price">0.00</span>
+                </div>
+                <button class="bg-[#07c160] text-white px-6 py-2 rounded-full font-bold text-[15px] active:scale-95 transition-transform" onclick="waimaiCheckout()">去结算</button>
+            </div>
+        </div>
+
+        <div id="waimai-me-tab" class="flex-1 hidden flex flex-col bg-[#f4f5f7]">
+            <div class="h-12 bg-white flex items-center px-4 border-b shadow-sm shrink-0">
+                <div class="flex-1 text-center font-bold text-[17px] text-black">我的</div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="bg-white rounded-2xl p-5 flex items-center gap-4 mb-4 shadow-sm">
+                    <img id="waimai-user-avatar" src="" class="w-16 h-16 rounded-full object-cover border border-gray-100">
+                    <div class="font-bold text-[18px] text-[#333]" id="waimai-user-name">我</div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3 min-h-[300px]">
+                    <div class="font-bold text-[15px] border-b border-gray-50 pb-3 text-black">历史订单</div>
+                    <div id="waimai-order-history" class="text-sm text-gray-500 flex flex-col gap-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="h-14 bg-white border-t border-gray-100 flex items-center justify-around shrink-0 z-10 pb-1">
+            <button onclick="switchWaimaiTab('home')" id="waimai-nav-home" class="flex flex-col items-center text-black font-bold active:scale-95 transition-transform">
+                <span class="text-[14px]">首页</span>
+            </button>
+            <button onclick="switchWaimaiTab('me')" id="waimai-nav-me" class="flex flex-col items-center text-gray-400 font-bold active:scale-95 transition-transform">
+                <span class="text-[14px]">我的</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="waimai-item-modal" class="fixed inset-0 bg-black/50 hidden z-[90] flex items-center justify-center p-6">
+        <div class="bg-white rounded-[24px] w-full max-w-xs p-6 shadow-2xl relative animate-in">
+            <h3 class="font-bold text-[#333] mb-2 text-center text-[17px] leading-tight" id="wm-modal-name">商品名称</h3>
+            <p class="text-center text-[#ff4a4a] font-bold mb-5 text-[18px]">¥<span id="wm-modal-price">0.00</span></p>
+            <div class="flex justify-center items-center gap-5 mb-6">
+                <button class="w-10 h-10 rounded-full border-2 border-gray-200 text-gray-500 text-2xl flex items-center justify-center active:bg-gray-100 pb-1" onclick="changeWmQty(-1)">-</button>
+                <span id="wm-modal-qty" class="text-[20px] font-bold w-6 text-center text-black">1</span>
+                <button class="w-10 h-10 rounded-full bg-black text-white text-2xl flex items-center justify-center active:scale-95 pb-1" onclick="changeWmQty(1)">+</button>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeWaimaiItemModal()" class="w-1/3 py-3 bg-[#f2f2f6] text-gray-600 rounded-[20px] font-bold text-[15px] active:scale-95">取消</button>
+                <button onclick="confirmWaimaiAdd()" class="flex-1 py-3 bg-black text-white rounded-[20px] font-bold text-[15px] active:scale-95 shadow-md">加入购物车</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="waimai-checkout-modal" class="fixed inset-0 bg-black/60 hidden z-[90] flex flex-col justify-end backdrop-blur-sm">
+        <div class="bg-white w-full rounded-t-[28px] p-6 pb-10 transform transition-transform animate-in">
+            <h3 class="font-bold text-[#333] mb-6 text-center text-[18px]">请选择付款方式</h3>
+            <div class="flex flex-col gap-4">
+                <button class="w-full py-4 bg-[#07c160] text-white rounded-[20px] font-bold text-[16px] shadow-[0_4px_12px_rgba(7,193,96,0.3)] active:scale-95 transition-transform" onclick="waimaiPaySelf()">自己付 (扣微信零钱)</button>
+                <button class="w-full py-4 bg-black text-white rounded-[20px] font-bold text-[16px] shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" onclick="waimaiPayTA()">让TA付 (发微信卡片)</button>
+                <button class="w-full py-3 bg-white border-2 border-gray-100 text-gray-500 rounded-[20px] font-bold text-[16px] mt-2 active:bg-gray-50" onclick="closeWaimaiCheckout()">我再想想</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="waimai-char-modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-[28px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[75vh]">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">发给谁帮忙代付？</h3>
+            <div id="waimai-char-list" class="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-2 flex flex-col gap-2 mb-5 border border-gray-100">
+            </div>
+            <button onclick="closeWaimaiCharModal()" class="w-full py-3 bg-white border-2 border-gray-200 rounded-full font-bold text-gray-600 text-[16px] active:bg-gray-50 transition-colors">取消</button>
+        </div>
     </div>
 
     <div id="mqbx-app-screen" class="fixed inset-0 bg-[#f7f7f7] hidden flex flex-col z-[80]">
@@ -3050,6 +3143,262 @@ function regenerateLastMessage() {
 function togglePlaceholderMenu() {
     const menu = document.getElementById('placeholder-menu');
     menu.classList.toggle('hidden');
+}
+
+// === 新增：全屏外卖APP逻辑 ===
+let wmItems = [];
+let wmCart = []; 
+let wmCurrentItem = null;
+
+function openWaimaiApp() {
+    document.getElementById('waimai-app-screen').classList.remove('hidden');
+    document.getElementById('waimai-user-avatar').src = userProfile.avatar || 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';
+    document.getElementById('waimai-user-name').innerText = userProfile.name || '我';
+    renderWaimaiCart();
+    renderWaimaiHistory();
+}
+
+function closeWaimaiApp() {
+    document.getElementById('waimai-app-screen').classList.add('hidden');
+}
+
+function switchWaimaiTab(tab) {
+    if(tab === 'home') {
+        document.getElementById('waimai-home-tab').classList.remove('hidden');
+        document.getElementById('waimai-me-tab').classList.add('hidden');
+        document.getElementById('waimai-nav-home').classList.add('text-black');
+        document.getElementById('waimai-nav-home').classList.remove('text-gray-400');
+        document.getElementById('waimai-nav-me').classList.remove('text-black');
+        document.getElementById('waimai-nav-me').classList.add('text-gray-400');
+    } else {
+        document.getElementById('waimai-me-tab').classList.remove('hidden');
+        document.getElementById('waimai-home-tab').classList.add('hidden');
+        document.getElementById('waimai-nav-me').classList.add('text-black');
+        document.getElementById('waimai-nav-me').classList.remove('text-gray-400');
+        document.getElementById('waimai-nav-home').classList.remove('text-black');
+        document.getElementById('waimai-nav-home').classList.add('text-gray-400');
+        renderWaimaiHistory();
+    }
+}
+
+async function generateWaimaiItems() {
+    if (!config.apiKey) return alert("请先在设置中配置 API Key！");
+    const container = document.getElementById('waimai-items-container');
+    container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10">正在为您生成附近美食<span class="animate-pulse">...</span></div>';
+    
+    const prompt = "请随机生成15到20个外卖商品（吃的、喝的、奶茶、烧烤等），必须以如下格式严格输出，不要带任何其他废话或前缀。格式每行一个商品：商品名称|价格数字。例如：\n招牌珍珠奶茶|15.5\n麻辣烤串套餐|45.0\n至尊全家桶披萨|88.8";
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.9
+            })
+        });
+        const data = await response.json();
+        const text = data.choices[0].message.content.trim();
+        
+        wmItems = text.split('\n').filter(line => line.includes('|')).map(line => {
+            let parts = line.split('|');
+            return { name: parts[0].trim(), price: parseFloat(parts[1].trim()) };
+        });
+
+        if(wmItems.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-400 text-[13px] mt-10">生成失败，请重试</div>';
+            return;
+        }
+
+        container.innerHTML = '<div class="grid grid-cols-2 gap-3 pb-4"></div>';
+        const grid = container.querySelector('.grid');
+
+        wmItems.forEach((item, idx) => {
+            grid.innerHTML += `
+                <div class="bg-white rounded-[20px] p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between cursor-pointer active:scale-95 transition-transform border border-gray-50" onclick="openWaimaiItemModal(${idx})">
+                    <div class="w-full aspect-square bg-[#f8f8f8] rounded-[16px] mb-3 flex items-center justify-center overflow-hidden">
+                        <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center opacity-70">
+                            <svg class="w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        </div>
+                    </div>
+                    <div class="font-bold text-[14px] text-gray-800 leading-tight mb-2 truncate">${item.name}</div>
+                    <div class="text-[#ff4a4a] font-bold text-[16px] flex items-center justify-between mt-auto">
+                        <span><span class="text-[11px] mr-0.5">¥</span>${item.price.toFixed(2)}</span>
+                        <div class="w-7 h-7 bg-black rounded-full text-white flex items-center justify-center text-xl pb-[2px] shadow-sm">+</div>
+                    </div>
+                </div>
+            `;
+        });
+
+    } catch(e) {
+        container.innerHTML = '<div class="text-center text-gray-400 text-[13px] mt-10">网络出错啦，请检查配置或重试</div>';
+    }
+}
+
+function openWaimaiItemModal(idx) {
+    wmCurrentItem = wmItems[idx];
+    document.getElementById('wm-modal-name').innerText = wmCurrentItem.name;
+    document.getElementById('wm-modal-price').innerText = wmCurrentItem.price.toFixed(2);
+    document.getElementById('wm-modal-qty').innerText = "1";
+    document.getElementById('waimai-item-modal').classList.remove('hidden');
+}
+
+function closeWaimaiItemModal() {
+    document.getElementById('waimai-item-modal').classList.add('hidden');
+}
+
+function changeWmQty(delta) {
+    let span = document.getElementById('wm-modal-qty');
+    let qty = parseInt(span.innerText);
+    qty += delta;
+    if(qty < 1) qty = 1;
+    span.innerText = qty;
+}
+
+function confirmWaimaiAdd() {
+    let qty = parseInt(document.getElementById('wm-modal-qty').innerText);
+    let exist = wmCart.find(i => i.name === wmCurrentItem.name);
+    if(exist) {
+        exist.qty += qty;
+    } else {
+        wmCart.push({...wmCurrentItem, qty});
+    }
+    closeWaimaiItemModal();
+    renderWaimaiCart();
+}
+
+function renderWaimaiCart() {
+    let totalQty = 0;
+    let totalPrice = 0;
+    wmCart.forEach(i => {
+        totalQty += i.qty;
+        totalPrice += i.price * i.qty;
+    });
+
+    const bar = document.getElementById('waimai-cart-bar');
+    if(totalQty > 0) {
+        bar.classList.remove('hidden');
+        document.getElementById('waimai-cart-badge').innerText = totalQty;
+        document.getElementById('waimai-total-price').innerText = totalPrice.toFixed(2);
+    } else {
+        bar.classList.add('hidden');
+    }
+}
+
+function waimaiCheckout() {
+    if(wmCart.length === 0) return alert("购物车空空的，先点些吃的吧~");
+    document.getElementById('waimai-checkout-modal').classList.remove('hidden');
+}
+
+function closeWaimaiCheckout() {
+    document.getElementById('waimai-checkout-modal').classList.add('hidden');
+}
+
+let waimaiOrders = JSON.parse(localStorage.getItem('waimai_orders')) || [];
+
+function renderWaimaiHistory() {
+    const container = document.getElementById('waimai-order-history');
+    if(waimaiOrders.length === 0) {
+        container.innerHTML = '<div class="text-center py-10 text-gray-400 text-[13px]">暂无外卖记录</div>';
+        return;
+    }
+    container.innerHTML = '';
+    [...waimaiOrders].reverse().forEach(o => {
+        container.innerHTML += `
+            <div class="border-b border-gray-50 py-3 active:bg-gray-50 transition-colors">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[12px] text-gray-400">${o.time}</span>
+                    <span class="font-bold text-[#ff4a4a] text-[15px]"><span class="text-[10px] mr-0.5">¥</span>${o.total.toFixed(2)}</span>
+                </div>
+                <div class="text-[13px] text-gray-800 leading-tight font-medium">
+                    ${o.items}
+                </div>
+            </div>
+        `;
+    });
+}
+
+function getCartSummaryStr() {
+    let sumStr = wmCart.map(i => `${i.name} x${i.qty}`).join('，');
+    let total = wmCart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+    return { sumStr, total };
+}
+
+function clearCartAndRecord(sumStr, total) {
+    const now = new Date();
+    const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    waimaiOrders.push({time: timeStr, items: sumStr, total});
+    localStorage.setItem('waimai_orders', JSON.stringify(waimaiOrders));
+    wmCart = [];
+    renderWaimaiCart();
+    renderWaimaiHistory();
+}
+
+function waimaiPaySelf() {
+    const { sumStr, total } = getCartSummaryStr();
+    if(walletBalance < total) {
+        alert("啊哦，微信钱包里的零钱不够啦！");
+        return;
+    }
+    addTransaction('外卖点餐: ' + sumStr.substring(0, 10) + '...', total, 'expense');
+    alert("支付成功！已从微信钱包扣除费用。");
+    clearCartAndRecord(sumStr, total);
+    closeWaimaiCheckout();
+}
+
+function waimaiPayTA() {
+    closeWaimaiCheckout();
+    document.getElementById('waimai-char-modal').classList.remove('hidden');
+    
+    const list = document.getElementById('waimai-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    if(friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没添加可以代付的人哦</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 rounded-xl border border-gray-100 bg-white mb-2 active:scale-95 transition-transform" onclick="sendWaimaiCardToChar('${f.id}')">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover border border-gray-100">
+                    <span class="font-bold text-[15px] text-gray-700 flex-1">${f.remark}</span>
+                </div>
+            `;
+        });
+    }
+}
+
+function closeWaimaiCharModal() {
+    document.getElementById('waimai-char-modal').classList.add('hidden');
+}
+
+function sendWaimaiCardToChar(charId) {
+    const { sumStr, total } = getCartSummaryStr();
+    const friend = friendList.find(f => f.id === charId);
+    if(!friend) return;
+
+    // 生成发在微信里的代付卡片界面
+    let cardHtml = `
+        <div class="bg-white rounded-[16px] shadow-sm border border-gray-100 p-3.5 w-[230px] flex flex-col gap-2">
+            <div class="flex items-center gap-2 mb-1 border-b border-gray-50 pb-2">
+                <div class="w-7 h-7 bg-[#ff4a4a] rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0">代付</div>
+                <span class="text-[14px] font-bold text-gray-800">外卖代付请求</span>
+            </div>
+            <div class="text-[12px] text-gray-500 leading-tight line-clamp-2">${sumStr}</div>
+            <div class="text-[#ff4a4a] font-bold text-[18px]">¥${total.toFixed(2)}</div>
+            <div class="text-[10px] text-gray-400 mt-1 text-center bg-gray-50 rounded-full py-1">TA知道这是什么，快去求求TA吧</div>
+        </div>
+    `;
+
+    friend.chatHistory.push({
+        role: 'user',
+        content: `[我发送了一个外卖代付卡片，里面是我刚刚点的吃的，需要你帮我付款 ¥${total.toFixed(2)}]\n${cardHtml}`
+    });
+
+    localStorage.setItem('friend_list', JSON.stringify(friendList));
+    clearCartAndRecord(sumStr, total);
+    closeWaimaiCharModal();
+    alert(`已成功把代付卡片发给 ${friend.remark} 啦！快去微信聊天界面看看吧！`);
 }
 // ================= 新增：角色设定页面逻辑 =================
 
