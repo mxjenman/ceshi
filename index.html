@@ -452,7 +452,7 @@ openPlaylist();">
                 <div onclick="openTransferModal()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">转账</div>
                 <div onclick="regenerateLastMessage()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">重回</div>
                 <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">视频通话</div>
-                <div class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音通话</div>
+                <div onclick="openVoiceCall()" class="text-center text-[14px] text-gray-700 py-2 bg-gray-50 rounded-lg cursor-pointer active:bg-gray-200">语音通话</div>
             </div>
 
             <div id="placeholder-menu" class="hidden absolute bottom-[60px] right-12 bg-white border border-gray-200 shadow-lg rounded-xl p-4 w-[120px] z-50 text-center text-gray-400 text-[13px]">
@@ -1890,8 +1890,286 @@ openPlaylist();">
         <button class="bg-black text-white px-4 py-2 rounded-[30px] text-[14px] font-bold active:scale-95 transition-transform" onclick="submitMomentsComment()">发送</button>
     </div>
 
+    <div id="voice-call-screen" class="fixed inset-0 bg-[#333333] hidden flex flex-col z-[300] transition-transform duration-300 translate-y-full">
+        <div class="relative flex-1 flex flex-col items-center justify-center">
+            <div class="absolute top-12 right-6 flex flex-col items-center">
+                <img id="vc-avatar" src="" class="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg">
+                <span id="vc-name" class="text-white/80 text-[12px] mt-2 font-medium">TA</span>
+            </div>
+            <div class="text-white/60 text-[16px] tracking-widest mb-10" id="vc-status">正在通话中...</div>
+            <div id="vc-timer" class="text-white font-mono text-[22px] tracking-wider mb-8">00:00</div>
+            
+            <div class="flex gap-10" id="vc-action-buttons">
+                <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-[#222222] p-4 pb-8 rounded-t-[24px] flex items-center gap-3" id="vc-input-area">
+            <input id="vc-input" type="text" class="flex-1 bg-[#444444] text-white rounded-full px-5 py-3 outline-none text-[15px] placeholder-white/30" placeholder="发送空消息让TA回复..." onkeydown="if(event.key === 'Enter') sendVoiceCallMsg()">
+            <button class="w-12 h-12 bg-[#07c160] rounded-full flex items-center justify-center text-white active:scale-90 transition-transform" onclick="sendVoiceCallMsg()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="vc-transcript-modal" class="fixed inset-0 bg-black/60 hidden z-[350] flex flex-col justify-end backdrop-blur-sm" onclick="closeVcTranscript()">
+        <div class="bg-white w-full rounded-t-[24px] p-5 pb-10 max-h-[75vh] flex flex-col transition-transform transform translate-y-full" id="vc-transcript-panel" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                <h3 class="font-bold text-[#333] text-[16px]">通话内容</h3>
+                <button onclick="closeVcTranscript()" class="text-gray-400 font-bold active:scale-95">关闭</button>
+            </div>
+            <div id="vc-transcript-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 text-[14px]"></div>
+        </div>
+    </div>
+
 <script>
+// ================= 新增：语音通话引擎 =================
+let vcTimerInterval;
+let vcSeconds = 0;
+let currentVcTranscript = [];
+let isVoiceCalling = false;
+
+function openVoiceCall() {
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+    if (!config.apiKey) return alert("请先在设置中配置 API Key！");
+
+    toggleInventory(); 
+    
+    document.getElementById('vc-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    document.getElementById('vc-name').innerText = friend.remark || 'TA';
+    document.getElementById('vc-status').innerText = "等待接听...";
+    document.getElementById('vc-timer').innerText = "00:00";
+    document.getElementById('vc-input').value = "";
+    
+    document.getElementById('vc-action-buttons').innerHTML = `
+        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </div>
+    `;
+    document.getElementById('vc-input-area').classList.remove('hidden');
+    
+    document.getElementById('voice-call-screen').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('voice-call-screen').classList.remove('translate-y-full');
+    }, 10);
+
+    vcSeconds = 0;
+    currentVcTranscript = [];
+    isVoiceCalling = true;
+    
+    setTimeout(() => {
+        if(isVoiceCalling) {
+            document.getElementById('vc-status').innerText = "通话中";
+            startVcTimer();
+        }
+    }, 2000);
+}
+
+function incomingVoiceCall(friendId) {
+    const friend = friendList.find(f => f.id === friendId);
+    if (!friend) return;
+    
+    document.getElementById('vc-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    document.getElementById('vc-name').innerText = friend.remark || 'TA';
+    document.getElementById('vc-status').innerText = "邀请你进行语音通话...";
+    document.getElementById('vc-timer').innerText = "";
+    
+    document.getElementById('vc-input-area').classList.add('hidden');
+    document.getElementById('vc-action-buttons').innerHTML = `
+        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="rejectVoiceCall()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </div>
+        <div class="w-[70px] h-[70px] bg-[#07c160] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="acceptIncomingVoiceCall()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </div>
+    `;
+    
+    document.getElementById('voice-call-screen').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('voice-call-screen').classList.remove('translate-y-full');
+    }, 10);
+
+    vcSeconds = 0;
+    currentVcTranscript = [];
+    isVoiceCalling = true;
+}
+
+function acceptIncomingVoiceCall() {
+    document.getElementById('vc-status').innerText = "通话中";
+    document.getElementById('vc-timer').innerText = "00:00";
+    document.getElementById('vc-input-area').classList.remove('hidden');
+    document.getElementById('vc-input').value = "";
+    
+    document.getElementById('vc-action-buttons').innerHTML = `
+        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </div>
+    `;
+    startVcTimer();
+}
+
+function rejectVoiceCall() {
+    isVoiceCalling = false;
+    const screen = document.getElementById('voice-call-screen');
+    screen.classList.add('translate-y-full');
+    setTimeout(() => { screen.classList.add('hidden'); }, 300);
+    
+    chatHistory.push({ role: 'user', content: `[系统消息:已拒绝语音通话]` });
+    renderAllMessages(true);
+}
+
+function startVcTimer() {
+    clearInterval(vcTimerInterval);
+    vcTimerInterval = setInterval(() => {
+        vcSeconds++;
+        const m = Math.floor(vcSeconds / 60).toString().padStart(2, '0');
+        const s = (vcSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('vc-timer').innerText = `${m}:${s}`;
+    }, 1000);
+}
+
+function hangUpVoiceCall() {
+    clearInterval(vcTimerInterval);
+    isVoiceCalling = false;
+    
+    const screen = document.getElementById('voice-call-screen');
+    screen.classList.add('translate-y-full');
+    setTimeout(() => { screen.classList.add('hidden'); }, 300);
+    
+    const m = Math.floor(vcSeconds / 60).toString().padStart(2, '0');
+    const s = (vcSeconds % 60).toString().padStart(2, '0');
+    const timeStr = `${m}:${s}`;
+    
+    if (vcSeconds > 0 || currentVcTranscript.length > 0) {
+        const transcriptStr = JSON.stringify(currentVcTranscript).replace(/"/g, '&quot;');
+        const bubbleHtml = `
+        <div class="flex items-center gap-2 cursor-pointer" onclick="showVcTranscript('${transcriptStr}')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>语音通话 ${timeStr}</span>
+        </div>`;
+        chatHistory.push({ role: 'user', content: bubbleHtml });
+    } else {
+        chatHistory.push({ role: 'user', content: `[系统消息:已取消语音通话]` });
+    }
+    renderAllMessages(true);
+}
+
+async function sendVoiceCallMsg() {
+    const inputEl = document.getElementById('vc-input');
+    const text = inputEl.value.trim();
+    
+    if (text) {
+        currentVcTranscript.push({ role: 'user', content: text });
+        inputEl.value = "";
+        document.getElementById('vc-status').innerText = "你正在说话...";
+        setTimeout(() => {
+            if(document.getElementById('vc-status').innerText === "你正在说话...") {
+                document.getElementById('vc-status').innerText = "通话中";
+            }
+        }, 1500);
+        return; 
+    }
+    
+    if (currentVcTranscript.length === 0 || currentVcTranscript[currentVcTranscript.length - 1].role === 'assistant') {
+        return; 
+    }
+    
+    document.getElementById('vc-status').innerText = "TA正在听...";
+    const friend = friendList.find(f => f.id === currentFriendId);
+    
+    let prompt = `【当前场景】：你正在和用户进行实时的“语音通话”。请注意，你们是在“说话”而不是在打字聊天。
+你的真实名字是：${friend.realName}。你的设定是：${friend.persona}。
+`;
+    if (friend.userPersona) prompt += `用户的设定是：${friend.userPersona}。\n`;
+    
+    let memoryText = "";
+    if (friend.memoryList && friend.memoryList.length > 0) {
+        memoryText = friend.memoryList.join('\n');
+    } else if (friend.aiMemory) {
+        memoryText = friend.aiMemory;
+    }
+    if (memoryText) prompt += `这是你们过去的记忆总结：\n${memoryText}\n`;
+
+    prompt += `
+【语音通话强制规则】：
+1. 你的回复必须是真实的口语化文字！带有日常说话的停顿、思考、语气词，绝对不要出现任何机器感。
+2. 绝对不能使用任何表情包代码、图片或换行排版！
+3. 可以在括号内加入你的呼吸、动作、轻笑、环境背景音等描述来增加真实感（例如：(轻笑)、(翻身的声音)、(电话那头传来的风声)、(叹气) 等）。
+4. 每次说话控制在简短的一两句，符合真实电话一来一回的节奏。`;
+
+    let callContext = currentVcTranscript.map(m => ({ role: m.role, content: m.content }));
+    
+    try {
+        inputEl.placeholder = "等待TA开口...";
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{role: 'system', content: prompt}, ...callContext],
+                temperature: parseFloat(config.temperature) || 1.0,
+                max_tokens: 300
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        currentVcTranscript.push({ role: 'assistant', content: reply });
+        document.getElementById('vc-status').innerText = "TA正在说话...";
+        
+        inputEl.placeholder = "TA正在说话...";
+        const talkTime = Math.min(Math.max(reply.length * 150, 2000), 8000); 
+        setTimeout(() => {
+            if(isVoiceCalling) {
+                inputEl.placeholder = "发送空消息让TA回复...";
+                document.getElementById('vc-status').innerText = "通话中";
+            }
+        }, talkTime);
+        
+    } catch(e) {
+        document.getElementById('vc-status').innerText = "信号不好...";
+        inputEl.placeholder = "发送空消息让TA回复...";
+    }
+}
+
+function showVcTranscript(transcriptStr) {
+    const list = JSON.parse(transcriptStr.replace(/&quot;/g, '"'));
+    const container = document.getElementById('vc-transcript-list');
+    container.innerHTML = '';
+    
+    const friend = friendList.find(f => f.id === currentFriendId);
+    const aiName = friend ? (friend.remark || friend.realName) : "TA";
+    
+    if (list.length === 0) {
+        container.innerHTML = '<div class="text-gray-400 text-center mt-4">没有留下声音...</div>';
+    } else {
+        list.forEach(msg => {
+            const isSelf = msg.role === 'user';
+            const name = isSelf ? "我" : aiName;
+            const color = isSelf ? "text-blue-500" : "text-gray-800";
+            container.innerHTML += `<div class="mb-3 leading-relaxed"><span class="${color} font-bold mr-1">${name}:</span><span class="text-gray-700">${msg.content}</span></div>`;
+        });
+    }
+    
+    const modal = document.getElementById('vc-transcript-modal');
+    const panel = document.getElementById('vc-transcript-panel');
+    modal.classList.remove('hidden');
+    setTimeout(() => { panel.classList.remove('translate-y-full'); }, 10);
+}
+
+function closeVcTranscript() {
+    const panel = document.getElementById('vc-transcript-panel');
+    panel.classList.add('translate-y-full');
+    setTimeout(() => {
+        document.getElementById('vc-transcript-modal').classList.add('hidden');
+    }, 300);
+}
+
 // ================= 终极内存解放补丁：极致图片压缩（存一万张图也不怕版） =================
+
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
     if (file && file.type && file.type.startsWith('image/') && file.type !== 'image/gif') {
@@ -2861,8 +3139,11 @@ function syncProfileToAI() {
 - 如果接受，请务必在回复中单独占一行输出：【接受转账】
 - 如果拒绝/退回，请务必在回复中单独占一行输出：【退回转账】
 - 如果你想主动给用户发红包、转账表达感谢或撒娇要钱等，请在回复中单独占一行输出：【发起转账：金额，备注：xxx】（例如：【发起转账：52.0，备注：去买杯奶茶】）。金额必须是纯数字。
+8. 语音通话功能：
+- 如果你想主动给用户拨打语音通话，请在回复中单独占一行输出：【发起语音通话】
 
 === 进阶定制指令（分场景细化） ===
+
 所有进阶版本均基于核心基础指令叠加，请根据当前的角色设定和对话场景，自动选择最符合下述其中一种的语气来回复：
 
 【进阶1：日常闲聊版】（熟人/普通朋友）
@@ -4331,10 +4612,19 @@ TimeChecklist:
             extractedVoice = fallbackVoices[Math.floor(Math.random() * fallbackVoices.length)];
         }
 
-        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
-        let extraMessages = [];
-        let needsFullRender = false;
-        if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
+    // ==== 拦截处理 AI 的主动语音通话 ====
+    if (reply.includes('【发起语音通话】')) {
+        reply = reply.replace(/【发起语音通话】/g, '').trim();
+        setTimeout(() => {
+            incomingVoiceCall(currentFriendId);
+        }, 1500);
+    }
+
+    // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
+    let extraMessages = [];
+    let needsFullRender = false;
+    
+    if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
             const isAccept = reply.includes('【接受转账】');
             reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
             for(let i = chatHistory.length - 1; i >= 0; i--) {
