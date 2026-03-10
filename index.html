@@ -4257,15 +4257,25 @@ TimeChecklist:
             }
 
             // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
-
             if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
                 // 把后面的排版代码一刀切掉，只保留前面的纯文字
                 let textOnly = msg.content.split('\n<div')[0];
                 // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
                 textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
-                
                 formattedMessages.push({ role: msg.role, content: textOnly });
                 return; // 这一条处理完毕，直接跳过后面的识图步骤
+            }
+
+            // 【新增修复】：拦截外卖代付卡片，防止系统把它当成真实的图片去请求识图 API 导致报错
+            if (msg.content.includes('waimai-no-bubble-trigger')) {
+                // 提取出我们藏在 HTML 注释里的悄悄话喂给 AI
+                const match = msg.content.match(//);
+                if (match) {
+                    formattedMessages.push({ role: msg.role, content: match[1] });
+                } else {
+                    formattedMessages.push({ role: msg.role, content: "[我给你发送了一个外卖代付请求]" });
+                }
+                return; // 跳过后面的识图步骤
             }
 
             const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
