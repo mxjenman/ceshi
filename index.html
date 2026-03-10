@@ -3822,14 +3822,13 @@ function renderAllMessages(isIncremental = false) {
         }
         // ===================================
 
-            let bubbleHtml = '';
-            // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
-            let isMedia = false;
-            let contentForCheck = displayContent.trim();
-            // 【新增修复】：只要包含了外卖专属的隐形标志代码，也把它当成“不需要绿色气泡”的媒体卡片处理
-            if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"') || contentForCheck.includes('waimai-no-bubble-trigger')) {
-                isMedia = true;
-            }
+        let bubbleHtml = '';
+        // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
+        let isMedia = false;
+        let contentForCheck = displayContent.trim();
+        if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"')) {
+            isMedia = true;
+        }
 
         if (customBubbleHtml) {
             bubbleHtml = customBubbleHtml;
@@ -4258,24 +4257,15 @@ TimeChecklist:
             }
 
             // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+
             if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
                 // 把后面的排版代码一刀切掉，只保留前面的纯文字
                 let textOnly = msg.content.split('\n<div')[0];
                 // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
                 textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
+                
                 formattedMessages.push({ role: msg.role, content: textOnly });
                 return; // 这一条处理完毕，直接跳过后面的识图步骤
-            }
-
-            // 【新增修复】：拦截无气泡卡片（如外卖），提取藏在代码里的纯净指令，避免把超长的 HTML 排版代码发给 AI 导致报错崩溃
-            if (msg.content.includes('waimai-no-bubble-trigger')) {
-                const hiddenMatch = msg.content.match(//);
-                if (hiddenMatch) {
-                    formattedMessages.push({ role: msg.role, content: hiddenMatch[1] });
-                } else {
-                    formattedMessages.push({ role: msg.role, content: "[我给你发了一张外卖代付卡片]" });
-                }
-                return; // 这一条处理完毕，直接跳过后面的图片解析步骤
             }
 
             const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
