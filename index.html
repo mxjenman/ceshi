@@ -4340,24 +4340,15 @@ TimeChecklist:
             extractedVoice = fallbackVoices[Math.floor(Math.random() * fallbackVoices.length)];
         }
 
-            // ==== 拦截处理 AI 的收钱逻辑（含外卖代付升级版） ====
-            if (reply.includes('【接受转账】')) {
-                // 新增：安全获取当前角色的名字（万能防崩溃保护）
-                let roleName = "TA";
-                try {
-                    if (typeof friends !== 'undefined' && typeof currentFriendId !== 'undefined') {
-                        const f = friends.find(x => x.id === currentFriendId);
-                        if (f) roleName = f.remark || f.name;
-                    } else if (typeof friend !== 'undefined') {
-                        roleName = friend.remark || friend.name;
-                    } else if (typeof currentFriend !== 'undefined') {
-                        roleName = currentFriend.remark || currentFriend.name;
-                    }
-                } catch (e) {
-                    console.error("名字获取失败，使用默认值TA");
-                }
+            // ==== 拦截处理 AI 的收钱逻辑（修正稳定版） ====
+            let roleNameSafe = "TA";
+            if (currentFriendId && typeof friendList !== 'undefined') {
+                const f = friendList.find(x => x.id === currentFriendId);
+                if (f) roleNameSafe = f.remark || f.realName || "TA";
+            }
 
-                // 1. 尝试寻找普通转账
+            if (reply.includes('【接受转账】')) {
+                // 1. 尝试寻找普通转账并更新
                 const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
                 if (lastPending) {
                     const parts = lastPending.content.split('|');
@@ -4365,22 +4356,20 @@ TimeChecklist:
                     const tid = parts[1];
                     lastPending.content = `[转账|${tid}|user|${amt}|${parts[4]}|accepted]`;
                     if (typeof addTransaction === 'function') {
-                        addTransaction(`TA收了你的转账`, parseFloat(amt), 'income');
+                        addTransaction(`${roleNameSafe}收了你的转账`, parseFloat(amt), 'income');
                     }
                     needsFullRender = true;
                 }
 
-                // 2. 尝试寻找外卖代付请求并更新状态
+                // 2. 尝试寻找外卖卡片并更新（把 TA 变成角色名）
                 const lastWaimai = [...chatHistory].reverse().find(m => m.content.includes('外卖代付请求') && (m.content.includes('等待TA付款') || m.content.includes('等待付款')));
                 if (lastWaimai) {
-                    // 把“等待TA付款”文字替换掉，兼容各种带不带省略号的情况
-                    lastWaimai.content = lastWaimai.content.replace(/等待TA付款\.{0,3}/, `${roleName}已成功付款`);
+                    lastWaimai.content = lastWaimai.content.replace(/等待TA付款\.{0,3}/g, `${roleNameSafe}已成功付款`);
+                    lastWaimai.content = lastWaimai.content.replace(/等待付款\.{0,3}/g, `${roleNameSafe}已成功付款`);
                     
-                    // 抓取金额用于展示
                     const priceMatch = lastWaimai.content.match(/¥([\d\.]+)/);
                     const wmPrice = priceMatch ? priceMatch[1] : "0.00";
                     
-                    // 让角色额外发一张“付款成功”的绿色小卡片
                     extraMessages.push({
                         role: 'assistant',
                         content: `
@@ -4390,7 +4379,7 @@ TimeChecklist:
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-[14px] font-bold text-gray-800">付款成功</span>
-                                <span class="text-[12px] text-gray-400">${roleName}已为你支付 ¥${wmPrice}</span>
+                                <span class="text-[12px] text-gray-400">${roleNameSafe}已为你支付 ¥${wmPrice}</span>
                             </div>
                         </div>`
                     });
@@ -4410,7 +4399,6 @@ TimeChecklist:
                 reply = reply.replace('【退回转账】', '').trim();
             }
 
-            // AI 发起转账拦截
             const aiPayMatch = reply.match(/【发起转账：([\d\.]+)，备注：(.*?)】/);
             if (aiPayMatch) {
                 const amt = aiPayMatch[1];
@@ -4422,7 +4410,6 @@ TimeChecklist:
 
             if (needsFullRender) renderAllMessages(false);
 
-            // --- 拆分消息逻辑 ---
             const imgRegex = /<img[^>]*>/g;
             const images = reply.match(imgRegex);
             const textOnly = reply.replace(imgRegex, '').trim();
@@ -4451,11 +4438,11 @@ TimeChecklist:
                 });
             }
 
-            // --- 逐条显示逻辑 ---
             let msgIndex = 0;
             function showNextMsg() {
                 if (msgIndex < newMessages.length) {
                     const currentMsg = newMessages[msgIndex];
+
                 chatHistory.push(currentMsg);
                 renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
                 
