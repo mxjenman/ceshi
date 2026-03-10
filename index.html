@@ -292,11 +292,28 @@ backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1.5px 
                         </div>
                         <svg class="w-7 h-7 cursor-pointer active:scale-90 transition-transform" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" onclick="event.stopPropagation(); playNext();"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
                     </div>
-                    <svg class="w-[22px] h-[22px] opacity-90 cursor-pointer active:scale-90 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" onclick="event.stopPropagation(); openPlaylist();">
+                    <svg class="w-[22px] h-[22px] opacity-90 cursor-pointer active:scale-90 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" onclick="event.stopPropagation();
+openPlaylist();">
                         <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
                 </div>
             </div>
+
+            <div class="w-full flex gap-6 px-2 mt-6">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('默契比心')">
+                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
+                        <img id="icon-mqbx" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    </div>
+                    <span class="text-xs text-gray-600 font-bold drop-shadow-md">默契比心</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('外卖')">
+                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
+                        <img id="icon-waimai" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
+                    </div>
+                    <span class="text-xs text-gray-600 font-bold drop-shadow-md">外卖</span>
+                </div>
+            </div>
+    
         </div> </div> <div class="px-6 pb-6 w-full z-20">
         <div class="glass-card w-full p-4 flex justify-between items-center relative">
             <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
