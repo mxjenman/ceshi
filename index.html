@@ -1026,9 +1026,9 @@ openPlaylist();">
                 
                 <button id="mqbx-action-btn" class="w-full py-3.5 bg-black text-white rounded-[20px] font-bold text-[16px] shadow-lg active:scale-95 transition-transform opacity-50 pointer-events-none mb-4 shrink-0" onclick="submitMqbxAnswer()">TA还没答完哦</button>
                 
-                <div id="mqbx-comment-area" class="hidden bg-[#f0f5ff] border border-blue-100 rounded-[24px] p-5 relative mb-6 shrink-0 mt-4 animate-in">
-                    <div class="absolute -top-3 left-6 bg-blue-500 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">TA的反应</div>
-                    <div id="mqbx-char-comment" class="text-[15px] text-gray-800 leading-relaxed mt-2 font-medium"></div>
+                <div id="mqbx-comment-area" class="hidden bg-[#222222] border border-[#333333] rounded-[24px] p-5 relative mb-6 shrink-0 mt-4 animate-in">
+                    <div id="mqbx-reaction-title" class="absolute -top-3 left-6 bg-black text-white border border-[#444] px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">TA的反应</div>
+                    <div id="mqbx-char-comment" class="text-[15px] text-[#f0f0f0] leading-relaxed mt-2 font-medium"></div>
                 </div>
             </div>
         </div>
@@ -4586,8 +4586,9 @@ function openMqbxApp() {
         list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没添加好友，快去微信列表加一个吧</div>';
     } else {
         friends.forEach(f => {
+            // 注意：这里改成了 readyMqbxGame，不再是一点进去就直接调用API
             list.innerHTML += `
-                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-200 rounded-xl border border-gray-100 bg-white mb-2 active:scale-95 transition-transform" onclick="startMqbxGame('${f.id}')">
+                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-200 rounded-xl border border-gray-100 bg-white mb-2 active:scale-95 transition-transform" onclick="readyMqbxGame('${f.id}')">
                     <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover">
                     <span class="font-bold text-[15px] text-gray-700 flex-1">${f.remark}</span>
                 </div>
@@ -4601,18 +4602,20 @@ function closeMqbxApp() {
     document.getElementById('mqbx-char-modal').classList.add('hidden');
 }
 
-async function startMqbxGame(charId) {
-    if (!config.apiKey) return alert("请先在设置中配置 API Key！");
+// 新增：准备开始界面
+function readyMqbxGame(charId) {
     mqbxCurrentCharId = charId;
     const friend = friendList.find(f => f.id === charId);
     if(!friend) return;
     
+    const name = friend.remark || friend.realName || "TA";
+
     document.getElementById('mqbx-char-modal').classList.add('hidden');
     document.getElementById('mqbx-game-area').classList.remove('hidden');
     document.getElementById('mqbx-comment-area').classList.add('hidden');
     
     document.getElementById('mqbx-char-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
-    document.getElementById('mqbx-char-name').innerText = friend.remark;
+    document.getElementById('mqbx-char-name').innerText = name;
     document.getElementById('mqbx-user-avatar').src = userProfile.avatar || 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';
     
     const qEl = document.getElementById('mqbx-question');
@@ -4621,13 +4624,47 @@ async function startMqbxGame(charId) {
     const inputEl = document.getElementById('mqbx-user-input');
     const btn = document.getElementById('mqbx-action-btn');
     
-    qEl.innerHTML = '正在生成灵魂拷问<span class="animate-pulse">...</span>';
-    statusEl.innerText = 'TA正在苦思冥想...';
+    // 初始化界面为等待点击开始的状态
+    qEl.innerHTML = '准备好接受默契考验了吗？<br><span class="text-[13px] text-gray-400 font-normal">点击下方按钮开始生成专属问题</span>';
+    statusEl.innerText = `等待游戏开始...`;
     statusEl.classList.remove('hidden');
     ansEl.classList.add('hidden');
     inputEl.value = '';
     inputEl.disabled = true;
-    inputEl.placeholder = "等待生成问题...";
+    inputEl.placeholder = `等待问题生成...`;
+    
+    // 把框框标题改成角色的名字
+    document.getElementById('mqbx-reaction-title').innerText = `${name}的反应`;
+
+    btn.innerText = "开始游戏";
+    btn.style.opacity = "1";
+    btn.style.pointerEvents = "auto";
+    btn.onclick = startMqbxGame;
+}
+
+// 点击开始游戏后才触发
+async function startMqbxGame() {
+    if (!config.apiKey) return alert("请先在设置中配置 API Key！");
+    const friend = friendList.find(f => f.id === mqbxCurrentCharId);
+    if(!friend) return;
+    const name = friend.remark || friend.realName || "TA";
+    
+    const qEl = document.getElementById('mqbx-question');
+    const statusEl = document.getElementById('mqbx-char-status');
+    const ansEl = document.getElementById('mqbx-char-answer');
+    const inputEl = document.getElementById('mqbx-user-input');
+    const btn = document.getElementById('mqbx-action-btn');
+    const commentArea = document.getElementById('mqbx-comment-area');
+    
+    commentArea.classList.add('hidden');
+    qEl.innerHTML = '正在生成灵魂拷问<span class="animate-pulse">...</span>';
+    statusEl.innerText = `${name}正在苦思冥想...`;
+    statusEl.classList.remove('hidden');
+    ansEl.classList.add('hidden');
+    inputEl.value = '';
+    inputEl.disabled = true;
+    inputEl.placeholder = `等待问题生成...`;
+    
     btn.innerText = "生成中...";
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
@@ -4648,7 +4685,7 @@ async function startMqbxGame(charId) {
         qEl.innerText = mqbxQuestion;
         
         // 2. 角色偷偷作答
-        inputEl.placeholder = "等待TA写下答案...";
+        inputEl.placeholder = `等待${name}写下答案...`;
         let promptA = `你扮演“${friend.realName}”，设定是：${friend.persona}。现在我们在玩默契游戏，问题是：“${mqbxQuestion}”。请直接给出你的答案（简短，一句话内），一定要符合你的人设。不要带多余的动作描写，只输出纯文本答案。`;
 
         const resA = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -4667,13 +4704,17 @@ async function startMqbxGame(charId) {
         ansEl.classList.remove('text-black', 'not-italic');
         
         inputEl.disabled = false;
-        inputEl.placeholder = "TA已经答完了！轮到你了，写下你的答案吧...";
-        btn.innerText = "提交并查看TA的答案";
+        inputEl.placeholder = `${name}已经答完了！轮到你了，写下你的答案吧...`;
+        btn.innerText = `提交并查看${name}的答案`;
         btn.style.opacity = "1";
         btn.style.pointerEvents = "auto";
 
     } catch (e) {
         qEl.innerText = "网络错误，请重试";
+        btn.innerText = "重新开始";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        btn.onclick = () => readyMqbxGame(mqbxCurrentCharId);
     }
 }
 
@@ -4687,18 +4728,20 @@ async function submitMqbxAnswer() {
     const commentArea = document.getElementById('mqbx-comment-area');
     const commentText = document.getElementById('mqbx-char-comment');
     
+    const friend = friendList.find(f => f.id === mqbxCurrentCharId);
+    const name = friend ? (friend.remark || friend.realName || "TA") : "TA";
+
     // 显示角色真正的答案
     ansEl.innerText = mqbxCharAnswerText;
     ansEl.classList.remove('text-gray-400', 'italic');
     ansEl.classList.add('text-black', 'not-italic');
     
     inputEl.disabled = true;
-    btn.innerText = "正在等待TA的反应...";
+    btn.innerText = `正在等待${name}的反应...`;
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
     
     // 3. 角色点评审判
-    const friend = friendList.find(f => f.id === mqbxCurrentCharId);
     let promptC = `你扮演“${friend.realName}”，设定是：${friend.persona}。你们刚刚玩了默契游戏。
 问题是：“${mqbxQuestion}”
 你的答案是：“${mqbxCharAnswerText}”
@@ -4720,13 +4763,13 @@ async function submitMqbxAnswer() {
         btn.innerText = "再玩一次";
         btn.style.opacity = "1";
         btn.style.pointerEvents = "auto";
-        btn.onclick = () => startMqbxGame(mqbxCurrentCharId);
+        btn.onclick = () => readyMqbxGame(mqbxCurrentCharId);
         
     } catch(e) {
         btn.innerText = "再玩一次 (网络出错)";
         btn.style.opacity = "1";
         btn.style.pointerEvents = "auto";
-        btn.onclick = () => startMqbxGame(mqbxCurrentCharId);
+        btn.onclick = () => readyMqbxGame(mqbxCurrentCharId);
     }
 }
 
