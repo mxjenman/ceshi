@@ -4219,74 +4219,81 @@ TimeChecklist:
 
         try {
             // 【修复】微信使用真正的多模态格式读取微信的历史记录
+            let formattedMessages = [{role:'system', content:finalSystemMessage}];
 
-        let formattedMessages = [{role:'system', content:finalSystemMessage}];
-        chatHistory.slice(-5).forEach(msg => {
-            
-            // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
-            let textOnly = msg.content;
-            if (textOnly.startsWith('[转账|')) {
-                const parts = textOnly.replace(/\[|\]/g, '').split('|');
-                const sender = parts[2];
-                const amt = parts[3];
-                const note = parts[4];
-                const status = parts[5];
-                
-                if (sender === 'user') {
-                    if (status === 'pending') {
-                        textOnly = `[我向你发起了一笔转账，金额：${amt}元，备注：${note}。请结合当前的聊天语境和你的性格，决定是否接受这笔钱。如果接受，请在回复中单独占一行写上：【接受转账】；如果不想收/退回，请在回复中单独占一行写上：【退回转账】]`;
-                    } else if (status === 'accepted') {
-                        textOnly = `[你已接收了我转账的 ${amt}元]`;
-                    } else if (status === 'returned') {
-                        textOnly = `[你已退回了我转账的 ${amt}元]`;
+            chatHistory.slice(-5).forEach(msg => {
+                // 【新增】：将生硬的转账代码翻译成 AI 能看懂的白话文
+                let textOnly = msg.content;
+                if (textOnly.startsWith('[转账|')) {
+                    const parts = textOnly.replace(/\[|\]/g, '').split('|');
+                    const amt = parts[3];
+                    const status = parts[5];
+                    if (msg.role === 'user') {
+                        if (status === 'pending') {
+                            textOnly = `[我向你发起了一笔 ${amt}元的转账]`;
+                        } else if (status === 'accepted') {
+                            textOnly = `[你已收下了我转账的 ${amt}元]`;
+                        } else if (status === 'returned') {
+                            textOnly = `[你已退回了我转账的 ${amt}元]`;
+                        }
+                    } else {
+                        if (status === 'pending') {
+                            textOnly = `[你向我发起了一笔 ${amt}元的转账]`;
+                        } else if (status === 'accepted') {
+                            textOnly = `[我已收下了你转账的 ${amt}元]`;
+                        } else if (status === 'returned') {
+                            textOnly = `[我已退回了你转账的 ${amt}元]`;
+                        }
                     }
-                } else {
-                    if (status === 'pending') {
-                        textOnly = `[你向我发起了一笔转账，金额：${amt}元，备注：${note}。等待我收款]`;
-                    } else if (status === 'accepted') {
-                        textOnly = `[我已接收了你转账的 ${amt}元]`;
-                    } else if (status === 'returned') {
-                        textOnly = `[我已退回了你转账的 ${amt}元]`;
-                    }
+                    formattedMessages.push({ role: msg.role, content: textOnly });
+                    return; // 翻译完毕，跳过下面直接进入下一条
+                } else if (textOnly.startsWith('[系统消息:')) {
+                    formattedMessages.push({ role: msg.role, content: textOnly });
+                    return; // 直接处理系统提示
                 }
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 翻译完毕，跳过下面直接进入下一条
-            } else if (textOnly.startsWith('[系统消息:')) {
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 直接处理系统提示
-            }
 
-            // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+                // 【核心修复】：拦截“描述照片”功能！只给 AI 看文字描述，彻底隐藏占位图
+                if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
+                    // 把后面的排版代码一刀切掉，只保留前面的纯文字
+                    let textOnly = msg.content.split('\n<div')[0];
+                    // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
+                    textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
+                    formattedMessages.push({ role: msg.role, content: textOnly });
+                    return; // 这一条处理完毕，直接跳过后面的识图步骤
+                }
 
-            if (msg.content.includes('[我发送了一张图片，图片内容是：')) {
-                // 把后面的排版代码一刀切掉，只保留前面的纯文字
-                let textOnly = msg.content.split('\n<div')[0];
-                // 【新增指令】：偷偷加上后缀，逼着 AI 去想象这张图片的细节，严禁它当复读机！
-                textOnly += " (请根据这段描述，在脑海中闭眼想象这张照片的具体细节、画面色彩和氛围，然后再像你亲眼看到真实照片一样给我自然地回复。千万不要干巴巴地复述我的描述！你可以稍微评价一下好看不好看，或者发散聊聊你的感受。)";
-                
-                formattedMessages.push({ role: msg.role, content: textOnly });
-                return; // 这一条处理完毕，直接跳过后面的识图步骤
-            }
+                // 【新增修复】：拦截外卖代付卡片，把杂乱的代码变成AI能看懂的文字！
+                if (msg.content.includes('外卖代付请求') && msg.content.includes('waimai-no-bubble-trigger')) {
+                    let waimaiPrice = "未知";
+                    let waimaiItems = "外卖";
+                    // 抓取金额和菜品名称告诉AI
+                    const priceMatch = msg.content.match(/¥([\d\.]+)/);
+                    if (priceMatch) waimaiPrice = priceMatch[1];
+                    const itemsMatch = msg.content.match(/text-left">([^<]+)<\/div>/);
+                    if (itemsMatch) waimaiItems = itemsMatch[1].trim();
 
-            const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
-            if (imgMatch) {
-                const base64Url = imgMatch[1];
-                let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
- 
-               // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
-                if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
-                
-                formattedMessages.push({
-                    role: msg.role,
-                    content: [
-                        { type: "text", text: textOnly },
-                        { type: "image_url", image_url: { url: base64Url } }
-                    ]
-                });
-            } else {
-                formattedMessages.push({ role: msg.role, content: msg.content });
-            }
-        });
+                    let cleanText = `[系统提示：我向你发送了一张外卖代付卡片，我想买 ${waimaiItems}，需要付款 ${waimaiPrice} 元。请结合你的人设和情绪，回复你要不要帮我付。如果你同意代付，请在回复里加上【接受转账】（这就当做你付款了）；如果你拒绝，可以直接骂我或嘲讽我。]`;
+                    formattedMessages.push({ role: msg.role, content: cleanText });
+                    return; // 直接跳过后面的图片识别步骤
+                }
+
+                const imgMatch = msg.content.match(/<img[^>]+src=["']([^"']+)["']/);
+                if (imgMatch) {
+                    const base64Url = imgMatch[1];
+                    let textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+                    // 如果只发了图没打字，系统要偷偷加一句旁白，否则API不知道怎么回答
+                    if (!textOnly) textOnly = msg.role === 'user' ? "【我发送了一张图片，请你看看图片里有什么，并根据内容回复我】" : "【一张图片】";
+                    formattedMessages.push({
+                        role: msg.role,
+                        content: [
+                            { type: "text", text: textOnly },
+                            { type: "image_url", image_url: { url: base64Url } }
+                        ]
+                    });
+                } else {
+                    formattedMessages.push({ role: msg.role, content: msg.content });
+                }
+            });
 
         const response=await fetch(`${config.baseUrl}/chat/completions`,{
             method:'POST',
