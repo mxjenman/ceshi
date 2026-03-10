@@ -2976,12 +2976,15 @@ function renderFriendList() {
             
             // 2. 提取最后一条聊天记录用于展示
             let lastMsg = '暂无聊天记录';
-  
             if (f.chatHistory && f.chatHistory.length > 0) {
                 let lastContent = f.chatHistory[f.chatHistory.length - 1].content;
                 
+                // 【新增外卖代付卡片判断】优先把外卖卡片变成 [外卖…]
+                if (lastContent.includes('外卖代付请求') || lastContent.includes('waimai-no-bubble-trigger')) {
+                    lastMsg = '[外卖…]';
+                } 
                 // 【新增修复】优先把“描述照片”的超长代码变成干净的 [图片]
-                if (lastContent.includes('<div class="desc-photo-container"')) {
+                else if (lastContent.includes('<div class="desc-photo-container"')) {
                     lastMsg = '[图片]';
                 } else {
                     // 把真实的图片代码替换成干净的 [图片] 两个字
@@ -3901,13 +3904,20 @@ function renderAllMessages(isIncremental = false) {
                             renderAllMessages();
                         }
                      }},
-                    { label: '引用', action: () => { 
+                    { label: '引用', action: () => {
                         let quoteContent = displayContent;
+                        
+                        // 【新增外卖代付卡片引用拦截】把外卖卡片变成 [外卖…]
+                        if (quoteContent.includes('外卖代付请求') || quoteContent.includes('waimai-no-bubble-trigger')) {
+                            quoteContent = '[外卖…]';
+                        } 
                         // 【新增修复】拦截描述照片的恶心代码，直接变图片
-                        if (quoteContent.includes('<div class="desc-photo-container"')) {
-                            quoteContent = '[图片]';
+                        else if (quoteContent.includes('<div class="desc-photo-container"')) {
+                            quoteContent = '[图片]'; 
                         }
+                        
                         quoteContent = quoteContent.replace(/<img[^>]*>/g, '[图片]');
+
                         currentQuoteMsg = quoteContent;
                         document.getElementById('chat-input').placeholder = `引用: ${quoteContent.substring(0,8)}...`;
                         document.getElementById('chat-input').focus();
