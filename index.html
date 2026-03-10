@@ -1891,25 +1891,32 @@ openPlaylist();">
     </div>
 
     <div id="voice-call-screen" class="fixed inset-0 bg-[#333333] hidden flex flex-col z-[300] transition-transform duration-300 translate-y-full">
-        <div class="relative flex-1 flex flex-col items-center justify-center">
-            <div class="absolute top-12 right-6 flex flex-col items-center">
-                <img id="vc-avatar" src="" class="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-lg">
-                <span id="vc-name" class="text-white/80 text-[12px] mt-2 font-medium">TA</span>
-            </div>
-            <div class="text-white/60 text-[16px] tracking-widest mb-10" id="vc-status">正在通话中...</div>
-            <div id="vc-timer" class="text-white font-mono text-[22px] tracking-wider mb-8">00:00</div>
-            
-            <div class="flex gap-10" id="vc-action-buttons">
-                <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
-                </div>
+        <div class="w-full relative h-[120px] shrink-0">
+            <div class="absolute top-12 left-6 flex flex-col items-center">
+                <img id="vc-avatar" src="" class="w-[74px] h-[74px] rounded-full object-cover border-2 border-white/20 shadow-lg">
+                <span id="vc-name" class="text-white/80 text-[13px] mt-2 font-medium">TA</span>
             </div>
         </div>
-        <div class="bg-[#222222] p-4 pb-8 rounded-t-[24px] flex items-center gap-3" id="vc-input-area">
-            <input id="vc-input" type="text" class="flex-1 bg-[#444444] text-white rounded-full px-5 py-3 outline-none text-[15px] placeholder-white/30" placeholder="发送空消息让TA回复..." onkeydown="if(event.key === 'Enter') sendVoiceCallMsg()">
-            <button class="w-12 h-12 bg-[#07c160] rounded-full flex items-center justify-center text-white active:scale-90 transition-transform" onclick="sendVoiceCallMsg()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
+
+        <div class="flex-1 overflow-y-auto px-6 py-2 flex flex-col gap-4 text-[15px] no-scrollbar" id="vc-live-transcript">
+            </div>
+
+        <div class="w-full flex flex-col items-center shrink-0 pb-6 pt-2">
+            <div class="text-white/60 text-[14px] tracking-widest mb-1" id="vc-status">正在通话中...</div>
+            <div id="vc-timer" class="text-white font-mono text-[18px] tracking-wider mb-4">00:00</div>
+            
+            <div class="flex gap-10 mb-4" id="vc-action-buttons">
+                <div class="w-[60px] h-[60px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                </div>
+            </div>
+
+            <div class="w-full px-4 flex items-center gap-3" id="vc-input-area">
+                <input id="vc-input" type="text" class="flex-1 bg-[#444444] text-white rounded-full px-4 py-2 outline-none text-[15px] placeholder-white/30" placeholder="发送空消息让TA回复..." onkeydown="if(event.key === 'Enter') sendVoiceCallMsg()">
+                <button class="w-10 h-10 bg-[#07c160] rounded-full flex items-center justify-center text-white active:scale-90 transition-transform shrink-0" onclick="sendVoiceCallMsg()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1930,6 +1937,15 @@ let vcSeconds = 0;
 let currentVcTranscript = [];
 let isVoiceCalling = false;
 
+function appendLiveTranscript(role, text) {
+    const container = document.getElementById('vc-live-transcript');
+    const isUser = role === 'user';
+    const alignClass = isUser ? 'self-end text-white bg-[#07c160] rounded-tl-[16px] rounded-tr-[4px] rounded-bl-[16px] rounded-br-[16px]' : 'self-start text-gray-800 bg-white rounded-tl-[4px] rounded-tr-[16px] rounded-bl-[16px] rounded-br-[16px]';
+    
+    container.innerHTML += `<div class="max-w-[80%] px-4 py-2.5 ${alignClass} shadow-sm leading-relaxed">${text}</div>`;
+    container.scrollTop = container.scrollHeight;
+}
+
 function openVoiceCall() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
@@ -1943,10 +1959,11 @@ function openVoiceCall() {
     document.getElementById('vc-status').innerText = "等待接听...";
     document.getElementById('vc-timer').innerText = "00:00";
     document.getElementById('vc-input').value = "";
+    document.getElementById('vc-live-transcript').innerHTML = "";
     
     document.getElementById('vc-action-buttons').innerHTML = `
-        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        <div class="w-[60px] h-[60px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
     `;
     document.getElementById('vc-input-area').classList.remove('hidden');
@@ -1976,14 +1993,15 @@ function incomingVoiceCall(friendId) {
     document.getElementById('vc-name').innerText = friend.remark || 'TA';
     document.getElementById('vc-status').innerText = "邀请你进行语音通话...";
     document.getElementById('vc-timer').innerText = "";
+    document.getElementById('vc-live-transcript').innerHTML = "";
     
     document.getElementById('vc-input-area').classList.add('hidden');
     document.getElementById('vc-action-buttons').innerHTML = `
-        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="rejectVoiceCall()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        <div class="w-[60px] h-[60px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="rejectVoiceCall()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
-        <div class="w-[70px] h-[70px] bg-[#07c160] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="acceptIncomingVoiceCall()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        <div class="w-[60px] h-[60px] bg-[#07c160] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="acceptIncomingVoiceCall()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
         </div>
     `;
     
@@ -2004,8 +2022,8 @@ function acceptIncomingVoiceCall() {
     document.getElementById('vc-input').value = "";
     
     document.getElementById('vc-action-buttons').innerHTML = `
-        <div class="w-[70px] h-[70px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        <div class="w-[60px] h-[60px] bg-[#ff3b30] rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform shadow-lg" onclick="hangUpVoiceCall()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
     `;
     startVcTimer();
@@ -2044,7 +2062,8 @@ function hangUpVoiceCall() {
     const timeStr = `${m}:${s}`;
     
     if (vcSeconds > 0 || currentVcTranscript.length > 0) {
-        const transcriptStr = JSON.stringify(currentVcTranscript).replace(/"/g, '&quot;');
+        // 使用 encodeURIComponent 替代原本的 replace 防止引号导致弹窗自动触发BUG
+        const transcriptStr = encodeURIComponent(JSON.stringify(currentVcTranscript));
         const bubbleHtml = `
         <div class="flex items-center gap-2 cursor-pointer" onclick="showVcTranscript('${transcriptStr}')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
@@ -2063,6 +2082,7 @@ async function sendVoiceCallMsg() {
     
     if (text) {
         currentVcTranscript.push({ role: 'user', content: text });
+        appendLiveTranscript('user', text);
         inputEl.value = "";
         document.getElementById('vc-status').innerText = "你正在说话...";
         setTimeout(() => {
@@ -2118,6 +2138,7 @@ async function sendVoiceCallMsg() {
         const reply = data.choices[0].message.content.trim();
         
         currentVcTranscript.push({ role: 'assistant', content: reply });
+        appendLiveTranscript('assistant', reply);
         document.getElementById('vc-status').innerText = "TA正在说话...";
         
         inputEl.placeholder = "TA正在说话...";
@@ -2136,7 +2157,8 @@ async function sendVoiceCallMsg() {
 }
 
 function showVcTranscript(transcriptStr) {
-    const list = JSON.parse(transcriptStr.replace(/&quot;/g, '"'));
+    // 配合上方的安全转码，彻底杜绝导致弹窗自动触发的乱码问题
+    const list = JSON.parse(decodeURIComponent(transcriptStr));
     const container = document.getElementById('vc-transcript-list');
     container.innerHTML = '';
     
