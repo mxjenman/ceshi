@@ -4330,78 +4330,105 @@ TimeChecklist:
             extractedVoice = fallbackVoices[Math.floor(Math.random() * fallbackVoices.length)];
         }
 
-        // ==== 拦截处理 AI 的收钱、退还或主动转账动作 ====
-        let extraMessages = [];
-        let needsFullRender = false;
-        if (reply.includes('【接受转账】') || reply.includes('【退回转账】')) {
-            const isAccept = reply.includes('【接受转账】');
-            reply = reply.replace(/【接受转账】/g, '').replace(/【退回转账】/g, '').trim();
-            for(let i = chatHistory.length - 1; i >= 0; i--) {
-                if(chatHistory[i].role === 'user' && chatHistory[i].content.includes('|pending]')) {
-                    const amt = chatHistory[i].content.split('|')[3];
-                    if (isAccept) {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|accepted]');
-                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已收钱|${amt}]` });
-                    } else {
-                        chatHistory[i].content = chatHistory[i].content.replace('|pending]', '|returned]');
-                        extraMessages.push({ role: 'assistant', content: `[系统消息:TA已退还|${amt}]` });
-                        addTransaction(`${friend.remark} 退回转账`, amt, 'income');
-                    }
+            // ==== 拦截处理 AI 的收钱逻辑（含外卖代付升级版） ====
+            if (reply.includes('【接受转账】')) {
+                // 1. 尝试寻找普通转账
+                const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
+                if (lastPending) {
+                    const parts = lastPending.content.split('|');
+                    const amt = parts[3];
+                    const tid = parts[1];
+                    lastPending.content = `[转账|${tid}|user|${amt}|${parts[4]}|accepted]`;
+                    addTransaction(`TA收了你的转账`, parseFloat(amt), 'income');
                     needsFullRender = true;
-                    break;
                 }
+
+                // 2. 尝试寻找外卖代付请求并更新状态
+                const lastWaimai = [...chatHistory].reverse().find(m => m.content.includes('外卖代付请求') && m.content.includes('等待TA付款'));
+                if (lastWaimai) {
+                    // 把“等待TA付款”文字替换掉
+                    lastWaimai.content = lastWaimai.content.replace('等待TA付款...', `${friend.remark}已成功付款`);
+                    
+                    // 抓取金额用于展示
+                    const priceMatch = lastWaimai.content.match(/¥([\d\.]+)/);
+                    const wmPrice = priceMatch ? priceMatch[1] : "0.00";
+                    
+                    // 让角色额外发一张“付款成功”的绿色小卡片
+                    extraMessages.push({
+                        role: 'assistant',
+                        content: `
+                        <div class="bg-white rounded-[16px] shadow-sm border border-gray-100 p-3 w-[220px] flex items-center gap-3">
+                            <div class="w-10 h-10 bg-[#07c160] rounded-full flex items-center justify-center shrink-0">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[14px] font-bold text-gray-800">付款成功</span>
+                                <span class="text-[12px] text-gray-400">${friend.remark}已为你支付 ¥${wmPrice}</span>
+                            </div>
+                        </div>`
+                    });
+                    needsFullRender = true;
+                }
+                reply = reply.replace('【接受转账】', '').trim();
             }
-        }
-        const transferRegex = /【发起转账：([\d\.]+)，备注：(.*?)】/g;
-        let match;
-        while ((match = transferRegex.exec(reply)) !== null) {
-            const amt = match[1];
-            const note = match[2] || '转账';
-            const transferId = 'tr_' + Date.now() + Math.random().toString().substr(2,4);
-            extraMessages.push({ role: 'assistant', content: `[转账|${transferId}|ai|${amt}|${note}|pending]` });
-        }
-        reply = reply.replace(/【发起转账：.*?】/g, '').trim();
 
-        if (needsFullRender) renderAllMessages(false);
-
-        // --- 真正的多条消息拆分 ---
-        const imgRegex = /<img[^>]*>/g;
-        const images = reply.match(imgRegex);
-        const textOnly = reply.replace(imgRegex, '').trim();
-
-        let newMessages = [];
-        newMessages = newMessages.concat(extraMessages); 
-
-        // 【核心修改】：拆分文字，但只把心声挂在最后一条气泡上，实现“每轮一个心声”
-        if (textOnly) {
-            const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            textLines.forEach((line, index) => {
-                const msgObj = { role: 'assistant', content: line };
-                // 只有这一轮回复的最后一行文字，才带上心声数据
-                if (index === textLines.length - 1 && (!images || images.length === 0)) {
-                    msgObj.innerVoice = extractedVoice;
+            if (reply.includes('【退回转账】')) {
+                const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
+                if (lastPending) {
+                    const parts = lastPending.content.split('|');
+                    const tid = parts[1];
+                    lastPending.content = `[转账|${tid}|user|${parts[3]}|${parts[4]}|returned]`;
+                    needsFullRender = true;
                 }
-                newMessages.push(msgObj);
-            });
-        }
-        
-        if (images && images.length > 0) {
-            images.forEach((img, index) => {
-                const msgObj = { role: 'assistant', content: img };
-                // 如果最后是图片，就把心声挂在最后一张图上
-                if (index === images.length - 1) {
-                    msgObj.innerVoice = extractedVoice;
-                }
-                newMessages.push(msgObj);
-            });
-        }
-        
-        // --- 新增：让消息每隔一段时间弹出来一条的魔法 ---
-        let msgIndex = 0;
-        function showNextMsg() {
-            if (msgIndex < newMessages.length) {
-                // 拿走当前的一条消息，放到聊天记录里
-                const currentMsg = newMessages[msgIndex];
+                reply = reply.replace('【退回转账】', '').trim();
+            }
+
+            // AI 发起转账拦截
+            const aiPayMatch = reply.match(/【发起转账：([\d\.]+)，备注：(.*?)】/);
+            if (aiPayMatch) {
+                const amt = aiPayMatch[1];
+                const note = aiPayMatch[2] || "转账";
+                const transferId = 'tr_' + Date.now() + Math.random().toString().substr(2,4);
+                extraMessages.push({ role: 'assistant', content: `[转账|${transferId}|ai|${amt}|${note}|pending]` });
+            }
+            reply = reply.replace(/【发起转账：.*?】/g, '').trim();
+
+            if (needsFullRender) renderAllMessages(false);
+
+            // --- 拆分消息逻辑 ---
+            const imgRegex = /<img[^>]*>/g;
+            const images = reply.match(imgRegex);
+            const textOnly = reply.replace(imgRegex, '').trim();
+
+            let newMessages = [];
+            newMessages = newMessages.concat(extraMessages);
+
+            if (textOnly) {
+                const textLines = textOnly.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                textLines.forEach((line, index) => {
+                    const msgObj = { role: 'assistant', content: line };
+                    if (index === textLines.length - 1 && (!images || images.length === 0)) {
+                        msgObj.innerVoice = extractedVoice;
+                    }
+                    newMessages.push(msgObj);
+                });
+            }
+
+            if (images && images.length > 0) {
+                images.forEach((img, index) => {
+                    const msgObj = { role: 'assistant', content: img };
+                    if (index === images.length - 1) {
+                        msgObj.innerVoice = extractedVoice;
+                    }
+                    newMessages.push(msgObj);
+                });
+            }
+
+            // --- 逐条显示逻辑 ---
+            let msgIndex = 0;
+            function showNextMsg() {
+                if (msgIndex < newMessages.length) {
+                    const currentMsg = newMessages[msgIndex];
                 chatHistory.push(currentMsg);
                 renderAllMessages(true); // 传入 true！告诉系统只画新消息，绝对不再闪烁！
                 
