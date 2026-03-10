@@ -380,11 +380,13 @@ openPlaylist();">
     </div>
 
     <div id="game-char-modal" class="fixed inset-0 bg-black/60 hidden z-[310] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[32px] w-full max-w-sm p-6 shadow-2xl relative">
+        <div class="absolute inset-0" onclick="document.getElementById('game-char-modal').classList.add('hidden')"></div>
+        
+        <div class="bg-white rounded-[32px] w-full max-w-sm p-6 shadow-2xl relative z-10 animate-in">
             <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">选择一个角色共同挑战</h3>
             <div id="game-char-list" class="max-h-[300px] overflow-y-auto mb-6 flex flex-col gap-2 p-1">
                 </div>
-            <button onclick="startGamePlay()" class="w-full py-4 bg-[#ff6b6b] text-white rounded-full font-bold text-[16px] shadow-lg active:scale-95 transition-transform">开始挑战</button>
+            <button onclick="startGamePlay()" class="w-full py-4 bg-black text-white rounded-full font-bold text-[16px] shadow-lg active:scale-95 transition-transform">开始挑战</button>
         </div>
     </div>
 
@@ -8341,14 +8343,13 @@ async function executeAutoMomentPost(friend) {
 </script>
 </body>
 <script>
-// --- 默契挑战小游戏大脑逻辑 ---
+// --- 默契挑战小游戏大脑逻辑 (修复加强版) ---
 let selectedGameCharId = null;
 
 // 1. 打开选人弹窗
 function openGameCharSelect() {
     const list = document.getElementById('game-char-list');
     list.innerHTML = '';
-    // 只找单人角色，不找群聊
     const friends = friendList.filter(f => !f.isGroup);
     
     if (friends.length === 0) {
@@ -8356,10 +8357,10 @@ function openGameCharSelect() {
     } else {
         friends.forEach(f => {
             list.innerHTML += `
-                <label class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl cursor-pointer active:bg-pink-50 transition-colors border-2 border-transparent has-[:checked]:border-[#ff6b6b] has-[:checked]:bg-[#fff5f5]">
+                <label class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl cursor-pointer border-2 border-transparent has-[:checked]:border-black has-[:checked]:bg-gray-100">
                     <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover">
-                    <span class="font-bold flex-1">${f.remark}</span>
-                    <input type="radio" name="game-char" value="${f.id}" class="w-5 h-5 accent-[#ff6b6b]" onchange="selectedGameCharId='${f.id}'">
+                    <span class="font-bold flex-1 text-gray-800">${f.remark}</span>
+                    <input type="radio" name="game-char" value="${f.id}" class="w-5 h-5 accent-black" onchange="selectedGameCharId='${f.id}'">
                 </label>
             `;
         });
@@ -8367,7 +8368,7 @@ function openGameCharSelect() {
     document.getElementById('game-char-modal').classList.remove('hidden');
 }
 
-// 2. 点击“开始挑战”
+// 2. 点击“开始挑战” (这里修复了网络错误)
 async function startGamePlay() {
     if (!selectedGameCharId) return alert("请先勾选一个角色！");
     if (!config.apiKey) return alert("请先在设置里填好 API Key 哦！");
@@ -8376,46 +8377,49 @@ async function startGamePlay() {
     document.getElementById('game-start-view').classList.add('hidden');
     document.getElementById('game-play-view').classList.remove('hidden');
     
-    // 重置界面
     document.getElementById('ai-answer-area').classList.add('hidden');
     document.getElementById('user-game-answer').value = '';
     document.getElementById('ai-reaction').innerText = '';
     document.getElementById('game-question').innerText = "正在穿越时空抽取题目...";
 
     const friend = friendList.find(f => f.id === selectedGameCharId);
-    
-    // 准备给AI的背景
     let memory = friend.memoryList ? friend.memoryList.slice(-5).join(';') : "初次见面";
     
-    // 向AI请求：生成一个问题 + 它的回答
-    let prompt = `你现在扮演 ${friend.realName}。设定是：${friend.persona}。你和用户的部分记忆是：${memory}。\n`;
-    prompt += `【任务】：现在你要和用户玩“默契大考验”。
-    1. 请基于你们的设定和记忆，随机出一个最能考验你们默契的选择题（例如：如果我们去旅游，你会带我去哪？/ 我最喜欢的颜色是什么？/ 如果天塌了，我会做什么？）。
-    2. 请写下你作为这个角色的【真实回答】。
-    
-    请严格返回JSON格式（不要带任何多余文字）：
+    // 加强了指令，修复了返回格式
+    let prompt = `你现在扮演 ${friend.realName}。设定是：${friend.persona}。你和用户的记忆是：${memory}。\n`;
+    prompt += `【任务】：
+    1. 基于你们的设定和记忆，出一道最能考验默契的选择题（例如：关于你的爱好、或者你们曾经聊过的某个话题）。
+    2. 写下你作为这个角色的【真实答案】。
+    请务必严格按照这个格式回复我（不要带任何额外解释）：
     {"question": "问题内容", "answer": "你的回答内容"}`;
 
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${config.apiKey}` 
+            },
             body: JSON.stringify({
                 model: config.model,
                 messages: [{ role: 'system', content: prompt }],
+                // 这里是核心：强制 AI 必须返回干净的 JSON
                 response_format: { type: "json_object" }
             })
         });
+        
+        if (!response.ok) throw new Error("API请求失败");
+        
         const data = await response.json();
         const result = JSON.parse(data.choices[0].message.content);
         
-        // 存起来，等会儿对比
         window.currentGameQuestion = result.question;
         window.currentAiAnswer = result.answer;
-        
         document.getElementById('game-question').innerText = result.question;
     } catch (e) {
-        alert("网络开小差了，请重试！");
+        console.error(e);
+        document.getElementById('game-question').innerText = "加载失败，请检查网络或配置后刷新重试";
+        alert("网络开小差了，可能是API Key配置不对或者网络环境问题。");
     }
 }
 
@@ -8430,10 +8434,9 @@ async function submitUserGameAnswer() {
 
     const friend = friendList.find(f => f.id === selectedGameCharId);
     
-    // 请求AI点评默契度
-    let prompt = `你是 ${friend.realName}。针对刚才的问题“${window.currentGameQuestion}”。\n`;
+    let prompt = `你是 ${friend.realName}。刚才的问题是：“${window.currentGameQuestion}”。\n`;
     prompt += `你的回答是：“${window.currentAiAnswer}”；用户的回答是：“${userAns}”。\n`;
-    prompt += `请根据你的人设，对比两人的答案是否一致，给出一句充满人情味的吐槽、调笑或惊喜的感慨（50字以内）。`;
+    prompt += `请根据你的人设对比两人的答案，给出一段50字以内的调笑、吐槽或欣慰。`;
 
     try {
         const response = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -8447,8 +8450,8 @@ async function submitUserGameAnswer() {
         const data = await response.json();
         document.getElementById('ai-reaction').innerText = data.choices[0].message.content.trim();
     } catch (e) {
-        document.getElementById('ai-reaction').innerText = "（TA已经无语到不想说话了）";
+        document.getElementById('ai-reaction').innerText = "（TA已经害羞/生气到不想说话了）";
     }
 }
-</script>
+<script>
 </html>
