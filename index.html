@@ -4342,6 +4342,21 @@ TimeChecklist:
 
             // ==== 拦截处理 AI 的收钱逻辑（含外卖代付升级版） ====
             if (reply.includes('【接受转账】')) {
+                // 新增：安全获取当前角色的名字（万能防崩溃保护）
+                let roleName = "TA";
+                try {
+                    if (typeof friends !== 'undefined' && typeof currentFriendId !== 'undefined') {
+                        const f = friends.find(x => x.id === currentFriendId);
+                        if (f) roleName = f.remark || f.name;
+                    } else if (typeof friend !== 'undefined') {
+                        roleName = friend.remark || friend.name;
+                    } else if (typeof currentFriend !== 'undefined') {
+                        roleName = currentFriend.remark || currentFriend.name;
+                    }
+                } catch (e) {
+                    console.error("名字获取失败，使用默认值TA");
+                }
+
                 // 1. 尝试寻找普通转账
                 const lastPending = [...chatHistory].reverse().find(m => m.content.includes('|pending]'));
                 if (lastPending) {
@@ -4349,15 +4364,17 @@ TimeChecklist:
                     const amt = parts[3];
                     const tid = parts[1];
                     lastPending.content = `[转账|${tid}|user|${amt}|${parts[4]}|accepted]`;
-                    addTransaction(`TA收了你的转账`, parseFloat(amt), 'income');
+                    if (typeof addTransaction === 'function') {
+                        addTransaction(`TA收了你的转账`, parseFloat(amt), 'income');
+                    }
                     needsFullRender = true;
                 }
 
                 // 2. 尝试寻找外卖代付请求并更新状态
-                const lastWaimai = [...chatHistory].reverse().find(m => m.content.includes('外卖代付请求') && m.content.includes('等待TA付款'));
+                const lastWaimai = [...chatHistory].reverse().find(m => m.content.includes('外卖代付请求') && (m.content.includes('等待TA付款') || m.content.includes('等待付款')));
                 if (lastWaimai) {
-                    // 把“等待TA付款”文字替换掉
-                    lastWaimai.content = lastWaimai.content.replace('等待TA付款...', `${friend.remark}已成功付款`);
+                    // 把“等待TA付款”文字替换掉，兼容各种带不带省略号的情况
+                    lastWaimai.content = lastWaimai.content.replace(/等待TA付款\.{0,3}/, `${roleName}已成功付款`);
                     
                     // 抓取金额用于展示
                     const priceMatch = lastWaimai.content.match(/¥([\d\.]+)/);
@@ -4373,7 +4390,7 @@ TimeChecklist:
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-[14px] font-bold text-gray-800">付款成功</span>
-                                <span class="text-[12px] text-gray-400">${friend.remark}已为你支付 ¥${wmPrice}</span>
+                                <span class="text-[12px] text-gray-400">${roleName}已为你支付 ¥${wmPrice}</span>
                             </div>
                         </div>`
                     });
@@ -4418,7 +4435,7 @@ TimeChecklist:
                 textLines.forEach((line, index) => {
                     const msgObj = { role: 'assistant', content: line };
                     if (index === textLines.length - 1 && (!images || images.length === 0)) {
-                        msgObj.innerVoice = extractedVoice;
+                        msgObj.innerVoice = typeof extractedVoice !== 'undefined' ? extractedVoice : '';
                     }
                     newMessages.push(msgObj);
                 });
@@ -4428,7 +4445,7 @@ TimeChecklist:
                 images.forEach((img, index) => {
                     const msgObj = { role: 'assistant', content: img };
                     if (index === images.length - 1) {
-                        msgObj.innerVoice = extractedVoice;
+                        msgObj.innerVoice = typeof extractedVoice !== 'undefined' ? extractedVoice : '';
                     }
                     newMessages.push(msgObj);
                 });
