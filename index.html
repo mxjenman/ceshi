@@ -300,15 +300,12 @@ openPlaylist();">
             </div>
 
             <div class="w-full flex gap-6 px-2 mt-6">
-                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('默契比心')">
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openMqbxApp()">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-mqbx" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
-                </div>
+                    </div>
                     <span class="text-xs text-gray-600 font-bold drop-shadow-md">默契比心</span>
                 </div>
-                <script>
-                    document.querySelector('[onclick="openPlaceholder(\'默契比心\')"]').setAttribute('onclick', "document.getElementById('game-screen').classList.remove('hidden')");
-                </script>
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openPlaceholder('外卖')">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-waimai" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
@@ -342,53 +339,6 @@ openPlaylist();">
         </div>
     </div>
 
-    <div id="game-screen" class="fixed inset-0 bg-white hidden flex flex-col z-[300]">
-        <div class="h-12 bg-white flex items-center px-4 border-b shrink-0">
-            <button onclick="document.getElementById('game-screen').classList.add('hidden')" class="w-10 text-2xl">×</button>
-            <div class="flex-1 text-center font-bold text-[17px]">默契比心</div>
-            <div class="w-10"></div>
-        </div>
-        
-        <div id="game-main" class="flex-1 flex flex-col items-center p-6 bg-[#fdf2f2]">
-            <div id="game-start-view" class="w-full flex flex-col items-center mt-20">
-                <div class="text-4xl mb-4">💓</div>
-                <h2 class="text-xl font-bold text-[#ff6b6b] mb-8">默契大考验</h2>
-                <button onclick="openGameCharSelect()" class="bg-[#ff6b6b] text-white px-10 py-4 rounded-full font-bold shadow-lg active:scale-95 transition-transform">开始挑战</button>
-            </div>
-
-            <div id="game-play-view" class="hidden w-full flex flex-col items-center">
-                <div class="bg-white rounded-3xl p-6 shadow-md w-full mb-6 border-2 border-[#ffc9c9]">
-                    <div class="text-[#ff6b6b] text-xs font-bold mb-2">随机问题：</div>
-                    <div id="game-question" class="text-gray-800 text-lg font-medium leading-relaxed">正在抽取问题...</div>
-                </div>
-
-                <div class="w-full space-y-4">
-                    <div class="text-sm text-gray-400 text-center">—— 你的回答 ——</div>
-                    <textarea id="user-game-answer" class="w-full border-2 border-gray-100 rounded-2xl p-4 h-24 outline-none focus:border-[#ff6b6b] transition-colors bg-white/50" placeholder="写下你的答案..."></textarea>
-                    <button id="submit-answer-btn" onclick="submitUserGameAnswer()" class="w-full bg-black text-white py-3 rounded-xl font-bold shadow-md active:scale-95">我选好了</button>
-                </div>
-
-                <div id="ai-answer-area" class="hidden w-full mt-8 animate-in">
-                    <div class="text-sm text-gray-400 text-center mb-4">—— TA的回答 ——</div>
-                    <div class="bg-[#fff5f5] rounded-2xl p-5 border-2 border-dashed border-[#ffb3b3] relative">
-                        <div id="ai-game-answer" class="text-gray-700 italic">TA正在思考...</div>
-                    </div>
-                    <div id="ai-reaction" class="mt-4 p-4 bg-white rounded-xl text-sm text-[#ff6b6b] font-medium text-center shadow-sm"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="game-char-modal" class="fixed inset-0 bg-black/60 hidden z-[310] flex items-center justify-center p-6">
-        <div class="absolute inset-0" onclick="document.getElementById('game-char-modal').classList.add('hidden')"></div>
-        
-        <div class="bg-white rounded-[32px] w-full max-w-sm p-6 shadow-2xl relative z-10 animate-in">
-            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">选择一个角色共同挑战</h3>
-            <div id="game-char-list" class="max-h-[300px] overflow-y-auto mb-6 flex flex-col gap-2 p-1">
-                </div>
-            <button onclick="startGamePlay()" class="w-full py-4 bg-black text-white rounded-full font-bold text-[16px] shadow-lg active:scale-95 transition-transform">开始挑战</button>
-        </div>
-    </div>
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
         <div id="wechat-header" class="h-12 bg-[#ededed] flex items-center px-4 border-b border-gray-200 transition-all">
@@ -1038,6 +988,59 @@ openPlaylist();">
             <div class="w-6"></div>
         </div>
         <div class="flex-1 flex items-center justify-center text-gray-400 italic">暂且空白...</div>
+    </div>
+
+    <div id="mqbx-app-screen" class="fixed inset-0 bg-[#f7f7f7] hidden flex flex-col z-[80]">
+        <div class="h-12 bg-white flex items-center px-4 border-b shadow-sm z-10">
+            <button onclick="closeMqbxApp()" class="back-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-[17px] tracking-wide">默契比心</div>
+            <div class="w-6"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 flex flex-col relative bg-[#f4f5f7]">
+            <div id="mqbx-game-area" class="hidden flex-col h-full">
+                <div class="bg-white rounded-[24px] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.03)] mb-5 relative mt-6 border border-gray-100">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-black text-white px-5 py-1.5 rounded-full text-[13px] font-bold shadow-md tracking-widest whitespace-nowrap">默契大考验</div>
+                    <div id="mqbx-question" class="text-center font-bold text-[16px] mt-3 text-gray-800 leading-relaxed">正在生成灵魂拷问...</div>
+                </div>
+                
+                <div class="bg-white rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.03)] mb-5 border border-gray-100">
+                    <div class="flex items-center gap-3 mb-3 border-b border-gray-50 pb-3">
+                        <img id="mqbx-char-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                        <span id="mqbx-char-name" class="font-bold text-[15px] text-gray-800">TA</span>
+                    </div>
+                    <div id="mqbx-char-status" class="text-center text-sm text-gray-400 italic py-5">TA正在苦思冥想...</div>
+                    <div id="mqbx-char-answer" class="hidden text-center text-[16px] font-bold text-black py-4 bg-gray-50 rounded-xl">？未查看？</div>
+                </div>
+
+                <div class="bg-white rounded-[24px] p-5 shadow-[0_4px_15px_rgba(0,0,0,0.03)] mb-6 flex-1 border border-gray-100">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img id="mqbx-user-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                        <span class="font-bold text-[15px] text-gray-800">我</span>
+                    </div>
+                    <textarea id="mqbx-user-input" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none resize-none h-24 text-[15px] text-gray-800" placeholder="等待TA回答完后，写下你的答案..." disabled></textarea>
+                </div>
+                
+                <button id="mqbx-action-btn" class="w-full py-3.5 bg-black text-white rounded-[20px] font-bold text-[16px] shadow-lg active:scale-95 transition-transform opacity-50 pointer-events-none mb-4 shrink-0" onclick="submitMqbxAnswer()">TA还没答完哦</button>
+                
+                <div id="mqbx-comment-area" class="hidden bg-[#f0f5ff] border border-blue-100 rounded-[24px] p-5 relative mb-6 shrink-0 mt-4 animate-in">
+                    <div class="absolute -top-3 left-6 bg-blue-500 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">TA的反应</div>
+                    <div id="mqbx-char-comment" class="text-[15px] text-gray-800 leading-relaxed mt-2 font-medium"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mqbx-char-modal" class="fixed inset-0 bg-black/60 hidden z-[90] flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-[28px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[75vh]">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">选择比心对象</h3>
+            <div id="mqbx-char-list" class="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-2 flex flex-col gap-2 mb-5 border border-gray-100">
+            </div>
+            <button onclick="closeMqbxApp()" class="w-full py-3 bg-white border-2 border-gray-200 rounded-full font-bold text-gray-600 text-[16px] active:bg-gray-50 transition-colors">退出</button>
+        </div>
     </div>
 
     <div id="record-app-screen" class="fixed inset-0 bg-[#f7f7f7] hidden flex flex-col z-[80]">
@@ -4562,7 +4565,170 @@ function openPlaceholder(id) {
     document.getElementById('placeholder-title').innerText = '占位APP ' + id;
     document.getElementById('placeholder-screen').classList.remove('hidden');
 }
-function closePlaceholder() { document.getElementById('placeholder-screen').classList.add('hidden'); }
+function closePlaceholder() {
+    document.getElementById('placeholder-screen').classList.add('hidden');
+}
+
+// === 默契比心APP核心逻辑 ===
+let mqbxCurrentCharId = null;
+let mqbxQuestion = "";
+let mqbxCharAnswerText = "";
+
+function openMqbxApp() {
+    document.getElementById('mqbx-app-screen').classList.remove('hidden');
+    document.getElementById('mqbx-game-area').classList.add('hidden');
+    document.getElementById('mqbx-char-modal').classList.remove('hidden');
+    
+    const list = document.getElementById('mqbx-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    if(friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没添加好友，快去微信列表加一个吧</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-200 rounded-xl border border-gray-100 bg-white mb-2 active:scale-95 transition-transform" onclick="startMqbxGame('${f.id}')">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover">
+                    <span class="font-bold text-[15px] text-gray-700 flex-1">${f.remark}</span>
+                </div>
+            `;
+        });
+    }
+}
+
+function closeMqbxApp() {
+    document.getElementById('mqbx-app-screen').classList.add('hidden');
+    document.getElementById('mqbx-char-modal').classList.add('hidden');
+}
+
+async function startMqbxGame(charId) {
+    if (!config.apiKey) return alert("请先在设置中配置 API Key！");
+    mqbxCurrentCharId = charId;
+    const friend = friendList.find(f => f.id === charId);
+    if(!friend) return;
+    
+    document.getElementById('mqbx-char-modal').classList.add('hidden');
+    document.getElementById('mqbx-game-area').classList.remove('hidden');
+    document.getElementById('mqbx-comment-area').classList.add('hidden');
+    
+    document.getElementById('mqbx-char-avatar').src = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    document.getElementById('mqbx-char-name').innerText = friend.remark;
+    document.getElementById('mqbx-user-avatar').src = userProfile.avatar || 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';
+    
+    const qEl = document.getElementById('mqbx-question');
+    const statusEl = document.getElementById('mqbx-char-status');
+    const ansEl = document.getElementById('mqbx-char-answer');
+    const inputEl = document.getElementById('mqbx-user-input');
+    const btn = document.getElementById('mqbx-action-btn');
+    
+    qEl.innerHTML = '正在生成灵魂拷问<span class="animate-pulse">...</span>';
+    statusEl.innerText = 'TA正在苦思冥想...';
+    statusEl.classList.remove('hidden');
+    ansEl.classList.add('hidden');
+    inputEl.value = '';
+    inputEl.disabled = true;
+    inputEl.placeholder = "等待生成问题...";
+    btn.innerText = "生成中...";
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+    btn.onclick = submitMqbxAnswer;
+
+    // 1. 出题 (基于记忆和人设)
+    let memoryText = friend.memoryList ? friend.memoryList.join(';') : (friend.aiMemory || "");
+    let promptQ = `你需要出一个“默契度测试”的问题。参与者是我和角色“${friend.realName}”。角色的设定是：${friend.persona}。我们之前的记忆点：${memoryText}。请结合我们的设定或记忆，随机提出一个刁钻、有趣或日常的二选一/简答默契问题（例如：“假如流落荒岛，你们俩谁会先饿死？”或“约会迟到半小时，对方第一句话会说什么？”）。只需输出问题文本，绝对不要带任何前缀或分析。`;
+
+    try {
+        const resQ = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({ model: config.model, messages: [{role: 'user', content: promptQ}], temperature: 0.9 })
+        });
+        const dataQ = await resQ.json();
+        mqbxQuestion = dataQ.choices[0].message.content.trim();
+        qEl.innerText = mqbxQuestion;
+        
+        // 2. 角色偷偷作答
+        inputEl.placeholder = "等待TA写下答案...";
+        let promptA = `你扮演“${friend.realName}”，设定是：${friend.persona}。现在我们在玩默契游戏，问题是：“${mqbxQuestion}”。请直接给出你的答案（简短，一句话内），一定要符合你的人设。不要带多余的动作描写，只输出纯文本答案。`;
+
+        const resA = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({ model: config.model, messages: [{role: 'user', content: promptA}], temperature: 0.8 })
+        });
+        const dataA = await resA.json();
+        mqbxCharAnswerText = dataA.choices[0].message.content.trim();
+        
+        // 角色答完了，放开用户的输入框
+        statusEl.classList.add('hidden');
+        ansEl.classList.remove('hidden');
+        ansEl.innerText = "？已隐藏，等你作答后可见？";
+        ansEl.classList.add('text-gray-400', 'italic');
+        ansEl.classList.remove('text-black', 'not-italic');
+        
+        inputEl.disabled = false;
+        inputEl.placeholder = "TA已经答完了！轮到你了，写下你的答案吧...";
+        btn.innerText = "提交并查看TA的答案";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+
+    } catch (e) {
+        qEl.innerText = "网络错误，请重试";
+    }
+}
+
+async function submitMqbxAnswer() {
+    const inputEl = document.getElementById('mqbx-user-input');
+    const userAns = inputEl.value.trim();
+    if (!userAns) return alert("你还没写答案呢！");
+    
+    const ansEl = document.getElementById('mqbx-char-answer');
+    const btn = document.getElementById('mqbx-action-btn');
+    const commentArea = document.getElementById('mqbx-comment-area');
+    const commentText = document.getElementById('mqbx-char-comment');
+    
+    // 显示角色真正的答案
+    ansEl.innerText = mqbxCharAnswerText;
+    ansEl.classList.remove('text-gray-400', 'italic');
+    ansEl.classList.add('text-black', 'not-italic');
+    
+    inputEl.disabled = true;
+    btn.innerText = "正在等待TA的反应...";
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+    
+    // 3. 角色点评审判
+    const friend = friendList.find(f => f.id === mqbxCurrentCharId);
+    let promptC = `你扮演“${friend.realName}”，设定是：${friend.persona}。你们刚刚玩了默契游戏。
+问题是：“${mqbxQuestion}”
+你的答案是：“${mqbxCharAnswerText}”
+用户的答案是：“${userAns}”
+请根据你们的答案是否一致/有默契，给出一句充满你人设特点的点评、吐槽、牢骚或调笑（控制在50字内）。直接输出你要说的话，不要带任何前缀。`;
+
+    try {
+        const resC = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}`},
+            body: JSON.stringify({ model: config.model, messages: [{role: 'user', content: promptC}], temperature: 0.8 })
+        });
+        const dataC = await resC.json();
+        const comment = dataC.choices[0].message.content.trim();
+        
+        commentArea.classList.remove('hidden');
+        commentText.innerText = comment;
+        
+        btn.innerText = "再玩一次";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        btn.onclick = () => startMqbxGame(mqbxCurrentCharId);
+        
+    } catch(e) {
+        btn.innerText = "再玩一次 (网络出错)";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        btn.onclick = () => startMqbxGame(mqbxCurrentCharId);
+    }
+}
 
 function updateWidgetTime() {
     const now = new Date();
@@ -8342,116 +8508,4 @@ async function executeAutoMomentPost(friend) {
 }
 </script>
 </body>
-<script>
-// --- 默契挑战小游戏大脑逻辑 (修复加强版) ---
-let selectedGameCharId = null;
-
-// 1. 打开选人弹窗
-function openGameCharSelect() {
-    const list = document.getElementById('game-char-list');
-    list.innerHTML = '';
-    const friends = friendList.filter(f => !f.isGroup);
-    
-    if (friends.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 py-10">你还没有添加任何角色哦</div>';
-    } else {
-        friends.forEach(f => {
-            list.innerHTML += `
-                <label class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl cursor-pointer border-2 border-transparent has-[:checked]:border-black has-[:checked]:bg-gray-100">
-                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover">
-                    <span class="font-bold flex-1 text-gray-800">${f.remark}</span>
-                    <input type="radio" name="game-char" value="${f.id}" class="w-5 h-5 accent-black" onchange="selectedGameCharId='${f.id}'">
-                </label>
-            `;
-        });
-    }
-    document.getElementById('game-char-modal').classList.remove('hidden');
-}
-
-// 2. 点击“开始挑战” (这里修复了网络错误)
-async function startGamePlay() {
-    if (!selectedGameCharId) return alert("请先勾选一个角色！");
-    if (!config.apiKey) return alert("请先在设置里填好 API Key 哦！");
-
-    document.getElementById('game-char-modal').classList.add('hidden');
-    document.getElementById('game-start-view').classList.add('hidden');
-    document.getElementById('game-play-view').classList.remove('hidden');
-    
-    document.getElementById('ai-answer-area').classList.add('hidden');
-    document.getElementById('user-game-answer').value = '';
-    document.getElementById('ai-reaction').innerText = '';
-    document.getElementById('game-question').innerText = "正在穿越时空抽取题目...";
-
-    const friend = friendList.find(f => f.id === selectedGameCharId);
-    let memory = friend.memoryList ? friend.memoryList.slice(-5).join(';') : "初次见面";
-    
-    // 加强了指令，修复了返回格式
-    let prompt = `你现在扮演 ${friend.realName}。设定是：${friend.persona}。你和用户的记忆是：${memory}。\n`;
-    prompt += `【任务】：
-    1. 基于你们的设定和记忆，出一道最能考验默契的选择题（例如：关于你的爱好、或者你们曾经聊过的某个话题）。
-    2. 写下你作为这个角色的【真实答案】。
-    请务必严格按照这个格式回复我（不要带任何额外解释）：
-    {"question": "问题内容", "answer": "你的回答内容"}`;
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${config.apiKey}` 
-            },
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{ role: 'system', content: prompt }],
-                // 这里是核心：强制 AI 必须返回干净的 JSON
-                response_format: { type: "json_object" }
-            })
-        });
-        
-        if (!response.ok) throw new Error("API请求失败");
-        
-        const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content);
-        
-        window.currentGameQuestion = result.question;
-        window.currentAiAnswer = result.answer;
-        document.getElementById('game-question').innerText = result.question;
-    } catch (e) {
-        console.error(e);
-        document.getElementById('game-question').innerText = "加载失败，请检查网络或配置后刷新重试";
-        alert("网络开小差了，可能是API Key配置不对或者网络环境问题。");
-    }
-}
-
-// 3. 用户提交答案并查看结果
-async function submitUserGameAnswer() {
-    const userAns = document.getElementById('user-game-answer').value.trim();
-    if (!userAns) return alert("写点什么吧，别交白卷呀！");
-    
-    document.getElementById('ai-answer-area').classList.remove('hidden');
-    document.getElementById('ai-game-answer').innerText = window.currentAiAnswer;
-    document.getElementById('ai-reaction').innerText = "TA正在对答案发表看法...";
-
-    const friend = friendList.find(f => f.id === selectedGameCharId);
-    
-    let prompt = `你是 ${friend.realName}。刚才的问题是：“${window.currentGameQuestion}”。\n`;
-    prompt += `你的回答是：“${window.currentAiAnswer}”；用户的回答是：“${userAns}”。\n`;
-    prompt += `请根据你的人设对比两人的答案，给出一段50字以内的调笑、吐槽或欣慰。`;
-
-    try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
-            body: JSON.stringify({
-                model: config.model,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
-        const data = await response.json();
-        document.getElementById('ai-reaction').innerText = data.choices[0].message.content.trim();
-    } catch (e) {
-        document.getElementById('ai-reaction').innerText = "（TA已经害羞/生气到不想说话了）";
-    }
-}
-<script>
 </html>
