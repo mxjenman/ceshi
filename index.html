@@ -2215,7 +2215,7 @@ function closeVcTranscript() {
     }, 300);
 }
 
-// ================= 终极内存解放补丁：极致图片压缩（存一万张图也不怕版） =================
+// ================= 终极内存解放补丁：智能图片压缩（兼顾清晰度与省内存版） =================
 
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
@@ -2227,8 +2227,8 @@ FileReader.prototype.readAsDataURL = function(file) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // 极限压缩：图片最大只保留 500 像素，手机屏幕看完全够了
-            const MAX_SIZE = 500;
+            // 【我帮你修改了这里】：把最大像素从 500 提升到了 1500，这样当壁纸绝对不会糊了！
+            const MAX_SIZE = 1500;
             let width = img.width;
             let height = img.height;
             
@@ -2244,8 +2244,8 @@ FileReader.prototype.readAsDataURL = function(file) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
-            // 质量调到 0.4，体积直接缩小 100 倍！
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+            // 【我帮你修改了这里】：质量调到 0.75，既能压缩体积省下大量内存，又能保持极高的清晰度！
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
             if (typeof this.onload === 'function') {
                 this.onload({ target: { result: dataUrl } });
             }
