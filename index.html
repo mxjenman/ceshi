@@ -4163,22 +4163,49 @@ function renderAllMessages(isIncremental = false) {
             }
         }
 
-        // 核心修改：每条消息都显示时间戳！并且字体缩小一丢丢变成了 text-[10px]
+        // 终极修复：注入“CSS隐身魔术”
+        // 原理：让浏览器自动监控，只要它发现两个同类气泡挨在一起，自动隐藏上面那个的时间，并缩小间距！
+        let magicCss = '';
+        if (!document.getElementById('magic-timestamp-css')) {
+            magicCss = `
+            <style id="magic-timestamp-css">
+                /* 默认让所有消息底部空隙大一点，留出地方放时间 */
+                #chat-box > div.justify-end, 
+                #chat-box > div.justify-start { 
+                    margin-bottom: 1.75rem !important; 
+                }
+                
+                /* 魔术发生处：如果下面紧接着同类消息，瞬间把间距缩回原来大小 */
+                #chat-box > div.justify-end:has(+ div.justify-end) { 
+                    margin-bottom: 1rem !important; 
+                }
+                #chat-box > div.justify-start:has(+ div.justify-start) { 
+                    margin-bottom: 1rem !important; 
+                }
+                
+                /* 魔术发生处：如果下面紧接着同类消息，瞬间把当前时间戳变隐身！ */
+                #chat-box > div.justify-end:has(+ div.justify-end) .msg-time-stamp,
+                #chat-box > div.justify-start:has(+ div.justify-start) .msg-time-stamp { 
+                    display: none !important; 
+                }
+            </style>`;
+        }
+
+        // 给每一条生成的消息都带上时间戳标签，把剩下的工作放心交给上面的魔术代码去自动隐身
+        // 修改：字体从 text-[11px] 缩小到了 text-[8px]；间距从 8px 缩小到了 6px，实现向左右气泡各自靠拢 2px。
         let timeStampHtml = '';
         if (msg.role === 'user') {
-            // 你的消息在右侧，时间戳放到气泡外面（左边），与底部平齐
-            timeStampHtml = `<span class="absolute right-[100%] bottom-0 mr-2 text-[10px] text-gray-400 font-medium whitespace-nowrap">${displayTime}</span>`;
+            timeStampHtml = `<span class="absolute right-[100%] bottom-0 mr-[6px] text-[8px] text-gray-400 font-medium whitespace-nowrap msg-time-stamp">${displayTime}</span>`;
         } else {
-            // AI消息在左侧，时间戳放到气泡外面（右边），与底部平齐
-            timeStampHtml = `<span class="absolute left-[100%] bottom-0 ml-2 text-[10px] text-gray-400 font-medium whitespace-nowrap">${displayTime}</span>`;
+            timeStampHtml = `<span class="absolute left-[100%] bottom-0 ml-[6px] text-[8px] text-gray-400 font-medium whitespace-nowrap msg-time-stamp">${displayTime}</span>`;
         }
 
         if (customBubbleHtml) {
-            bubbleHtml = customBubbleHtml;
+            bubbleHtml = magicCss + customBubbleHtml;
         } else if (msg.role === 'user') {
             if (isMedia) {
                 // 纯图片/表情包模式（无气泡）
-                bubbleHtml = `
+                bubbleHtml = magicCss + `
                     ${checkboxHtml}
                     <div class="chat-msg-user relative max-w-[72%] break-words" style="width: fit-content;">
                         ${quoteHtml}${displayContent}
@@ -4188,7 +4215,7 @@ function renderAllMessages(isIncremental = false) {
                 `;
             } else {
                 // 普通文字模式（有气泡）
-                bubbleHtml = `
+                bubbleHtml = magicCss + `
                     ${checkboxHtml}
                     <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
@@ -4201,7 +4228,7 @@ function renderAllMessages(isIncremental = false) {
         } else {
             if (isMedia) {
                 // AI发图片/表情包模式（无气泡）
-                bubbleHtml = `
+                bubbleHtml = magicCss + `
                     ${checkboxHtml}
                     <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
                     <div class="chat-msg-ai relative max-w-[72%] break-words" style="width: fit-content;">
@@ -4211,7 +4238,7 @@ function renderAllMessages(isIncremental = false) {
                 `;
             } else {
                 // AI普通文字模式（有气泡）
-                bubbleHtml = `
+                bubbleHtml = magicCss + `
                     ${checkboxHtml}
                     <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
                     <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
