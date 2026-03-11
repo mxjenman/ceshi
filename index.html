@@ -507,11 +507,6 @@ openPlaylist();">
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openBubbleSettings()">
                     <span class="text-[16px] text-black">气泡</span>
                 </div>
-                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="document.getElementById('fi-user-avatar-input').click()">
-                    <span class="text-[16px] text-black">我的专属头像 (当前聊天)</span>
-                    <img id="fi-user-avatar-preview" src="" class="w-8 h-8 rounded-[4px] object-cover hidden">
-                </div>
-                <input type="file" id="fi-user-avatar-input" class="hidden" accept="image/*" onchange="changeUserChatAvatar(this)">
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openOtherSettings()">
                     <span class="text-[16px] text-black">其他 (高级管理)</span>
                 </div>
@@ -3930,38 +3925,7 @@ function openFriendInfo() {
     document.getElementById('fi-name').innerText = friend.remark;
     document.getElementById('fi-desc').innerText = friend.desc || '亲爱的雪人先生 为什么天一亮你就会不见呢？';
     
-    // 新增：如果有设置我自己的专属头像，就显示在右边预览
-    const userAvatarPreview = document.getElementById('fi-user-avatar-preview');
-    if (friend.userAvatar) {
-        userAvatarPreview.src = friend.userAvatar;
-        userAvatarPreview.classList.remove('hidden');
-    } else {
-        userAvatarPreview.src = '';
-        userAvatarPreview.classList.add('hidden');
-    }
-
     document.getElementById('friend-info-page').classList.remove('slide-hidden');
-}
-
-// 新增功能：更改我在当前聊天窗口的专属头像
-function changeUserChatAvatar(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const newSrc = e.target.result;
-            const friend = friendList.find(f => f.id === currentFriendId);
-            if(friend) {
-                friend.userAvatar = newSrc; // 把头像存进这个好友的数据里
-                localStorage.setItem('friend_list', JSON.stringify(friendList));
-                document.getElementById('fi-user-avatar-preview').src = newSrc;
-                document.getElementById('fi-user-avatar-preview').classList.remove('hidden');
-                // 立刻刷新聊天记录，让新面孔出现
-                renderAllMessages(false); 
-            }
-        };
-        reader.readAsDataURL(input.files[0]);
-        input.value = '';
-    }
 }
 
 function closeFriendInfo() { document.getElementById('friend-info-page').classList.add('slide-hidden'); }
