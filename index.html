@@ -4136,13 +4136,41 @@ function renderAllMessages(isIncremental = false) {
             }
         }
         // ===================================
-
         let bubbleHtml = '';
         // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
         let isMedia = false;
         let contentForCheck = displayContent.trim();
         if (contentForCheck.startsWith('<img') || contentForCheck.startsWith('<div class="desc-photo-container"')) {
             isMedia = true;
+        }
+
+        // --- 新增：判断本轮最后一条并生成时间戳 ---
+        let isLastInRound = false;
+        if (index === chatHistory.length - 1) {
+            isLastInRound = true;
+        } else if (chatHistory[index + 1].role !== msg.role) {
+            isLastInRound = true;
+        } else if (chatHistory[index + 1].content.startsWith('[系统消息:')) {
+            isLastInRound = true;
+        }
+
+        if (!msg.time) {
+            const now = new Date();
+            msg.time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+
+        let timeStampHtml = '';
+        if (isLastInRound) {
+            if (msg.role === 'user') {
+                // 你的消息在右边，时间戳放左下角
+                timeStampHtml = `<span class="absolute -bottom-[20px] left-1 text-[11px] text-gray-400 font-medium whitespace-nowrap">${msg.time}</span>`;
+            } else {
+                // 对方消息在左边，时间戳放右下角
+                timeStampHtml = `<span class="absolute -bottom-[20px] right-1 text-[11px] text-gray-400 font-medium whitespace-nowrap">${msg.time}</span>`;
+            }
+            // 顺便把外层盒子的底部间距拉大，防止时间戳和下面一轮的头像重叠打架
+            div.classList.remove('mb-4');
+            div.classList.add('mb-7');
         }
 
         if (customBubbleHtml) {
@@ -4154,6 +4182,7 @@ function renderAllMessages(isIncremental = false) {
                     ${checkboxHtml}
                     <div class="chat-msg-user relative max-w-[72%] break-words" style="width: fit-content;">
                         ${quoteHtml}${displayContent}
+                        ${timeStampHtml}
                     </div>
                     <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
@@ -4164,6 +4193,7 @@ function renderAllMessages(isIncremental = false) {
                     <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
                         <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        ${timeStampHtml}
                     </div>
                     <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
@@ -4176,6 +4206,7 @@ function renderAllMessages(isIncremental = false) {
                     <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
                     <div class="chat-msg-ai relative max-w-[72%] break-words" style="width: fit-content;">
                         ${quoteHtml}${displayContent}
+                        ${timeStampHtml}
                     </div>
                 `;
             } else {
@@ -4186,11 +4217,12 @@ function renderAllMessages(isIncremental = false) {
                     <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
                         <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        ${timeStampHtml}
                     </div>
                 `;
             }
         }
-        
+
         div.innerHTML = bubbleHtml;
 
         // 获取里面的真实气泡（而不是整行），让弹窗精准对齐气泡
