@@ -507,6 +507,11 @@ openPlaylist();">
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openBubbleSettings()">
                     <span class="text-[16px] text-black">气泡</span>
                 </div>
+                <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="document.getElementById('fi-user-avatar-input').click()">
+                    <span class="text-[16px] text-black">我的专属头像 (当前聊天)</span>
+                    <img id="fi-user-avatar-preview" src="" class="w-8 h-8 rounded-[4px] object-cover hidden">
+                </div>
+                <input type="file" id="fi-user-avatar-input" class="hidden" accept="image/*" onchange="changeUserChatAvatar(this)">
                 <div class="py-4 px-4 border-b-[0.5px] border-gray-100 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="openOtherSettings()">
                     <span class="text-[16px] text-black">其他 (高级管理)</span>
                 </div>
@@ -3911,7 +3916,38 @@ function openFriendInfo() {
     document.getElementById('fi-name').innerText = friend.remark;
     document.getElementById('fi-desc').innerText = friend.desc || '亲爱的雪人先生 为什么天一亮你就会不见呢？';
     
+    // 新增：如果有设置我自己的专属头像，就显示在右边预览
+    const userAvatarPreview = document.getElementById('fi-user-avatar-preview');
+    if (friend.userAvatar) {
+        userAvatarPreview.src = friend.userAvatar;
+        userAvatarPreview.classList.remove('hidden');
+    } else {
+        userAvatarPreview.src = '';
+        userAvatarPreview.classList.add('hidden');
+    }
+
     document.getElementById('friend-info-page').classList.remove('slide-hidden');
+}
+
+// 新增功能：更改我在当前聊天窗口的专属头像
+function changeUserChatAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const newSrc = e.target.result;
+            const friend = friendList.find(f => f.id === currentFriendId);
+            if(friend) {
+                friend.userAvatar = newSrc; // 把头像存进这个好友的数据里
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
+                document.getElementById('fi-user-avatar-preview').src = newSrc;
+                document.getElementById('fi-user-avatar-preview').classList.remove('hidden');
+                // 立刻刷新聊天记录，让新面孔出现
+                renderAllMessages(false); 
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = '';
+    }
 }
 
 function closeFriendInfo() { document.getElementById('friend-info-page').classList.add('slide-hidden'); }
@@ -3995,29 +4031,29 @@ function closeChatDetail() {
 // 新增 isIncremental 参数：解决一闪一顿的问题！
 function renderAllMessages(isIncremental = false) {
     const container = document.getElementById('chat-flow');
-    
     // 如果不是只加新消息（比如平时刚打开聊天、删除消息时），才清空屏幕重画
     if (!isIncremental) {
         container.innerHTML = '<div class="text-center text-xs text-gray-400 my-4">开始与 AI 好友聊天吧</div>';
     }
-    
-    // 记住屏幕上已经有几条消息了
-    const alreadyDrawnCount = isIncremental ? container.querySelectorAll('.animate-in').length : 0;
 
-    let aiAvatarUrl = "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg";
-    if (currentFriendId) {
-        const friend = friendList.find(f => f.id === currentFriendId);
-        if (friend && friend.avatar) aiAvatarUrl = friend.avatar;
-    }
+    if (!currentFriendId) return;
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if (!friend) return;
+    const aiAvatarUrl = friend.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    
+    // 获取当前聊天你专属的头像，如果没有设置就默认用主页（全局）的头像
+    const myAvatarUrl = friend.userAvatar || userProfile.avatar;
+
+    // 重点：计算之前已经渲染了多少条消息，增量渲染时跳过之前的
+    const alreadyDrawnCount = isIncremental ? container.querySelectorAll('.chat-bubble-wrapper').length : 0;
 
     chatHistory.forEach((msg, index) => {
-        // 【闪烁修复魔法】：如果是只加新消息，并且这条消息之前已经画过了，直接跳过！
         if (isIncremental && index < alreadyDrawnCount) return;
 
         const div = document.createElement('div');
-        div.className = "flex w-full " + (msg.role === 'user' ? "justify-end" : "justify-start") + " items-center mb-4 animate-in relative select-none";
-        
-        // 多选框
+        div.className = "flex w-full chat-bubble-wrapper " + (msg.role === 'user' ? "justify-end" : "justify-start") + " items-end mb-4 relative";
+
+        // 获取多选状态
         let checkboxHtml = '';
         if (isMultiSelecting) {
             const isChecked = selectedMsgIndices.has(index) ? 'checked' : '';
@@ -4035,7 +4071,7 @@ function renderAllMessages(isIncremental = false) {
                 displayContent = displayContent.substring(endIdx + 2);
             }
         }
-        
+
         // 隐藏发给AI的表情包专属密码
         if (displayContent.includes('[我发送了一个表情包，它的意思是：')) {
             displayContent = displayContent.replace(/\[我发送了一个表情包，它的意思是：.*?\]\n/, '');
@@ -4049,10 +4085,10 @@ function renderAllMessages(isIncremental = false) {
         // ======= 转账与系统消息拦截渲染 =======
         if (displayContent.startsWith('[系统消息:')) {
             const parts = displayContent.replace(/\[|\]/g, '').split(':');
-            const sysData = parts[1].split('|'); 
+            const sysData = parts[1].split('|');
             const action = sysData[0];
             const amt = sysData[1];
-            
+
             let friendRemark = "TA";
             if (currentFriendId) {
                 const friend = friendList.find(f => f.id === currentFriendId);
@@ -4064,7 +4100,7 @@ function renderAllMessages(isIncremental = false) {
             if (action === 'TA已收钱') text = `${friendRemark}已收款 ¥${amt}`;
             if (action === '你已退还') text = `你已退还了${friendRemark}的转账 ¥${amt}`;
             if (action === 'TA已退还') text = `${friendRemark}已退还了你的转账 ¥${amt}`;
-            
+
             div.innerHTML = `<div class="system-msg w-full text-center text-[12px] text-gray-400 my-2">${text}</div>`;
             container.appendChild(div);
             return; // 是系统消息就结束渲染，不需要画普通气泡了
@@ -4078,13 +4114,14 @@ function renderAllMessages(isIncremental = false) {
             const amt = parts[3];
             const note = parts[4];
             const status = parts[5]; // 'pending', 'accepted', 'returned'
-            
+
             const isSelf = msg.role === 'user';
+            
             let iconClass = "transfer-icon";
             let bubbleClass = "transfer-bubble";
             let topText = isSelf ? "转账给TA" : "转账给你";
             let bottomText = "转账";
-            
+
             if (status === 'accepted') {
                 bubbleClass += " accepted";
                 iconClass += " accepted";
@@ -4094,30 +4131,29 @@ function renderAllMessages(isIncremental = false) {
                 iconClass += " accepted";
                 topText = "已退还";
             }
-            
+
             let actionsHtml = '';
             // 如果是对方发给我的钱，且还在等待状态，我可以在气泡底下点收下或退还
             if (!isSelf && status === 'pending') {
                 actionsHtml = `
-                <div class="flex justify-around bg-white/20 border-t border-white/20 text-white text-[12px]">
-                    <div class="flex-1 text-center py-2 border-r border-white/20 cursor-pointer active:bg-white/30" onclick="acceptTransfer('${transferId}', '${amt}')">收下</div>
-                    <div class="flex-1 text-center py-2 cursor-pointer active:bg-white/30" onclick="returnTransfer('${transferId}', '${amt}')">退还</div>
-                </div>`;
+                    <div class="flex justify-around bg-white/20 border-t border-white/20 text-white text-[12px]">
+                        <div class="flex-1 text-center py-2 border-r border-white/20 cursor-pointer active:bg-white/30" onclick="acceptTransfer('${transferId}', '${amt}')">收下</div>
+                        <div class="flex-1 text-center py-2 cursor-pointer active:bg-white/30" onclick="returnTransfer('${transferId}', '${amt}')">退还</div>
+                    </div>
+                `;
             }
-            
-            const innerBubble = `
+
+            let innerBubble = `
                 <div class="${bubbleClass}">
                     <div class="transfer-bubble-top">
-                        <div class="${iconClass}">
-                            ${status === 'pending' ? '¥' : '✓'}
-                        </div>
+                        <div class="${iconClass}">¥</div>
                         <div class="transfer-info">
-                            <span class="transfer-amt">¥ ${amt}</span>
-                            <span class="transfer-desc">${status === 'pending' ? note : topText}</span>
+                            <span class="transfer-amt">¥${parseFloat(amt).toFixed(2)}</span>
+                            <span class="transfer-desc">${note}</span>
                         </div>
                     </div>
-                    <div class="transfer-bottom">${bottomText}</div>
                     ${actionsHtml}
+                    <div class="transfer-bottom">${bottomText}</div>
                 </div>
             `;
             
@@ -4125,7 +4161,26 @@ function renderAllMessages(isIncremental = false) {
                 customBubbleHtml = `
                     ${checkboxHtml}
                     ${innerBubble}
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                `;
+            } else {
+                customBubbleHtml = `
+                    ${checkboxHtml}
+                    <img src="${aiAvatarUrl}" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100">
+                    ${innerBubble}
+                `;
+            }
+        }
+        // =======================================
+
+        let innerBubble = friend.bubbleCss ? `<div class="${msg.role === 'user' ? 'chat-msg-user' : 'chat-msg-ai'} relative max-w-[72%] break-words" style="width: fit-content;">${quoteHtml}${displayContent}${timeStampHtml}</div>` : '';
+
+        if (innerBubble) {
+            if (msg.role === 'user') {
+                customBubbleHtml = `
+                    ${checkboxHtml}
+                    ${innerBubble}
+                    <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
                 customBubbleHtml = `
@@ -4135,8 +4190,11 @@ function renderAllMessages(isIncremental = false) {
                 `;
             }
         }
+
         // ===================================
+
         let bubbleHtml = '';
+
         // 判断是不是纯图片或者表情包，如果是，就不要绿底/白底和气泡尾巴
         let isMedia = false;
         let contentForCheck = displayContent.trim();
@@ -4171,22 +4229,22 @@ function renderAllMessages(isIncremental = false) {
             <style id="magic-timestamp-css">
                 /* 默认让所有消息底部空隙大一点，留出地方放时间 */
                 #chat-box > div.justify-end, 
-                #chat-box > div.justify-start { 
-                    margin-bottom: 1.75rem !important; 
+                #chat-box > div.justify-start {
+                    margin-bottom: 1.75rem !important;
                 }
                 
                 /* 魔术发生处：如果下面紧接着同类消息，瞬间把间距缩回原来大小 */
-                #chat-box > div.justify-end:has(+ div.justify-end) { 
-                    margin-bottom: 1rem !important; 
+                #chat-box > div.justify-end:has(+ div.justify-end) {
+                    margin-bottom: 1rem !important;
                 }
-                #chat-box > div.justify-start:has(+ div.justify-start) { 
-                    margin-bottom: 1rem !important; 
+                #chat-box > div.justify-start:has(+ div.justify-start) {
+                    margin-bottom: 1rem !important;
                 }
-                
+
                 /* 魔术发生处：如果下面紧接着同类消息，瞬间把当前时间戳变隐身！ */
                 #chat-box > div.justify-end:has(+ div.justify-end) .msg-time-stamp,
-                #chat-box > div.justify-start:has(+ div.justify-start) .msg-time-stamp { 
-                    display: none !important; 
+                #chat-box > div.justify-start:has(+ div.justify-start) .msg-time-stamp {
+                    display: none !important;
                 }
             </style>`;
         }
@@ -4211,18 +4269,18 @@ function renderAllMessages(isIncremental = false) {
                         ${quoteHtml}${displayContent}
                         ${timeStampHtml}
                     </div>
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
                 // 普通文字模式（有气泡）
                 bubbleHtml = magicCss + `
                     ${checkboxHtml}
-                    <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    <div class="chat-msg-user relative max-w-[72%] bg-[#07c160] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
-                        <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        <img src="https://i.postimg.cc/d1Q4dntX/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
                         ${timeStampHtml}
                     </div>
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             }
         } else {
@@ -4261,11 +4319,11 @@ function renderAllMessages(isIncremental = false) {
             if (isMultiSelecting) return;
             pressTimer = setTimeout(() => {
                 showContextMenu(e, [
-                    { label: '删除', action: () => { 
+                    { label: '删除', action: () => {
                         chatHistory.splice(index, 1); // 彻底从大脑抹除
                         renderAllMessages();
-                     }},
-                    { label: '编辑', action: () => { 
+                    }},
+                    { label: '编辑', action: () => {
                         let rawText = chatHistory[index].content;
                         if (rawText.startsWith('[引用:')) rawText = rawText.substring(rawText.indexOf(']\n') + 2);
                         const res = prompt("编辑消息（AI不会知道）：", rawText);
@@ -4274,19 +4332,19 @@ function renderAllMessages(isIncremental = false) {
                             chatHistory[index].content = prefix + res;
                             renderAllMessages();
                         }
-                     }},
-                    { label: '引用', action: () => { 
+                    }},
+                    { label: '引用', action: () => {
                         let quoteContent = displayContent;
                         // 【新增修复】拦截描述照片的恶心代码，直接变图片
                         if (quoteContent.includes('<div class="desc-photo-container"')) {
-                            quoteContent = '[图片]';
+                            quoteContent = '[图片]'; 
                         }
                         quoteContent = quoteContent.replace(/<img[^>]*>/g, '[图片]');
                         currentQuoteMsg = quoteContent;
                         document.getElementById('chat-input').placeholder = `引用: ${quoteContent.substring(0,8)}...`;
                         document.getElementById('chat-input').focus();
                     }},
-                    { label: '多选', action: () => { 
+                    { label: '多选', action: () => {
                         isMultiSelecting = true;
                         selectedMsgIndices.clear();
                         selectedMsgIndices.add(index); // 默认选中你长按的这条
@@ -4298,7 +4356,7 @@ function renderAllMessages(isIncremental = false) {
             }, 500);
         };
         const cancelMsgPress = () => clearTimeout(pressTimer);
-        
+
         // 绑定事件
         div.addEventListener('touchstart', startMsgPress);
         div.addEventListener('touchend', cancelMsgPress);
@@ -4306,15 +4364,13 @@ function renderAllMessages(isIncremental = false) {
         div.addEventListener('mousedown', startMsgPress);
         div.addEventListener('mouseup', cancelMsgPress);
         div.addEventListener('mouseleave', cancelMsgPress);
-        
+
         // 点击选择(仅在多选模式下生效)
-        div.onclick = (e) => {
-            if (isMultiSelecting) toggleSelectMsg(index, e);
-        };
+        div.onclick = (e) => { if (isMultiSelecting) toggleSelectMsg(index, e); };
 
         container.appendChild(div);
     });
-    
+
     // 渲染完自动滚到底部
     setTimeout(() => {
         // 修改：因为真正负责滚动的其实是外层的外壳，所以要让它的 parentElement 滚到底部
@@ -4994,62 +5050,59 @@ function changeForumAvatar() {
     input.click();
 }
 
-function addPostToFeed(name, handle, text, img, time, isUserPost = false){ 
+function addPostToFeed(name, handle, text, img, time, isUserPost = false){
     const squareFeed = document.getElementById('forum-feed');
-    const profileFeed = document.getElementById('profile-posts-feed'); 
-    const hint = document.getElementById('empty-hint'); 
-    if(hint) hint.remove(); 
+    const profileFeed = document.getElementById('profile-posts-feed');
+    const hint = document.getElementById('empty-hint');
+    if(hint) hint.remove();
 
-    // 这个内部函数负责制造一个推文节点
-    const createNode = () => { 
+    const createNode = () => {
         const div = document.createElement('div');
-        div.className = "tweet-card flex gap-3 animate-in"; 
+        div.className = "tweet-card flex gap-3 animate-in";
+
+        // 修改：论坛发帖使用独立的论坛头像，不再去读取微信头像
         const forumAvatarSrc = document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
-        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"; 
+        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+        
         const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9); 
+        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
         const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9); 
-        div.innerHTML = ` 
-            <img src="${avatarUrl}" class="tweet-avatar"> 
-            <div class="flex-1 min-w-0"> 
-                <div class="flex items-center gap-1"> 
-                    <span class="font-bold text-[15px] truncate">${name}</span> 
-                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span> 
-                </div> 
-                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div> 
-                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""} 
-                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4"> 
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')"> 
-                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
-                        <span id="${id1}">0</span> 
-                    </div> 
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')"> 
-                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
-                        <span id="${id2}">0</span> 
-                    </div> 
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')"> 
-                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
-                        <span id="${id3}">0</span> 
-                    </div> 
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')"> 
-                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
-                        <span id="${id4}">0</span> 
-                    </div> 
-                </div> 
-            </div> `;
-        return div; 
-    }; 
+        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9);
 
-    // 【修改核心】：不论是不是用户发的，都先塞进首页广场
-    if (squareFeed) {
-        squareFeed.prepend(createNode()); 
-    }
-
-    // 如果是你自己发的推文，额外再往“我”的主页里塞一份
-    if (isUserPost && profileFeed) {
-        profileFeed.prepend(createNode()); 
-    }
+        div.innerHTML = `
+            <img src="${avatarUrl}" class="tweet-avatar">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-[15px] truncate">${name}</span>
+                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span>
+                </div>
+                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div>
+                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
+                
+                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4">
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')">
+                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id1}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')">
+                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id2}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')">
+                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id3}">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')">
+                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60">
+                        <span id="${id4}">0</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        return div;
+    };
+    squareFeed.prepend(createNode());
+    if(isUserPost) profileFeed.prepend(createNode());
 }
 
 // 全局保存当前生成的帖子，用于详情页展示
