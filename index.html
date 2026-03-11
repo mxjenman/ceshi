@@ -4521,9 +4521,13 @@ TimeChecklist:
 ============================================`;
     }
 
-    if (friend && friend.isTranslationEnabled) {
-        finalSystemMessage += `\n\n【强制翻译要求】：你开启了多语言自动翻译。你的每一条回复都必须严格使用以下单行HTML代码包裹（绝对不能在代码中间换行！），只需要把里面的[原语言]和[中文翻译]替换成你的回复即可：\n<div style="display:inline-block;font:13px;color:#333;line-height:1.2;padding:6px 7px;"><div style="margin:0 0 5px 6px;font-size:13px;">[原语言]</div><div id="trans-container"><div style="border-top:1px dashed #ccc;width:calc(100% - 4px);"></div><div style="color:#666;margin:3px 0 0 4px;cursor:pointer;" onclick="this.parentElement.style.display=this.parentElement.style.display==='none'?'block':'none'">[中文翻译]</div></div></div>`;
-    }
+if (friend && friend.isTranslationEnabled) {
+    finalSystemMessage += `\n\n【⚠️ 绝对逻辑覆写 / Absolute Logic Overwrite】
+1. 语言强制 (Language Core): 你的思维已被锁定。你必须且只能使用【符合你角色设定的外语（任何语言均可）】进行回复。禁止在代码气泡外部输出任何中文！
+2. 格式协议 (Format Protocol): 说完外语后，必须紧接着（无换行）附加中文翻译气泡。
+3. 严格输出模板 (Strict Template): 请完全按照以下结构填充内容，不要在外语原文周围添加任何括号或符号（注意：HTML代码内部绝对不能换行）：
+<details><summary style="cursor:pointer; list-style:none;">[此处填入外语原文内容]</summary><div style="margin-top:4px; color:#888; font-size: 0.9em;">[此处填入中文翻译内容]</div></details>`; 
+}
     finalSystemMessage += `\n\n当前与你对话的用户信息：
     昵称: ${userProfile.name}
     账号: ${userProfile.handle}
