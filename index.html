@@ -598,7 +598,7 @@ openPlaylist();">
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             <div class="bg-white rounded-[16px] p-4 shadow-sm mb-4">
                 <label class="font-bold text-[#333] text-[14px] mb-2 block">专属聊天背景 (仅此好友)</label>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 mb-4 border-b border-gray-50 pb-4">
                     <div class="w-16 h-24 border-2 border-gray-100 rounded-lg overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center shrink-0">
                         <img id="preview-single-chat-bg" src="" class="w-full h-full object-cover hidden">
                         <span id="single-chat-bg-hint" class="text-[10px] text-gray-400">无背景</span>
@@ -609,6 +609,19 @@ openPlaylist();">
                     </div>
                 </div>
                 <input type="file" id="single-chat-bg-input" class="hidden" accept="image/*" onchange="handleSingleChatBg(this)">
+
+                <label class="font-bold text-[#333] text-[14px] mb-2 block">专属我的头像 (仅此聊天)</label>
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 border-2 border-gray-100 rounded-full overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center shrink-0">
+                        <img id="preview-single-user-avatar" src="" class="w-full h-full object-cover hidden">
+                        <span id="single-user-avatar-hint" class="text-[10px] text-gray-400">默认</span>
+                    </div>
+                    <div class="flex flex-col gap-2 flex-1">
+                        <button onclick="document.getElementById('single-user-avatar-input').click()" class="w-full bg-gray-100 text-black py-2 rounded-lg text-sm font-bold active:scale-95">更换我的头像</button>
+                        <button onclick="clearSingleUserAvatar()" class="w-full bg-red-50 text-red-500 py-2 rounded-lg text-sm font-bold active:scale-95">恢复默认</button>
+                    </div>
+                </div>
+                <input type="file" id="single-user-avatar-input" class="hidden" accept="image/*" onchange="handleSingleUserAvatar(this)">
             </div>
             <div class="bg-white rounded-[16px] p-4 shadow-sm">
                 <div class="flex justify-between items-center mb-2">
@@ -4004,10 +4017,14 @@ function renderAllMessages(isIncremental = false) {
     // 记住屏幕上已经有几条消息了
     const alreadyDrawnCount = isIncremental ? container.querySelectorAll('.animate-in').length : 0;
 
-    let aiAvatarUrl = "https://i.postimg.cc/76N2w5M7/IMG_2980.jpg";
+    let aiAvatarUrl = 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg';
+    let currentUserAvatar = userProfile.avatar; // 默认使用主页设置的头像
     if (currentFriendId) {
         const friend = friendList.find(f => f.id === currentFriendId);
-        if (friend && friend.avatar) aiAvatarUrl = friend.avatar;
+        if (friend) {
+            if (friend.avatar) aiAvatarUrl = friend.avatar;
+            if (friend.userAvatar) currentUserAvatar = friend.userAvatar; // 如果该角色设置了专属用户头像，就覆盖
+        }
     }
 
     chatHistory.forEach((msg, index) => {
@@ -4121,11 +4138,11 @@ function renderAllMessages(isIncremental = false) {
                 </div>
             `;
             
-            if (isSelf) {
+            if (msg.role === 'user') {
                 customBubbleHtml = `
                     ${checkboxHtml}
                     ${innerBubble}
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${currentUserAvatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
                 customBubbleHtml = `
@@ -4211,18 +4228,18 @@ function renderAllMessages(isIncremental = false) {
                         ${quoteHtml}${displayContent}
                         ${timeStampHtml}
                     </div>
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${currentUserAvatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
                 // 普通文字模式（有气泡）
                 bubbleHtml = magicCss + `
                     ${checkboxHtml}
-                    <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    <div class="chat-msg-user relative max-w-[72%] bg-[#07c160] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
-                        <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        <img src="https://i.postimg.cc/QxzGnhwL/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
                         ${timeStampHtml}
                     </div>
-                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                    <img src="${currentUserAvatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             }
         } else {
@@ -7424,9 +7441,7 @@ function openBubbleSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
-    
     document.getElementById('bubble-css-input').value = friend.bubbleCss || '';
-
     if (friend.chatBg) {
         document.getElementById('preview-single-chat-bg').src = friend.chatBg;
         document.getElementById('preview-single-chat-bg').classList.remove('hidden');
@@ -7436,6 +7451,17 @@ function openBubbleSettings() {
         document.getElementById('preview-single-chat-bg').classList.add('hidden');
         document.getElementById('single-chat-bg-hint').classList.remove('hidden');
     }
+    
+    if (friend.userAvatar) {
+        document.getElementById('preview-single-user-avatar').src = friend.userAvatar;
+        document.getElementById('preview-single-user-avatar').classList.remove('hidden');
+        document.getElementById('single-user-avatar-hint').classList.add('hidden');
+    } else {
+        document.getElementById('preview-single-user-avatar').src = '';
+        document.getElementById('preview-single-user-avatar').classList.add('hidden');
+        document.getElementById('single-user-avatar-hint').classList.remove('hidden');
+    }
+    
     renderBubblePresets();
     document.getElementById('bubble-settings-page').classList.remove('slide-hidden');
 }
@@ -7797,6 +7823,45 @@ function clearSingleChatBg() {
         if (friend) {
             friend.chatBg = '';
             localStorage.setItem('friend_list', JSON.stringify(friendList));
+        }
+    }
+}
+
+// 专属用户头像：处理上传
+function handleSingleUserAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const result = e.target.result;
+            document.getElementById('preview-single-user-avatar').src = result;
+            document.getElementById('preview-single-user-avatar').classList.remove('hidden');
+            document.getElementById('single-user-avatar-hint').classList.add('hidden');
+            if (currentFriendId) {
+                const friend = friendList.find(f => f.id === currentFriendId);
+                if (friend) {
+                    friend.userAvatar = result;
+                    localStorage.setItem('friend_list', JSON.stringify(friendList));
+                    alert("✅ 专属你的头像已保存！");
+                    renderAllMessages(); // 刷新聊天界面
+                }
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+        input.value = '';
+    }
+}
+
+// 专属用户头像：清除并恢复默认主页头像
+function clearSingleUserAvatar() {
+    document.getElementById('preview-single-user-avatar').src = '';
+    document.getElementById('preview-single-user-avatar').classList.add('hidden');
+    document.getElementById('single-user-avatar-hint').classList.remove('hidden');
+    if (currentFriendId) {
+        const friend = friendList.find(f => f.id === currentFriendId);
+        if (friend) {
+            friend.userAvatar = '';
+            localStorage.setItem('friend_list', JSON.stringify(friendList));
+            renderAllMessages(); // 刷新聊天界面
         }
     }
 }
