@@ -4144,33 +4144,33 @@ function renderAllMessages(isIncremental = false) {
             isMedia = true;
         }
 
-        // --- 新增：判断本轮最后一条并生成时间戳 ---
-        let isLastInRound = false;
-        if (index === chatHistory.length - 1) {
-            isLastInRound = true;
-        } else if (chatHistory[index + 1].role !== msg.role) {
-            isLastInRound = true;
-        } else if (chatHistory[index + 1].content.startsWith('[系统消息:')) {
-            isLastInRound = true;
-        }
-
         if (!msg.time) {
             const now = new Date();
             msg.time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         }
 
-        let timeStampHtml = '';
-        if (isLastInRound) {
-            if (msg.role === 'user') {
-                // 你的消息在右边，时间戳放左下角
-                timeStampHtml = `<span class="absolute -bottom-[20px] left-1 text-[11px] text-gray-400 font-medium whitespace-nowrap">${msg.time}</span>`;
-            } else {
-                // 对方消息在左边，时间戳放右下角
-                timeStampHtml = `<span class="absolute -bottom-[20px] right-1 text-[11px] text-gray-400 font-medium whitespace-nowrap">${msg.time}</span>`;
+        // 转换为 12 小时制 AM/PM
+        let displayTime = msg.time;
+        if (displayTime) {
+            let parts = displayTime.split(':');
+            if (parts.length === 2) {
+                let h = parseInt(parts[0]);
+                let m = parts[1];
+                let ampm = h >= 12 ? 'PM' : 'AM';
+                let h12 = h % 12;
+                if (h12 === 0) h12 = 12;
+                displayTime = `${ampm} ${h12}:${m}`;
             }
-            // 顺便把外层盒子的底部间距拉大，防止时间戳和下面一轮的头像重叠打架
-            div.classList.remove('mb-4');
-            div.classList.add('mb-7');
+        }
+
+        // 核心修改：每条消息都显示时间戳！并且字体缩小一丢丢变成了 text-[10px]
+        let timeStampHtml = '';
+        if (msg.role === 'user') {
+            // 你的消息在右侧，时间戳放到气泡外面（左边），与底部平齐
+            timeStampHtml = `<span class="absolute right-[100%] bottom-0 mr-2 text-[10px] text-gray-400 font-medium whitespace-nowrap">${displayTime}</span>`;
+        } else {
+            // AI消息在左侧，时间戳放到气泡外面（右边），与底部平齐
+            timeStampHtml = `<span class="absolute left-[100%] bottom-0 ml-2 text-[10px] text-gray-400 font-medium whitespace-nowrap">${displayTime}</span>`;
         }
 
         if (customBubbleHtml) {
