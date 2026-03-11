@@ -601,9 +601,10 @@ openPlaylist();">
             <button onclick="saveBubbleSettings()" class="w-12 text-black font-bold text-[15px] text-right">保存</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+        
             <div class="bg-white rounded-[16px] p-4 shadow-sm mb-4">
                 <label class="font-bold text-[#333] text-[14px] mb-2 block">专属聊天背景 (仅此好友)</label>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 mb-5 border-b border-gray-50 pb-5">
                     <div class="w-16 h-24 border-2 border-gray-100 rounded-lg overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center shrink-0">
                         <img id="preview-single-chat-bg" src="" class="w-full h-full object-cover hidden">
                         <span id="single-chat-bg-hint" class="text-[10px] text-gray-400">无背景</span>
@@ -614,6 +615,19 @@ openPlaylist();">
                     </div>
                 </div>
                 <input type="file" id="single-chat-bg-input" class="hidden" accept="image/*" onchange="handleSingleChatBg(this)">
+
+                <label class="font-bold text-[#333] text-[14px] mb-2 block">我的专属头像 (仅此聊天)</label>
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 border-2 border-gray-100 rounded-full overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center shrink-0">
+                        <img id="preview-user-chat-avatar" src="" class="w-full h-full object-cover hidden">
+                        <span id="user-chat-avatar-hint" class="text-[10px] text-gray-400">默认</span>
+                    </div>
+                    <div class="flex flex-col gap-2 flex-1">
+                        <button onclick="document.getElementById('user-chat-avatar-input').click()" class="w-full bg-gray-100 text-black py-2 rounded-lg text-sm font-bold active:scale-95">更换头像</button>
+                        <button onclick="clearUserChatAvatar()" class="w-full bg-red-50 text-red-500 py-2 rounded-lg text-sm font-bold active:scale-95">恢复默认</button>
+                    </div>
+                </div>
+                <input type="file" id="user-chat-avatar-input" class="hidden" accept="image/*" onchange="handleUserChatAvatar(this)">
             </div>
             <div class="bg-white rounded-[16px] p-4 shadow-sm">
                 <div class="flex justify-between items-center mb-2">
@@ -7482,18 +7496,70 @@ function openBubbleSettings() {
     if (!friend) return;
     
     document.getElementById('bubble-css-input').value = friend.bubbleCss || '';
-
+    
+    // 背景图预览
+    const singleBgImg = document.getElementById('preview-single-chat-bg');
+    const singleBgHint = document.getElementById('single-chat-bg-hint');
     if (friend.chatBg) {
-        document.getElementById('preview-single-chat-bg').src = friend.chatBg;
-        document.getElementById('preview-single-chat-bg').classList.remove('hidden');
-        document.getElementById('single-chat-bg-hint').classList.add('hidden');
+        singleBgImg.src = friend.chatBg;
+        singleBgImg.classList.remove('hidden');
+        singleBgHint.classList.add('hidden');
     } else {
-        document.getElementById('preview-single-chat-bg').src = '';
-        document.getElementById('preview-single-chat-bg').classList.add('hidden');
-        document.getElementById('single-chat-bg-hint').classList.remove('hidden');
+        singleBgImg.src = '';
+        singleBgImg.classList.add('hidden');
+        singleBgHint.classList.remove('hidden');
     }
+
+    // 专属头像预览
+    const userAvatarImg = document.getElementById('preview-user-chat-avatar');
+    const userAvatarHint = document.getElementById('user-chat-avatar-hint');
+    if (friend.userAvatar) {
+        userAvatarImg.src = friend.userAvatar;
+        userAvatarImg.classList.remove('hidden');
+        userAvatarHint.classList.add('hidden');
+    } else {
+        userAvatarImg.src = '';
+        userAvatarImg.classList.add('hidden');
+        userAvatarHint.classList.remove('hidden');
+    }
+    
     renderBubblePresets();
+    document.getElementById('bubble-preset-select').value = "";
+    
     document.getElementById('bubble-settings-page').classList.remove('slide-hidden');
+}
+
+// 处理上传并更改你在这个聊天的专属头像
+function handleUserChatAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const base64 = e.target.result;
+            const friend = friendList.find(f => f.id === currentFriendId);
+            if(friend) {
+                friend.userAvatar = base64; 
+                localStorage.setItem('friend_list', JSON.stringify(friendList));
+                document.getElementById('preview-user-chat-avatar').src = base64;
+                document.getElementById('preview-user-chat-avatar').classList.remove('hidden');
+                document.getElementById('user-chat-avatar-hint').classList.add('hidden');
+                renderAllMessages(false); // 立刻刷新背景和气泡
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 清除专属头像，恢复全局默认微信头像
+function clearUserChatAvatar() {
+    const friend = friendList.find(f => f.id === currentFriendId);
+    if(friend) {
+        friend.userAvatar = null;
+        localStorage.setItem('friend_list', JSON.stringify(friendList));
+        document.getElementById('preview-user-chat-avatar').src = '';
+        document.getElementById('preview-user-chat-avatar').classList.add('hidden');
+        document.getElementById('user-chat-avatar-hint').classList.remove('hidden');
+        renderAllMessages(false); // 立刻刷新气泡
+    }
 }
 
 function closeBubbleSettings() {
