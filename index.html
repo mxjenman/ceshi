@@ -4250,10 +4250,10 @@ function renderAllMessages(isIncremental = false) {
                     <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
                 `;
             } else {
-                // 普通文字模式（有气泡）
+                // 修复版：绿色气泡 + 确保小尾巴图片存在
                 bubbleHtml = magicCss + `
                     ${checkboxHtml}
-                    <div class="chat-msg-user relative max-w-[72%] bg-[#07c160] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
                         <img src="https://i.postimg.cc/d1Q4dntX/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
                         ${timeStampHtml}
