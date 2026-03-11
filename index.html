@@ -592,26 +592,10 @@ openPlaylist();">
             <button onclick="closeBubbleSettings()" class="back-icon w-12 flex justify-start">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18L9 12L15 6"/></svg>
             </button>
-            <div class="flex-1 text-center font-bold text-[17px]">个性化外观</div>
+            <div class="flex-1 text-center font-bold text-[17px]">气泡外观设置</div>
             <button onclick="saveBubbleSettings()" class="w-12 text-black font-bold text-[15px] text-right">保存</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-            <div class="bg-white rounded-[16px] p-4 shadow-sm">
-                <label class="font-bold text-[#333] text-[14px] mb-2 block">在此聊天中使用独立头像</label>
-                <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 border-2 border-gray-100 rounded-full overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center shrink-0">
-                        <img id="preview-single-chat-avatar" src="" class="w-full h-full object-cover hidden">
-                        <span id="single-chat-avatar-hint" class="text-[10px] text-gray-400">默认</span>
-                    </div>
-                    <div class="flex flex-col gap-2 flex-1">
-                        <button onclick="document.getElementById('single-chat-avatar-input').click()" class="w-full bg-gray-100 text-black py-2 rounded-lg text-sm font-bold active:scale-95">更换头像</button>
-                        <button onclick="clearSingleChatAvatar()" class="w-full bg-red-50 text-red-500 py-2 rounded-lg text-sm font-bold active:scale-95">恢复默认</button>
-                    </div>
-                </div>
-                <input type="file" id="single-chat-avatar-input" class="hidden" accept="image/*" onchange="handleSingleChatAvatar(this)">
-                <div class="text-[11px] text-gray-400 mt-2">注：该设置仅在与当前角色的聊天窗生效，不影响主页头像。</div>
-            </div>
-
             <div class="bg-white rounded-[16px] p-4 shadow-sm mb-4">
                 <label class="font-bold text-[#333] text-[14px] mb-2 block">专属聊天背景 (仅此好友)</label>
                 <div class="flex items-center gap-4">
@@ -4216,18 +4200,19 @@ function renderAllMessages(isIncremental = false) {
             timeStampHtml = `<span class="absolute left-[100%] bottom-0 ml-[6px] text-[8px] text-gray-400 font-medium whitespace-nowrap msg-time-stamp">${displayTime}</span>`;
         }
 
-        // 核心修改：决定该用哪个头像
-        const finalUserAvatar = friend.userAvatar || userProfile.avatar || 'https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg';
-
         if (customBubbleHtml) {
-            // 如果是转账等特殊气泡，也要把头像换了
-            if (msg.role === 'user') {
-                customBubbleHtml = customBubbleHtml.replace(userProfile.avatar, finalUserAvatar);
-            }
             bubbleHtml = magicCss + customBubbleHtml;
         } else if (msg.role === 'user') {
-            if (isMedia) { 
-                bubbleHtml = magicCss + ` ${checkboxHtml} <div class="chat-msg-user relative max-w-[72%] break-words" style="width: fit-content;"> ${quoteHtml}${displayContent} ${timeStampHtml} </div> <img src="${finalUserAvatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200"> `;
+            if (isMedia) {
+                // 纯图片/表情包模式（无气泡）
+                bubbleHtml = magicCss + `
+                    ${checkboxHtml}
+                    <div class="chat-msg-user relative max-w-[72%] break-words" style="width: fit-content;">
+                        ${quoteHtml}${displayContent}
+                        ${timeStampHtml}
+                    </div>
+                    <img src="${userProfile.avatar}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
+                `;
             } else {
                 // 普通文字模式（有气泡）
                 bubbleHtml = magicCss + `
@@ -5009,59 +4994,62 @@ function changeForumAvatar() {
     input.click();
 }
 
-function addPostToFeed(name, handle, text, img, time, isUserPost = false){
+function addPostToFeed(name, handle, text, img, time, isUserPost = false){ 
     const squareFeed = document.getElementById('forum-feed');
-    const profileFeed = document.getElementById('profile-posts-feed');
-    const hint = document.getElementById('empty-hint');
-    if(hint) hint.remove();
+    const profileFeed = document.getElementById('profile-posts-feed'); 
+    const hint = document.getElementById('empty-hint'); 
+    if(hint) hint.remove(); 
 
-    const createNode = () => {
+    // 这个内部函数负责制造一个推文节点
+    const createNode = () => { 
         const div = document.createElement('div');
-        div.className = "tweet-card flex gap-3 animate-in";
-
-        // 修改：论坛发帖使用独立的论坛头像，不再去读取微信头像
+        div.className = "tweet-card flex gap-3 animate-in"; 
         const forumAvatarSrc = document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
-        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
-        
+        const avatarUrl = isUserPost ? forumAvatarSrc : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"; 
         const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9); 
         const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
-        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+        const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9); 
+        div.innerHTML = ` 
+            <img src="${avatarUrl}" class="tweet-avatar"> 
+            <div class="flex-1 min-w-0"> 
+                <div class="flex items-center gap-1"> 
+                    <span class="font-bold text-[15px] truncate">${name}</span> 
+                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span> 
+                </div> 
+                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div> 
+                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""} 
+                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4"> 
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')"> 
+                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
+                        <span id="${id1}">0</span> 
+                    </div> 
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')"> 
+                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
+                        <span id="${id2}">0</span> 
+                    </div> 
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')"> 
+                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
+                        <span id="${id3}">0</span> 
+                    </div> 
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')"> 
+                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60"> 
+                        <span id="${id4}">0</span> 
+                    </div> 
+                </div> 
+            </div> `;
+        return div; 
+    }; 
 
-        div.innerHTML = `
-            <img src="${avatarUrl}" class="tweet-avatar">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1">
-                    <span class="font-bold text-[15px] truncate">${name}</span>
-                    <span class="text-gray-500 text-[14px] truncate">${handle} · ${time}</span>
-                </div>
-                <div class="text-[15px] mt-1 leading-normal break-words">${text}</div>
-                ${img ? `<img src="${img}" class="mt-3 rounded-2xl border border-gray-100 max-h-80 w-full object-cover">` : ""}
-                
-                <div class="flex items-center justify-between mt-3 text-gray-500 text-[13px] pr-4">
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id1}')">
-                        <img src="https://i.postimg.cc/sxyx6PGn/IMG_3090.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id1}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500 transition-colors" onclick="editAnyText('${id2}')">
-                        <img src="https://i.postimg.cc/wMVvStDP/IMG_3092.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id2}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors" onclick="editAnyText('${id3}')">
-                        <img src="https://i.postimg.cc/SRrswXcT/IMG_3091.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id3}">0</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors" onclick="editAnyText('${id4}')">
-                        <img src="https://i.postimg.cc/4y5drKzC/IMG_3093.png" class="w-[18px] h-[18px] object-contain opacity-60">
-                        <span id="${id4}">0</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        return div;
-    };
-    squareFeed.prepend(createNode());
-    if(isUserPost) profileFeed.prepend(createNode());
+    // 【修改核心】：不论是不是用户发的，都先塞进首页广场
+    if (squareFeed) {
+        squareFeed.prepend(createNode()); 
+    }
+
+    // 如果是你自己发的推文，额外再往“我”的主页里塞一份
+    if (isUserPost && profileFeed) {
+        profileFeed.prepend(createNode()); 
+    }
 }
 
 // 全局保存当前生成的帖子，用于详情页展示
@@ -7439,10 +7427,9 @@ function openBubbleSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
-
-    document.getElementById('bubble-css-input').value = friend.bubbleCss || '';
     
-    // 背景预览逻辑
+    document.getElementById('bubble-css-input').value = friend.bubbleCss || '';
+
     if (friend.chatBg) {
         document.getElementById('preview-single-chat-bg').src = friend.chatBg;
         document.getElementById('preview-single-chat-bg').classList.remove('hidden');
@@ -7452,20 +7439,6 @@ function openBubbleSettings() {
         document.getElementById('preview-single-chat-bg').classList.add('hidden');
         document.getElementById('single-chat-bg-hint').classList.remove('hidden');
     }
-
-    // 新增：头像预览逻辑
-    const avatarPreview = document.getElementById('preview-single-chat-avatar');
-    const avatarHint = document.getElementById('single-chat-avatar-hint');
-    if (friend.userAvatar) {
-        avatarPreview.src = friend.userAvatar;
-        avatarPreview.classList.remove('hidden');
-        avatarHint.classList.add('hidden');
-    } else {
-        avatarPreview.src = '';
-        avatarPreview.classList.add('hidden');
-        avatarHint.classList.remove('hidden');
-    }
-
     renderBubblePresets();
     document.getElementById('bubble-settings-page').classList.remove('slide-hidden');
 }
@@ -7474,53 +7447,18 @@ function closeBubbleSettings() {
     document.getElementById('bubble-settings-page').classList.add('slide-hidden');
 }
 
-// 新增：处理专属头像上传
-function handleSingleChatAvatar(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const result = e.target.result;
-            document.getElementById('preview-single-chat-avatar').src = result;
-            document.getElementById('preview-single-chat-avatar').classList.remove('hidden');
-            document.getElementById('single-chat-avatar-hint').classList.add('hidden');
-            // 临时存到按钮属性上，等点保存再生效
-            document.getElementById('bubble-settings-page').setAttribute('data-temp-avatar', result);
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// 新增：清除专属头像
-function clearSingleChatAvatar() {
-    document.getElementById('preview-single-chat-avatar').src = '';
-    document.getElementById('preview-single-chat-avatar').classList.add('hidden');
-    document.getElementById('single-chat-avatar-hint').classList.remove('hidden');
-    document.getElementById('bubble-settings-page').setAttribute('data-temp-avatar', 'CLEAR');
-}
-
 function saveBubbleSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
     
-    // 保存 CSS
     const cssContent = document.getElementById('bubble-css-input').value;
     friend.bubbleCss = cssContent;
-    
-    // 保存新头像
-    const tempAvatar = document.getElementById('bubble-settings-page').getAttribute('data-temp-avatar');
-    if (tempAvatar === 'CLEAR') {
-        friend.userAvatar = '';
-    } else if (tempAvatar) {
-        friend.userAvatar = tempAvatar;
-    }
-    document.getElementById('bubble-settings-page').removeAttribute('data-temp-avatar');
-
     localStorage.setItem('friend_list', JSON.stringify(friendList));
+    
     applyDynamicBubbleCss(cssContent);
-    renderAllMessages(); // 刷新聊天界面显示新头像
     closeBubbleSettings();
-    alert('✅ 个性化设置已保存！');
+    alert('✅ 气泡样式已保存并立即生效！');
 }
 
 function renderBubblePresets() {
