@@ -4253,9 +4253,9 @@ function renderAllMessages(isIncremental = false) {
                 // 普通文字模式（有气泡）
                 bubbleHtml = magicCss + `
                     ${checkboxHtml}
-                    <div class="chat-msg-user relative max-w-[72%] bg-[#3C3C3C] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
+                    <div class="chat-msg-user relative max-w-[72%] bg-[#07c160] text-white px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
-                        <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        <img src="https://i.postimg.cc/d3p7WfC5/IMG_3204.png" class="absolute -right-[9px] bottom-[-3px] w-[20px] h-[20px] pointer-events-none">
                         ${timeStampHtml}
                     </div>
                     <img src="${myAvatarUrl}" class="w-[45px] h-[45px] ml-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-200">
@@ -4279,7 +4279,7 @@ function renderAllMessages(isIncremental = false) {
                     <img src="${aiAvatarUrl}" onclick="openInnerVoice()" class="w-[45px] h-[45px] mr-2 rounded-full object-cover flex-shrink-0 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-transform">
                     <div class="chat-msg-ai relative max-w-[72%] bg-white text-black px-4 py-1.5 rounded-[30px] shadow-sm break-words" style="width: fit-content; font-size: 15px;">
                         ${quoteHtml}${displayContent}
-                        <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[7px] bottom-[-2px] w-[20px] h-[20px] pointer-events-none">
+                        <img src="https://i.postimg.cc/J0vyTFXK/IMG_3203.png" class="absolute -left-[9px] bottom-[-3px] w-[20px] h-[20px] pointer-events-none">
                         ${timeStampHtml}
                     </div>
                 `;
