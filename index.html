@@ -3433,11 +3433,14 @@ function regenerateLastMessage() {
         alert("还没有聊天记录呢！");
         return;
     }
+
     // 1. 先关掉左下角的菜单
-    toggleInventory(); 
+    toggleInventory();
 
     let deletedSomething = false;
-    // 2. 从最后一条消息开始往前查，把AI发的消息彻底删除
+
+    // 2. 从最后一条消息开始往前查，把TA（角色）发的消息彻底删除！
+    // 这样旧的时间戳也会被直接销毁，等会儿重说时会自动打上最新的时间戳。
     while (chatHistory.length > 0) {
         const lastMsg = chatHistory[chatHistory.length - 1];
         if (lastMsg.role === 'assistant') {
@@ -3457,9 +3460,12 @@ function regenerateLastMessage() {
                     }
                 }
             }
-            chatHistory.pop(); 
+
+            // 拔出这根萝卜，彻底删掉角色的回复和它的时间戳
+            chatHistory.pop();
             deletedSomething = true;
         } else {
+            // 如果碰到的是你发的消息，说明角色的回复已经删干净了，停止删除
             break;
         }
     }
@@ -3469,17 +3475,17 @@ function regenerateLastMessage() {
         return;
     }
 
-    // 【核心修复】：除了删掉聊天记录，还要同步更新给这个好友存储的“大脑记忆”
+    // 3. 把删干净旧消息的聊天记录，立刻存入手机记忆
     const friendIndex = friendList.findIndex(f => f.id === currentFriendId);
     if (friendIndex !== -1) {
         friendList[friendIndex].chatHistory = [...chatHistory];
-        // 立即保存到手机存储，确保 AI 重新读取时拿到的历史记录是干净的
         localStorage.setItem('friend_list', JSON.stringify(friendList));
     }
 
-    // 3. 刷新画面
+    // 4. 刷新屏幕画面，让刚刚那条消息在屏幕上瞬间消失
     renderAllMessages(false);
-    // 4. 重新回复（此时AI读取的历史记录里已经没有刚才那句话了）
+
+    // 5. 触发重新回复！此时它会重新获取这一秒钟的最新时间，重新思考并回答！
     triggerAI();
 }
 // =========================================================
