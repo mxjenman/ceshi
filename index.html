@@ -4316,7 +4316,10 @@ function renderAllMessages(isIncremental = false) {
     });
     
     // 渲染完自动滚到底部
-    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+    setTimeout(() => {
+        // 修改：因为真正负责滚动的其实是外层的外壳，所以要让它的 parentElement 滚到底部
+        container.parentElement.scrollTop = container.parentElement.scrollHeight;
+    }, 50);
 }
 
 // 多选小工具
