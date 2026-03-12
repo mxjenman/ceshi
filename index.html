@@ -9347,13 +9347,16 @@ async function openForumCharReplySelect(areaId, text, img) {
 
 // 执行AI评论生成
 async function executeForumReply(areaId, friendId, postText, postImg) {
-    closeWeightCharSelect();
-    const friend = friendList.find(f => f.id === friendId);
+    document.getElementById('weight-char-modal').classList.add('hidden');
     const container = document.getElementById(areaId);
-    
+    if (!container) return;
+
+    const friend = friendList.find(f => f.id === friendId);
+    if (!friend) return;
+
     const loading = document.createElement('div');
-    loading.className = "text-[12px] text-gray-400 italic";
-    loading.innerText = `${friend.remark} 正在思考评论...`;
+    loading.className = "text-gray-400 text-xs italic mb-1";
+    loading.innerText = `${friend.remark} 正在打字...`;
     container.appendChild(loading);
 
     let prompt = `你扮演 ${friend.realName}。设定：${friend.persona}。\n`;
@@ -9367,18 +9370,21 @@ async function executeForumReply(areaId, friendId, postText, postImg) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
             body: JSON.stringify({
                 model: config.model,
-                messages: [{ role: 'system', content: prompt }],
+                messages: [{ role: 'user', content: prompt }], 
                 temperature: 0.8
             })
         });
+
         const data = await response.json();
         const reply = data.choices[0].message.content.trim();
         
         loading.remove();
+        
         const commentDiv = document.createElement('div');
         commentDiv.className = "bg-gray-50 p-2 rounded-xl text-[13px] animate-in";
         commentDiv.innerHTML = `<span class="font-bold text-black">${friend.remark}：</span><span class="text-gray-700">${reply}</span>`;
         container.appendChild(commentDiv);
+
     } catch (e) {
         loading.innerText = "评论失败，请检查API";
     }
