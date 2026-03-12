@@ -2291,13 +2291,13 @@ function startListenTogether(friendId) {
     window.listenTogetherCharId = friendId;
     window.isListeningTogether = true;
     closeListenTogetherSelect();
-    
+
     const friend = friendList.find(f => f.id === friendId);
     const coverSrc = document.getElementById('player-cover-img').src;
     document.getElementById('listen-together-cover').src = coverSrc;
-    
+
     // 发送微信卡片
-    const cardHtml = `
+    const cardHtml = `<span style="display:none;">[一起听音乐]</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="display:none;">
         <div class="bg-white rounded-xl p-3 w-[220px] shadow-sm border border-gray-100 flex flex-col gap-2">
             <div class="flex items-center gap-2">
                 <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-gray-200">
@@ -2314,14 +2314,15 @@ function startListenTogether(friendId) {
             </div>
         </div>
     `;
-    
+
     if (friend) {
-        chatHistory.push({ role: 'user', content: cardHtml });
         closeMusicPlayer();
         openChat();
+
         setTimeout(() => {
-            openFriendChat(friendId);
-            const sysMsg = `[系统提示：我向你发送了“一起听”邀请。同意后，我们的音乐播放器将同步，你能实时听到我放的歌和当前的歌词。请简短回复是否同意。]`;
+            openChatDetail(friendId);
+            chatHistory.push({ role: 'user', content: cardHtml });
+            const sysMsg = `[系统消息:我向你发送了“一起听”邀请。同意后，我们的音乐播放器将同步，你能实时听到我放的歌和当前的歌词。请简短回复是否同意。]`;
             chatHistory.push({ role: 'user', content: sysMsg });
             renderAllMessages(true);
             triggerAI();
