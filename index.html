@@ -6510,6 +6510,7 @@ function openAppearanceApp() {
         document.getElementById('preview-wallpaper').src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
         document.getElementById('preview-wallpaper').style.backgroundColor = '#d1d5db';
     }
+
     // 回显全局聊天背景
     if (config.globalChatBg) {
         document.getElementById('preview-global-chat-bg').src = config.globalChatBg;
@@ -6520,9 +6521,9 @@ function openAppearanceApp() {
         document.getElementById('preview-global-chat-bg').src = '';
         document.getElementById('preview-global-chat-bg').classList.add('hidden');
         document.getElementById('global-chat-bg-hint').classList.remove('hidden');
-        tempAppearance.chatBg = '';
     }
-    // 生成图标网格
+
+    // 获取并显示所有桌面图标当前的状态
     const iconGrid = document.getElementById('icon-edit-grid');
     iconGrid.innerHTML = '';
     const iconsList = [
@@ -6533,12 +6534,15 @@ function openAppearanceApp() {
         { id: 'icon-sms', name: '信息' },
         { id: 'icon-settings', name: '设置' },
         { id: 'icon-appearance', name: '外观' },
-        { id: 'icon-placeholder4', name: '查手机' }
+        { id: 'icon-placeholder4', name: '查手机' },
+        // === 这里把外卖和默契比心加进去了 ===
+        { id: 'icon-mqbx', name: '默契比心' },
+        { id: 'icon-waimai', name: '外卖' }
     ];
-    
+
     // 获取已经保存过的自定义名称
     const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
-    
+
     iconsList.forEach(icon => {
         const desktopImg = document.getElementById(icon.id);
         const currentSrc = tempAppearance.icons[icon.id] || (desktopImg ? desktopImg.src : '');
