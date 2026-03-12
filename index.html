@@ -5280,42 +5280,50 @@ ${charDetails}
 function createForumPostNode(post) {
     const div = document.createElement('div');
     // 设置为 relative 相对定位，方便右上角放置删除按钮
-    div.className = "tweet-card flex gap-3 animate-in relative"; 
-    
-    // 生成一个推文内唯一的评论容器ID
-    const commentAreaId = 'forum-cm-' + Math.random().toString(36).substr(2, 9);
-    
+    div.className = "tweet-card flex gap-3 animate-in relative";
+    // 修改：论坛发帖使用独立的论坛头像，不再去读取微信头像
+    const forumAvatarSrc = document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
+    const avatarUrl = (post.isChar && post.charId === 'user') ? forumAvatarSrc : post.finalAvatar;
+
+    const id1 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+    const id2 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+    const id3 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+    const id4 = 'cnt-' + Math.random().toString(36).substr(2, 9);
+    const commentAreaId = 'forum-comments-' + Math.random().toString(36).substr(2, 9);
+
+    // 【核心修复1】：在这里就把保存在大脑里的评论渲染出来！这样就算刷新或者发新推文，评论也永远不会消失了！
+    let inlineCommentsHtml = '';
+    if (post.comments && post.comments.length > 0) {
+        post.comments.forEach(c => {
+            inlineCommentsHtml += `<div class="bg-gray-50 p-2 rounded-xl text-[13px] mb-1.5"><span class="font-bold text-black">${c.name}：</span><span class="text-gray-700">${c.text}</span></div>`;
+        });
+    }
+
     div.innerHTML = `
-        <img src="${post.finalAvatar}" class="tweet-avatar shrink-0">
+        ${post.charId === 'user' ? `<button onclick="deleteForumTweet(this)" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 font-bold text-lg leading-none active:scale-90 transition-transform px-2 py-1">×</button>` : ""}
+        <img src="${avatarUrl}" class="tweet-avatar shrink-0 cursor-pointer" onclick="openForumDetail(${post.listIndex})">
         <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1 min-w-0">
-                    <span class="font-bold text-[15px] truncate text-black">${post.name}</span>
-                    <span class="text-gray-500 text-[14px] truncate">${post.handle}</span>
-                </div>
-                <div class="p-1 cursor-pointer text-gray-400 hover:text-red-500" onclick="deleteForumTweet(this)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-                    </svg>
+            <div class="flex justify-between items-start">
+                <div class="cursor-pointer" onclick="openForumDetail(${post.listIndex})">
+                    <span class="font-bold text-[15px] text-black mr-1">${post.name}</span>
+                    <span class="text-gray-500 text-[14px]">${post.handle} · ${post.time}</span>
                 </div>
             </div>
-            
-            <p class="text-[15px] text-[#0f1419] leading-snug break-words mt-0.5 cursor-pointer" onclick="openForumDetail(${post.listIndex})">${post.text}</p>
+            <p class="text-[15px] text-[#333] mt-1 leading-relaxed break-words cursor-pointer" onclick="openForumDetail(${post.listIndex})">${post.text}</p>
             ${post.img ? `<img src="${post.img}" class="mt-3 rounded-2xl border border-gray-100 max-h-60 w-full object-cover cursor-pointer" onclick="openForumDetail(${post.listIndex})">` : ''}
-            
-            <div class="flex justify-between mt-3 max-w-[220px] text-gray-500">
+            <div class="flex justify-between mt-3 max-w-[220px] text-gray-500 mb-2">
                 <div class="flex items-center gap-1.5 cursor-pointer" onclick="openForumDetail(${post.listIndex})">
                     <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     <span class="text-xs">${post.comments ? post.comments.length : 0}</span>
                 </div>
-                <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500" onclick="openForumCharReplySelect('${commentAreaId}', \`${post.text.replace(/`/g, '\\`')}\`, '${post.img || ''}')">
+                <div class="flex items-center gap-1.5 cursor-pointer hover:text-green-500" onclick="openForumCharReplySelect(${post.listIndex}, '${commentAreaId}', \`${post.text.replace(/`/g, '\\`')}\`, '${post.img || ''}')">
                     <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </div>
                 <div class="flex items-center gap-1.5 cursor-pointer hover:text-red-500">
                     <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </div>
             </div>
-            <div id="${commentAreaId}" class="mt-3 space-y-2"></div>
+            <div id="${commentAreaId}" class="space-y-1">${inlineCommentsHtml}</div>
         </div>
     `;
     return div;
@@ -9324,29 +9332,27 @@ document.addEventListener('mousemove', cancelPress);
 document.addEventListener('mouseup', cancelPress);
 // =====================================================================
 // 弹出角色选择框，用于基于人设评论推文
-async function openForumCharReplySelect(areaId, text, img) {
+async function openForumCharReplySelect(postIndex, areaId, text, img) {
     const list = document.getElementById('weight-char-list');
     list.innerHTML = '';
     const friends = friendList.filter(f => !f.isGroup);
-    
     if (friends.length === 0) return alert("还没有添加角色哦");
 
-    // 复用已有的角色选择弹窗样式
+    // 复用已有的角色选择弹窗样式，带着帖子的编号一起传递
     friends.forEach(f => {
         list.innerHTML += `
-            <div class="flex items-center gap-3 p-2 cursor-pointer hover:bg-gray-50 rounded-lg" 
-                 onclick="executeForumReply('${areaId}', '${f.id}', \`${text.replace(/`/g, '\\`')}\`, '${img}')">
-                <img src="${f.avatar}" class="w-10 h-10 rounded-full object-cover">
+            <div class="flex items-center gap-3 p-2 cursor-pointer hover:bg-gray-50 rounded-lg" onclick="executeForumReply(${postIndex}, '${areaId}', '${f.id}', \`${text.replace(/`/g, '\\`')}\`, '${img}')">
+                <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
                 <span class="font-medium text-[14px] text-gray-700 flex-1">${f.remark}</span>
-                <span class="text-blue-500 text-xs font-bold">评论</span>
             </div>
         `;
     });
+    
     document.getElementById('weight-char-modal').classList.remove('hidden');
 }
 
 // 执行AI评论生成
-async function executeForumReply(areaId, friendId, postText, postImg) {
+async function executeForumReply(postIndex, areaId, friendId, postText, postImg) {
     document.getElementById('weight-char-modal').classList.add('hidden');
     const container = document.getElementById(areaId);
     if (!container) return;
@@ -9370,7 +9376,7 @@ async function executeForumReply(areaId, friendId, postText, postImg) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
             body: JSON.stringify({
                 model: config.model,
-                messages: [{ role: 'user', content: prompt }], 
+                messages: [{ role: 'user', content: prompt }],
                 temperature: 0.8
             })
         });
@@ -9380,10 +9386,32 @@ async function executeForumReply(areaId, friendId, postText, postImg) {
         
         loading.remove();
         
-        const commentDiv = document.createElement('div');
-        commentDiv.className = "bg-gray-50 p-2 rounded-xl text-[13px] animate-in";
-        commentDiv.innerHTML = `<span class="font-bold text-black">${friend.remark}：</span><span class="text-gray-700">${reply}</span>`;
-        container.appendChild(commentDiv);
+        // 1. 【关键修复】把 AI 的评论永久保存在系统大名单里，防止刷新消失！
+        if (currentForumPostsData[postIndex]) {
+            if (!currentForumPostsData[postIndex].comments) {
+                currentForumPostsData[postIndex].comments = [];
+            }
+            currentForumPostsData[postIndex].comments.push({
+                name: friend.remark,
+                text: reply
+            });
+            // 存入手机本地存储，杀后台也不怕丢
+            localStorage.setItem('os_forum_posts_data', JSON.stringify(currentForumPostsData));
+        }
+        
+        // 2. 【核心修复】重新刷新首页和个人主页，让评论瞬间两边同步出来！
+        const feed = document.getElementById('forum-feed');
+        if(feed) {
+            feed.innerHTML = ""; 
+            currentForumPostsData.forEach(p => { feed.appendChild(createForumPostNode(p)); });
+        }
+        const profileFeed = document.getElementById('profile-posts-feed');
+        if (profileFeed) {
+            profileFeed.innerHTML = ""; 
+            currentForumPostsData.filter(p => p.charId === 'user').forEach(p => {
+                profileFeed.appendChild(createForumPostNode(p));
+            });
+        }
 
     } catch (e) {
         loading.innerText = "评论失败，请检查API";
