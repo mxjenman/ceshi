@@ -5234,42 +5234,54 @@ ${charDetails}
                 max_tokens: 4000 // 防止因为字数太多被截断
             })
         });
-        
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content);
-        currentForumPostsData = parsed.posts || [];
         
-        // 随机打乱数组，让角色和陌生人帖子混合显示
-        currentForumPostsData.sort(() => Math.random() - 0.5);
+        // === 修复开始：保留用户自己发的推文 ===
+        let aiGeneratedPosts = parsed.posts || [];
+        // 随机打乱AI生成的帖子
+        aiGeneratedPosts.sort(() => Math.random() - 0.5);
+        
+        // 找出所有之前用户自己发的帖子，牢牢保存在这（防止被AI新生成的覆盖删除）
+        const myOldPosts = currentForumPostsData.filter(p => p.charId === 'user');
+        
+        // 把你发的帖子放在最上面，后面接着排AI新生成的帖子，这样你就不会找不到自己发的推文了
+        currentForumPostsData = myOldPosts.concat(aiGeneratedPosts);
+        // === 修复结束 ===
         
         feed.innerHTML = "";
-            // 渲染并分发帖子到各个页面
-    const profileFeed = document.getElementById('profile-posts-feed');
-    if(profileFeed) profileFeed.innerHTML = ""; // 清空个人主页
+        
+        // 渲染并分发帖子到各个页面
+        const profileFeed = document.getElementById('profile-posts-feed');
+        if(profileFeed) profileFeed.innerHTML = ""; // 清空个人主页
 
-    currentForumPostsData.forEach((p, index) => { 
-        p.listIndex = index; 
-        let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG_2980.jpg"; 
-        if (p.isChar && p.charId) { 
-            const f = friendList.find(x => x.id === p.charId); 
-            if (f && f.avatar) avatar = f.avatar; 
-            const charData = selectedFriendsData.find(x => x.id === p.charId); 
-            if (charData && charData.handle) { 
-                p.handle = charData.handle.startsWith('@') ? charData.handle : '@' + charData.handle; 
-            } 
-        } else { 
-            avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random"; 
-        } 
-        p.finalAvatar = avatar; 
-
-        // 首页显示所有帖子
-        feed.appendChild(createForumPostNode(p)); 
-
-        // 如果该帖子是用户发的，或者是你当前查看的那个人的，就显示到“我”的主页标签里
-        if (profileFeed && (p.charId === 'user')) {
-            profileFeed.appendChild(createForumPostNode(p));
-        }
-    });
+        currentForumPostsData.forEach((p, index) => {
+            p.listIndex = index;
+            let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG_2980.jpg";
+            
+            if (p.isChar && p.charId) {
+                const f = friendList.find(x => x.id === p.charId);
+                if (f && f.avatar) avatar = f.avatar;
+                
+                const charData = selectedFriendsData.find(x => x.id === p.charId);
+                if (charData && charData.handle) {
+                    p.handle = charData.handle.startsWith('@') ? charData.handle : '@' + charData.handle;
+                }
+            } else {
+                avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
+            }
+            
+            p.finalAvatar = avatar;
+            
+            // 首页显示所有帖子
+            feed.appendChild(createForumPostNode(p));
+            
+            // 如果该帖子是用户发的，或者是你当前查看的那个人的，就显示到“我”的主页标签里
+            if (profileFeed && (p.charId === 'user')) {
+                profileFeed.appendChild(createForumPostNode(p));
+            }
+        });
+        
     } catch(e) {
         feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，请检查网络或API Key，并稍后再试。</div>';
         console.error(e);
