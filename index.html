@@ -3434,14 +3434,17 @@ function regenerateLastMessage() {
         return;
     }
     // 1. 先关掉左下角的菜单
-    toggleInventory(); 
-
+    toggleInventory();
+    
     let deletedSomething = false;
-    // 2. 从最后一条消息开始往前查，把AI发的消息彻底删除
+    
+    // 2. 从最后一条消息开始往前查，把AI发的消息，还有跟随的系统消息（比如TA已收钱）全删掉
     while (chatHistory.length > 0) {
         const lastMsg = chatHistory[chatHistory.length - 1];
+        
+        // 判断是不是AI发的话（包含AI收钱/退钱系统提示）
         if (lastMsg.role === 'assistant') {
-            // 处理转账撤销逻辑
+            // 防刷钱机制：如果AI上一回退还了转账，我们要把退回钱包的钱重新扣除
             if (lastMsg.content.includes('TA已退还')) {
                 try {
                     const amtStr = lastMsg.content.split('|')[1].replace(']', '');
@@ -3449,37 +3452,34 @@ function regenerateLastMessage() {
                     if (!isNaN(amt)) addTransaction('撤销退款(重回)', amt, 'expense');
                 } catch(e) {}
             }
+            
+            // 恢复刚才转账气泡的“等待收款”橙色状态
             if (lastMsg.content.includes('TA已收钱') || lastMsg.content.includes('TA已退还')) {
                 for(let i = chatHistory.length - 1; i >= 0; i--) {
                     if (chatHistory[i].role === 'user' && chatHistory[i].content.includes('[转账|')) {
                         chatHistory[i].content = chatHistory[i].content.replace('|accepted]', '|pending]').replace('|returned]', '|pending]');
-                        break;
+                        break; // 恢复最新的一笔即可
                     }
                 }
             }
-            chatHistory.pop(); 
+            
+            chatHistory.pop(); // 咔嚓！从大脑里彻底删掉这条消息（连同它旧的时间戳一起拔除）
             deletedSomething = true;
         } else {
+            // 碰到了用户自己发的文字、图片或者发起的转账，就停止删除
             break;
         }
     }
-
+    
     if (!deletedSomething) {
         alert("上一条是你发的消息哦，等TA回复了之后才能重回！");
         return;
     }
-
-    // 【核心修复】：除了删掉聊天记录，还要同步更新给这个好友存储的“大脑记忆”
-    const friendIndex = friendList.findIndex(f => f.id === currentFriendId);
-    if (friendIndex !== -1) {
-        friendList[friendIndex].chatHistory = [...chatHistory];
-        // 立即保存到手机存储，确保 AI 重新读取时拿到的历史记录是干净的
-        localStorage.setItem('friend_list', JSON.stringify(friendList));
-    }
-
-    // 3. 刷新画面
+    
+    // 3. 强制全局刷新一遍画面，把删掉的消息从屏幕上抹掉
     renderAllMessages(false);
-    // 4. 重新回复（此时AI读取的历史记录里已经没有刚才那句话了）
+    
+    // 4. 重新呼叫AI思考新的回复！因为旧消息连带时间都被删了，新消息会自动盖上当前时间！
     triggerAI();
 }
 // =========================================================
