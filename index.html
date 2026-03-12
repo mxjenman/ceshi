@@ -7650,11 +7650,22 @@ function saveOtherSettings() {
     if (!currentFriendId) return;
     const friend = friendList.find(f => f.id === currentFriendId);
     if (!friend) return;
+
     friend.isTranslationEnabled = document.getElementById('os-translation').checked;
     friend.bgActivityInterval = parseInt(document.getElementById('os-bg-activity').value) || 0;
     // 新增：保存朋友圈主动活跃的时间间隔
     friend.momentsActivityInterval = parseInt(document.getElementById('os-moments-activity').value) || 0;
     
+    // 【终极修复开始】：当你点保存时，立刻给系统盖个时间戳死死记住，杀后台也不会重置了！
+    if (friend.momentsActivityInterval > 0 && !friend.lastProactiveMomentTime) {
+        friend.lastProactiveMomentTime = Date.now();
+    }
+    // 顺便把主动发微信的失忆问题也一起修了
+    if (friend.bgActivityInterval > 0 && !friend.lastProactiveTime) {
+        friend.lastProactiveTime = Date.now();
+    }
+    // 【终极修复结束】
+
     const wasBlocked = friend.isBlocked;
     friend.isBlocked = document.getElementById('os-block-switch').checked;
     friend.blockDuration = parseInt(document.getElementById('os-block-duration').value) || 60;
