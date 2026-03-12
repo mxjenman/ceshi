@@ -1563,16 +1563,18 @@ openPlaylist();">
 
     <div id="music-player-screen" class="fixed inset-0 hidden flex flex-col z-[100] transition-transform duration-300 translate-y-full player-bg-adaptive" style="background-size: cover; background-position: center;">
         <div class="h-14 flex items-center justify-between px-4 mt-2 border-b pb-2 player-border-adaptive">
-            <div class="flex items-center gap-2 w-24">
-                <button onclick="closeMusicPlayer()" class="player-text-adaptive">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
-                </button>
-                <button onclick="openListenTogetherModal()" class="text-[12px] bg-black/5 px-2 py-1 rounded-full player-text-adaptive font-bold border border-black/10">一起听</button>
-            </div>
-            <div class="flex-1 text-center font-bold text-[17px] player-text-adaptive">正在播放</div>
-            <button onclick="document.getElementById('player-bg-input').click()" class="w-24 flex justify-end player-text-adaptive active:scale-90 transition-transform">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <button onclick="closeMusicPlayer()" class="w-10 flex justify-start player-text-adaptive">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
             </button>
+            <div class="flex-1 text-center font-bold text-[16px] player-text-adaptive">正在播放</div>
+            
+            <div class="flex items-center gap-2 justify-end">
+                <button onclick="openListenTogetherSelect()" class="text-[12px] font-bold player-text-adaptive bg-black/10 px-2.5 py-1 rounded-full active:scale-95 transition-transform whitespace-nowrap">一起听</button>
+                <button onclick="document.getElementById('player-bg-input').click()" class="w-8 flex justify-end player-text-adaptive active:scale-90 transition-transform">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </button>
+            </div>
+            
             <input type="file" id="player-bg-input" class="hidden" accept="image/*" onchange="changePlayerBg(this)">
         </div>
 
@@ -1952,6 +1954,25 @@ openPlaylist();">
         </div>
     </div>
 
+    <div id="listen-together-float" class="fixed top-24 right-4 w-[50px] h-[50px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.3)] overflow-hidden hidden z-[85] cursor-pointer active:scale-90 transition-transform border-2 border-white" onclick="openMusicPlayer()" style="animation: spin 10s linear infinite;">
+        <img id="listen-together-cover" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+            <div class="w-2 h-2 rounded-full bg-white"></div>
+        </div>
+    </div>
+
+    <div id="listen-together-modal" class="fixed inset-0 bg-black/60 hidden z-[150] flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-[28px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[75vh]">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">邀请谁一起听歌？</h3>
+            <div id="listen-together-char-list" class="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-2 flex flex-col gap-2 mb-5 border border-gray-100">
+            </div>
+            <div class="flex gap-3 shrink-0">
+                <button onclick="closeListenTogetherSelect()" class="w-1/3 py-3 bg-white border-2 border-gray-200 rounded-[20px] font-bold text-gray-600 text-[15px] active:bg-gray-50 transition-colors">取消</button>
+                <button onclick="stopListenTogether()" id="stop-listen-btn" class="flex-1 py-3 bg-red-500 text-white rounded-[20px] font-bold text-[15px] hidden active:scale-95 shadow-md">结束一起听</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 // ================= 新增：语音通话引擎 =================
 let vcTimerInterval;
@@ -2223,8 +2244,148 @@ function closeVcTranscript() {
     }, 300);
 }
 
-// ================= 终极内存解放补丁：智能图片压缩（兼顾清晰度与省内存版） =================
+// ================= 终极内// ================= 新增：一起听核心逻辑 =================
+window.isListeningTogether = false;
+window.listenTogetherCharId = null;
 
+function openListenTogetherSelect() {
+    const list = document.getElementById('listen-together-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    if (friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加角色哦</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-xl active:scale-95 transition-transform" onclick="startListenTogether('${f.id}')">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-[15px] text-gray-800 truncate">${f.remark}</div>
+                        <div class="text-[12px] text-gray-400 truncate">邀请TA一起听歌</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    if (window.isListeningTogether) {
+        document.getElementById('stop-listen-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('stop-listen-btn').classList.add('hidden');
+    }
+    
+    document.getElementById('listen-together-modal').classList.remove('hidden');
+}
+
+function closeListenTogetherSelect() {
+    document.getElementById('listen-together-modal').classList.add('hidden');
+}
+
+function startListenTogether(friendId) {
+    const songTitleEl = document.getElementById('player-title');
+    if (!songTitleEl || songTitleEl.innerText === "暂无歌曲") {
+        alert("请先播放一首歌哦！");
+        return;
+    }
+    
+    window.listenTogetherCharId = friendId;
+    window.isListeningTogether = true;
+    closeListenTogetherSelect();
+    
+    const friend = friendList.find(f => f.id === friendId);
+    const coverSrc = document.getElementById('player-cover-img').src;
+    document.getElementById('listen-together-cover').src = coverSrc;
+    
+    // 发送微信卡片
+    const cardHtml = `
+        <div class="bg-white rounded-xl p-3 w-[220px] shadow-sm border border-gray-100 flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-gray-200">
+                    <img src="${coverSrc}" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-[14px] font-bold text-[#333] truncate">${songTitleEl.innerText}</div>
+                    <div class="text-[11px] text-gray-500 truncate">${document.getElementById('player-artist').innerText}</div>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 pt-1.5 text-[10px] text-gray-400 flex items-center gap-1 mt-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                邀请你一起听歌
+            </div>
+        </div>
+    `;
+    
+    if (friend) {
+        chatHistory.push({ role: 'user', content: cardHtml });
+        closeMusicPlayer();
+        openChat();
+        setTimeout(() => {
+            openFriendChat(friendId);
+            const sysMsg = `[系统提示：我向你发送了“一起听”邀请。同意后，我们的音乐播放器将同步，你能实时听到我放的歌和当前的歌词。请简短回复是否同意。]`;
+            chatHistory.push({ role: 'user', content: sysMsg });
+            renderAllMessages(true);
+            triggerAI();
+        }, 400);
+    }
+}
+
+function stopListenTogether() {
+    window.isListeningTogether = false;
+    window.listenTogetherCharId = null;
+    document.getElementById('listen-together-float').classList.add('hidden');
+    closeListenTogetherSelect();
+    alert("已结束一起听");
+}
+
+// 拦截原有的开关音乐播放器方法，加入悬浮窗逻辑
+const originalCloseMusicPlayer = window.closeMusicPlayer;
+window.closeMusicPlayer = function() {
+    if (typeof originalCloseMusicPlayer === 'function') {
+        originalCloseMusicPlayer();
+    } else {
+        const screen = document.getElementById('music-player-screen');
+        if(screen) {
+            screen.classList.add('translate-y-full');
+            setTimeout(() => screen.classList.add('hidden'), 300);
+        }
+    }
+    // 如果在一起听，退出界面就显示悬浮窗
+    if (window.isListeningTogether) {
+        document.getElementById('listen-together-float').classList.remove('hidden');
+    }
+};
+
+const originalOpenMusicPlayer = window.openMusicPlayer;
+window.openMusicPlayer = function() {
+    if (typeof originalOpenMusicPlayer === 'function') {
+        originalOpenMusicPlayer();
+    } else {
+        const screen = document.getElementById('music-player-screen');
+        if(screen) {
+            screen.classList.remove('hidden');
+            setTimeout(() => screen.classList.remove('translate-y-full'), 10);
+        }
+    }
+    // 进入界面就隐藏悬浮窗
+    document.getElementById('listen-together-float').classList.add('hidden');
+};
+
+// 监听封面变化（当切歌时），同步更新悬浮窗的封面
+const coverObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'src') {
+            document.getElementById('listen-together-cover').src = document.getElementById('player-cover-img').src;
+        }
+    });
+});
+setTimeout(() => {
+    const playerCover = document.getElementById('player-cover-img');
+    if (playerCover) {
+        coverObserver.observe(playerCover, { attributes: true });
+    }
+}, 1000);
+
+// ================= 终极内存解放补丁：智能图片压缩（兼顾清晰度与省内存版） =================
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
     if (file && file.type && file.type.startsWith('image/') && file.type !== 'image/gif') {
@@ -4643,11 +4804,19 @@ if (friend && friend.isTranslationEnabled) {
             injectedLore.push(`[设定《${entry.title || '未命名'}》: ${entry.content}]`);
         }
     });
-        if(injectedLore.length > 0) {
+                if(injectedLore.length > 0) {
             finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
             console.log("注入了世界书数据:", injectedLore);
         }
-        
+
+        // === 新增：一起听状态注入，让AI实时知道你在听什么，唱到了哪里 ===
+        if (window.isListeningTogether && window.listenTogetherCharId === currentFriendId) {
+            const songTitle = document.getElementById('player-title') ? document.getElementById('player-title').innerText : '未知歌曲';
+            const activeLyricEl = document.querySelector('.active-lyric');
+            const currentLyric = activeLyricEl ? activeLyricEl.innerText : '暂无歌词/前奏中';
+            finalSystemMessage += `\n\n【特殊场景提示】：你正在和用户“一起听歌”。目前正在播放的歌曲是《${songTitle}》，现在刚好唱到这句歌词：“${currentLyric}”。请你在回复时，偶尔自然地提到这首歌或者这句歌词的感受，就像两人正戴着同一副耳机一样。`;
+        }
+
         // --- ★ 新增：让AI一次性生成所有对话并整体总结心声 ---
         finalSystemMessage += `\n\n【核心心声要求】：在你的全部回复内容最末尾，你必须对这整次回复进行一个整体的内心想法总结。格式必须严格为：<心声>这里写你总体的内心真实想法</心声>。注意：心声是对本次你所有说的话的“整体总结”，只允许在末尾输出一次，绝对不要每说一句话就加一个心声！而且你的正文千万不要出现这个标签。`;
 
@@ -9508,119 +9677,5 @@ async function executeAutoMomentPost(friend) {
     } catch(e) { console.error("AI自动发朋友圈失败:", e); }
 }
 </script>
-<div id="listen-together-modal" class="fixed inset-0 bg-black/50 hidden z-[250] flex items-center justify-center p-6">
-    <div class="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl relative">
-        <h3 class="font-bold text-[#333] mb-4 text-center text-[16px]">邀请谁一起听？</h3>
-        <div id="listen-char-list" class="max-h-[300px] overflow-y-auto mb-4 border border-gray-200 rounded-xl p-2 flex flex-col gap-2">
-            </div>
-        <button onclick="closeListenTogetherModal()" class="w-full py-2.5 bg-gray-100 rounded-[30px] font-bold text-black text-[15px] active:scale-95 shadow-sm">取消</button>
-    </div>
-</div>
-
-<div id="music-float-window" class="fixed top-20 right-4 w-14 h-14 rounded-full shadow-lg z-[400] hidden border-2 border-white overflow-hidden animate-spin-slow cursor-pointer transition-all active:scale-90" style="animation: spin 10s linear infinite; animation-play-state: paused;" onclick="openMusicPlayer()">
-    <img id="float-cover-img" src="" class="w-full h-full object-cover">
-</div>
-
-<style>
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .animate-spin-slow { animation: spin 10s linear infinite; }
-// --- 一起听功能逻辑开始 ---
-let isListenTogether = false;
-let listenPartnerId = null;
-
-// 打开邀请弹窗
-window.openListenTogetherModal = function() {
-    const list = document.getElementById('listen-char-list');
-    list.innerHTML = '';
-    // 过滤出只有单聊的角色（排除群聊）
-    const friends = friendList.filter(f => !f.isGroup);
-    if (friends.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有好友可以邀请哦</div>';
-    } else {
-        friends.forEach(f => {
-            const div = document.createElement('div');
-            div.className = "flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-xl transition-colors";
-            div.onclick = () => inviteToListen(f.id);
-            div.innerHTML = `
-                <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-10 h-10 rounded-full object-cover">
-                <span class="font-bold text-[15px] text-gray-800 flex-1">${f.remark}</span>
-            `;
-            list.appendChild(div);
-        });
-    }
-    document.getElementById('listen-together-modal').classList.remove('hidden');
-}
-
-window.closeListenTogetherModal = function() {
-    document.getElementById('listen-together-modal').classList.add('hidden');
-}
-
-// 邀请角色
-window.inviteToListen = function(friendId) {
-    listenPartnerId = friendId;
-    const friend = friendList.find(f => f.id === friendId);
-    const currentSong = playlist[currentSongIndex];
-    
-    if (!currentSong) {
-        alert("请先播放一首歌再邀请哦！");
-        return;
-    }
-
-    // 音乐卡片 HTML（去掉气泡，独立显示）
-    const musicCardHtml = `
-        <div class="music-card-no-bubble" style="width: 100%; background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; display: flex; gap: 12px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <img src="${currentSong.cover}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                <div style="font-weight: bold; font-size: 14px; color: #333;">${currentSong.title}</div>
-                <div style="font-size: 12px; color: #999;">${currentSong.artist}</div>
-            </div>
-            <div style="display: flex; align-items: center; color: #07c160; font-size: 12px; font-weight: bold;">音乐</div>
-        </div>
-    `;
-
-    // 存入聊天记录
-    if (!friend.chatHistory) friend.chatHistory = [];
-    friend.chatHistory.push({
-        role: 'user',
-        content: `我发起了“一起听”邀请：\n${musicCardHtml}`
-    });
-
-    // 模拟角色同意
-    setTimeout(() => {
-        const reply = "好哒，我已经进入播放间了，这首歌真好听 ~";
-        friend.chatHistory.push({ role: 'assistant', content: reply });
-        if (typeof currentFriendId !== 'undefined' && currentFriendId === friendId) {
-            renderAllMessages(true);
-        }
-        isListenTogether = true;
-        alert(`已成功邀请 ${friend.remark} 一起听！`);
-    }, 1000);
-
-    closeListenTogetherModal();
-    renderFriendList();
-}
-
-// 处理悬浮窗的显示逻辑
-// 我们通过每秒检查一次播放器状态来控制悬浮窗
-setInterval(() => {
-    const playerScreen = document.getElementById('music-player-screen');
-    const floatWin = document.getElementById('music-float-window');
-    
-    // 如果“一起听”开始了，并且播放器界面被隐藏了（说明退出了播放页）
-    if (isListenTogether && playerScreen.classList.contains('translate-y-full')) {
-        const currentSong = playlist[currentSongIndex];
-        if (currentSong) {
-            document.getElementById('float-cover-img').src = currentSong.cover;
-            floatWin.classList.remove('hidden');
-            // 音乐播放时图片旋转，暂停时停止旋转
-            floatWin.style.animationPlayState = isPlaying ? 'running' : 'paused';
-        }
-    } else {
-        // 否则隐藏悬浮窗
-        floatWin.classList.add('hidden');
-    }
-}, 500);
-// --- 一起听功能逻辑结束 ---
-</style>
 </body>
 </html>
