@@ -2,15 +2,15 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
     <link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="echo">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#f0f0f0">
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZWNobyIsImRpc3BsYXkiOiJmdWxsc2NyZWVuIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGYwZjAifQ==">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZWNobyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGYwZjAifQ==">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -3433,15 +3433,16 @@ function regenerateLastMessage() {
         alert("还没有聊天记录呢！");
         return;
     }
+
     // 1. 先关掉左下角的菜单
     toggleInventory();
-    
+
     let deletedSomething = false;
-    
+
     // 2. 从最后一条消息开始往前查，把AI发的消息，还有跟随的系统消息（比如TA已收钱）全删掉
     while (chatHistory.length > 0) {
         const lastMsg = chatHistory[chatHistory.length - 1];
-        
+
         // 判断是不是AI发的话（包含AI收钱/退钱系统提示）
         if (lastMsg.role === 'assistant') {
             // 防刷钱机制：如果AI上一回退还了转账，我们要把退回钱包的钱重新扣除
@@ -3463,23 +3464,33 @@ function regenerateLastMessage() {
                 }
             }
             
-            chatHistory.pop(); // 咔嚓！从大脑里彻底删掉这条消息（连同它旧的时间戳一起拔除）
+            chatHistory.pop(); // 咔嚓！从大脑里彻底删掉这轮AI回复的消息
             deletedSomething = true;
         } else {
             // 碰到了用户自己发的文字、图片或者发起的转账，就停止删除
             break;
         }
     }
-    
+
     if (!deletedSomething) {
         alert("上一条是你发的消息哦，等TA回复了之后才能重回！");
         return;
     }
-    
-    // 3. 强制全局刷新一遍画面，把删掉的消息从屏幕上抹掉
+
+    // 3. 【重点修改】：把上一条你发的消息的时间戳，强制刷新成现在的最新时间！
+    // 这样当AI重新回复时，它的时间也是现在，聊天的时间就完美对齐了！
+    if (chatHistory.length > 0) {
+        const myLastMsg = chatHistory[chatHistory.length - 1];
+        if (myLastMsg.role === 'user') {
+            const now = new Date();
+            myLastMsg.time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+    }
+
+    // 4. 强制全局刷新一遍画面，把删掉的消息从屏幕上抹掉，并显示新的时间戳
     renderAllMessages(false);
-    
-    // 4. 重新呼叫AI思考新的回复！因为旧消息连带时间都被删了，新消息会自动盖上当前时间！
+
+    // 5. 重新呼叫AI思考回复！新生成的回复会自动带上当前最新的时间戳！
     triggerAI();
 }
 // =========================================================
