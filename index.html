@@ -1561,20 +1561,34 @@ openPlaylist();">
         .glass-input::placeholder { color: #888; }
     </style>
 
+    <div id="listen-together-widget" class="fixed top-24 right-4 w-[60px] h-[60px] rounded-full shadow-2xl z-[90] hidden cursor-pointer border-2 border-white overflow-hidden" style="animation: spin 10s linear infinite;" onclick="openMusicPlayer()">
+        <img id="listen-together-cover" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        </div>
+    </div>
+
+    <div id="listen-together-modal" class="fixed inset-0 bg-black/60 hidden z-[120] flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-[28px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[75vh]">
+            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">邀请谁一起听歌？</h3>
+            <div id="listen-together-char-list" class="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-2 flex flex-col gap-2 mb-5 border border-gray-100">
+            </div>
+            <button onclick="closeListenTogetherModal()" class="w-full py-3 bg-white border-2 border-gray-200 rounded-full font-bold text-gray-600 text-[16px] active:bg-gray-50 transition-colors">取消</button>
+        </div>
+    </div>
+
     <div id="music-player-screen" class="fixed inset-0 hidden flex flex-col z-[100] transition-transform duration-300 translate-y-full player-bg-adaptive" style="background-size: cover; background-position: center;">
         <div class="h-14 flex items-center justify-between px-4 mt-2 border-b pb-2 player-border-adaptive">
             <button onclick="closeMusicPlayer()" class="w-10 flex justify-start player-text-adaptive">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
             </button>
             <div class="flex-1 text-center font-bold text-[16px] player-text-adaptive">正在播放</div>
-            
-            <div class="flex items-center gap-2 justify-end">
-                <button onclick="openListenTogetherSelect()" class="text-[12px] font-bold player-text-adaptive bg-black/10 px-2.5 py-1 rounded-full active:scale-95 transition-transform whitespace-nowrap">一起听</button>
-                <button onclick="document.getElementById('player-bg-input').click()" class="w-8 flex justify-end player-text-adaptive active:scale-90 transition-transform">
+            <div class="flex items-center gap-3">
+                <button onclick="openListenTogetherModal()" class="text-[13px] font-bold player-text-adaptive bg-white/20 px-3 py-1 rounded-full active:scale-90 transition-transform backdrop-blur-md shadow-sm border border-black/10">一起听</button>
+                <button onclick="document.getElementById('player-bg-input').click()" class="w-10 flex justify-end player-text-adaptive active:scale-90 transition-transform">
                     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </button>
             </div>
-            
             <input type="file" id="player-bg-input" class="hidden" accept="image/*" onchange="changePlayerBg(this)">
         </div>
 
@@ -1954,25 +1968,6 @@ openPlaylist();">
         </div>
     </div>
 
-    <div id="listen-together-float" class="fixed top-24 right-4 w-[50px] h-[50px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.3)] overflow-hidden hidden z-[85] cursor-pointer active:scale-90 transition-transform border-2 border-white" onclick="openMusicPlayer()" style="animation: spin 10s linear infinite;">
-        <img id="listen-together-cover" src="https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <div class="w-2 h-2 rounded-full bg-white"></div>
-        </div>
-    </div>
-
-    <div id="listen-together-modal" class="fixed inset-0 bg-black/60 hidden z-[150] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white rounded-[28px] w-full max-w-sm p-6 shadow-2xl relative flex flex-col max-h-[75vh]">
-            <h3 class="font-bold text-[#333] mb-4 text-center text-[18px]">邀请谁一起听歌？</h3>
-            <div id="listen-together-char-list" class="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-2 flex flex-col gap-2 mb-5 border border-gray-100">
-            </div>
-            <div class="flex gap-3 shrink-0">
-                <button onclick="closeListenTogetherSelect()" class="w-1/3 py-3 bg-white border-2 border-gray-200 rounded-[20px] font-bold text-gray-600 text-[15px] active:bg-gray-50 transition-colors">取消</button>
-                <button onclick="stopListenTogether()" id="stop-listen-btn" class="flex-1 py-3 bg-red-500 text-white rounded-[20px] font-bold text-[15px] hidden active:scale-95 shadow-md">结束一起听</button>
-            </div>
-        </div>
-    </div>
-
 <script>
 // ================= 新增：语音通话引擎 =================
 let vcTimerInterval;
@@ -2244,156 +2239,8 @@ function closeVcTranscript() {
     }, 300);
 }
 
-// ================= 终极内// ================= 新增：一起听核心逻辑 =================
-window.isListeningTogether = false;
-window.listenTogetherCharId = null;
-
-function openListenTogetherSelect() {
-    const list = document.getElementById('listen-together-char-list');
-    list.innerHTML = '';
-    const friends = friendList.filter(f => !f.isGroup);
-    if (friends.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">还没有添加角色哦</div>';
-    } else {
-        friends.forEach(f => {
-            list.innerHTML += `
-                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-xl active:scale-95 transition-transform" onclick="startListenTogether('${f.id}')">
-                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover shadow-sm">
-                    <div class="flex-1 min-w-0">
-                        <div class="font-bold text-[15px] text-gray-800 truncate">${f.remark}</div>
-                        <div class="text-[12px] text-gray-400 truncate">邀请TA一起听歌</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    if (window.isListeningTogether) {
-        document.getElementById('stop-listen-btn').classList.remove('hidden');
-    } else {
-        document.getElementById('stop-listen-btn').classList.add('hidden');
-    }
-    
-    document.getElementById('listen-together-modal').classList.remove('hidden');
-}
-
-function closeListenTogetherSelect() {
-    document.getElementById('listen-together-modal').classList.add('hidden');
-}
-
-function startListenTogether(friendId) {
-    const songTitleEl = document.getElementById('player-title');
-    if (!songTitleEl || songTitleEl.innerText === "暂无歌曲") {
-        alert("请先播放一首歌哦！");
-        return;
-    }
-    
-    window.listenTogetherCharId = friendId;
-    window.isListeningTogether = true;
-    closeListenTogetherSelect();
-    const friend = friendList.find(f => f.id === friendId);
-    const coverSrc = document.getElementById('player-cover-img').src;
-    document.getElementById('listen-together-cover').src = coverSrc;
-
-    if (friend) {
-        // 先关闭播放器并打开微信界面
-        closeMusicPlayer();
-        openChat();
-        
-        setTimeout(() => {
-            // 修复1：使用正确的名字 openChatDetail 进入聊天界面，确保锁定正确的 chatHistory
-            openChatDetail(friendId);
-            
-            // 修复2：加入隐形代码去掉气泡包裹，并加入隐形文字让好友列表和引用显示“[一起听音乐卡片]”
-            const cardHtml = `
-        <span style="display:none;">[一起听音乐卡片]</span>
-        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="display:none;" class="waimai-no-bubble-trigger">
-        <div class="bg-white rounded-xl p-3 w-[220px] shadow-sm border border-gray-100 flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-gray-200">
-                    <img src="${coverSrc}" class="w-full h-full object-cover">
-             
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-[14px] font-bold text-[#333] truncate">${songTitleEl.innerText}</div>
-                    <div class="text-[11px] text-gray-500 truncate">${document.getElementById('player-artist').innerText}</div>
-                </div>
-            </div>
-    
-            <div class="border-t border-gray-100 pt-1.5 text-[10px] text-gray-400 flex items-center gap-1 mt-1">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                邀请你一起听歌
-            </div>
-        </div>
-    `;
-            // 修复3：进入好友聊天界面后，再发送卡片并呼叫AI，确保立即显示且不会报错
-            chatHistory.push({ role: 'user', content: cardHtml });
-            
-            const sysMsg = `[系统提示：我向你发送了“一起听”邀请。同意后，我们的音乐播放器将同步，你能实时听到我放的歌和当前的歌词。请简短回复是否同意。]`;
-            chatHistory.push({ role: 'user', content: sysMsg });
-            renderAllMessages(true);
-            triggerAI();
-        }, 400);
-    }
-}
-
-function stopListenTogether() {
-    window.isListeningTogether = false;
-    window.listenTogetherCharId = null;
-    document.getElementById('listen-together-float').classList.add('hidden');
-    closeListenTogetherSelect();
-    alert("已结束一起听");
-}
-
-// 拦截原有的开关音乐播放器方法，加入悬浮窗逻辑
-const originalCloseMusicPlayer = window.closeMusicPlayer;
-window.closeMusicPlayer = function() {
-    if (typeof originalCloseMusicPlayer === 'function') {
-        originalCloseMusicPlayer();
-    } else {
-        const screen = document.getElementById('music-player-screen');
-        if(screen) {
-            screen.classList.add('translate-y-full');
-            setTimeout(() => screen.classList.add('hidden'), 300);
-        }
-    }
-    // 如果在一起听，退出界面就显示悬浮窗
-    if (window.isListeningTogether) {
-        document.getElementById('listen-together-float').classList.remove('hidden');
-    }
-};
-
-const originalOpenMusicPlayer = window.openMusicPlayer;
-window.openMusicPlayer = function() {
-    if (typeof originalOpenMusicPlayer === 'function') {
-        originalOpenMusicPlayer();
-    } else {
-        const screen = document.getElementById('music-player-screen');
-        if(screen) {
-            screen.classList.remove('hidden');
-            setTimeout(() => screen.classList.remove('translate-y-full'), 10);
-        }
-    }
-    // 进入界面就隐藏悬浮窗
-    document.getElementById('listen-together-float').classList.add('hidden');
-};
-
-// 监听封面变化（当切歌时），同步更新悬浮窗的封面
-const coverObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'src') {
-            document.getElementById('listen-together-cover').src = document.getElementById('player-cover-img').src;
-        }
-    });
-});
-setTimeout(() => {
-    const playerCover = document.getElementById('player-cover-img');
-    if (playerCover) {
-        coverObserver.observe(playerCover, { attributes: true });
-    }
-}, 1000);
-
 // ================= 终极内存解放补丁：智能图片压缩（兼顾清晰度与省内存版） =================
+
 const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
 FileReader.prototype.readAsDataURL = function(file) {
     if (file && file.type && file.type.startsWith('image/') && file.type !== 'image/gif') {
@@ -3691,6 +3538,209 @@ function closeWaimaiApp() {
     document.getElementById('waimai-app-screen').classList.add('hidden');
 }
 
+// ================= 新增：一起听 功能核心代码 =================
+let isListenTogetherMode = false;
+let listenTogetherCharId = null;
+let listenTogetherSyncTimer = null;
+
+function openListenTogetherModal() {
+    const list = document.getElementById('listen-together-char-list');
+    list.innerHTML = '';
+    const friends = friendList.filter(f => !f.isGroup);
+    if (friends.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-400 text-[14px] py-4">还没有添加好友哦</div>';
+    } else {
+        friends.forEach(f => {
+            list.innerHTML += `
+                <div class="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 rounded-xl transition-colors" onclick="sendListenTogetherInvite('${f.id}')">
+                    <img src="${f.avatar || 'https://i.postimg.cc/76N2w5M7/IMG_2980.jpg'}" class="w-12 h-12 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                        <div class="font-bold text-[15px] text-gray-800">${f.remark}</div>
+                        <div class="text-[12px] text-gray-400">发送音乐邀请卡片</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('listen-together-modal').classList.remove('hidden');
+}
+
+function closeListenTogetherModal() {
+    document.getElementById('listen-together-modal').classList.add('hidden');
+}
+
+async function sendListenTogetherInvite(friendId) {
+    closeListenTogetherModal();
+    const friend = friendList.find(f => f.id === friendId);
+    if (!friend) return;
+    
+    const titleEl = document.getElementById('player-title');
+    const artistEl = document.getElementById('player-artist');
+    const coverEl = document.getElementById('player-cover-img');
+    
+    const title = titleEl ? titleEl.innerText : '未知歌曲';
+    const artist = artistEl ? artistEl.innerText : '未知歌手';
+    const cover = coverEl ? coverEl.src : 'https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg';
+
+    // 这里通过设定负值的 margin，强制卡片冲破微信气泡的限制，实现无气泡的纯卡片外观
+    const cardHtml = `
+    <div style="margin: -10px -14px; background: white; border-radius: 12px; width: 240px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); text-align: left; cursor: pointer;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f0f0f0;">
+            <img src="${cover}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+            <div style="flex: 1; overflow: hidden;">
+                <div style="font-size: 15px; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</div>
+                <div style="font-size: 12px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artist}</div>
+            </div>
+            <div style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #07c160; display: flex; justify-content: center; align-items: center; color: #07c160; font-size: 12px; padding-left: 2px; flex-shrink: 0;">▶</div>
+        </div>
+        <div style="padding: 6px 12px; font-size: 11px; color: #aaa; background: #fdfdfd; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            邀请你一起听歌
+        </div>
+    </div>`;
+
+    currentFriendId = friendId;
+    switchWechatTab('messages');
+    document.getElementById('chat-screen').classList.remove('hidden');
+    if(typeof openChatDetail === 'function') openChatDetail(friendId);
+    
+    friend.chatHistory = friend.chatHistory || [];
+    friend.chatHistory.push({ role: 'user', content: cardHtml });
+    
+    if (typeof renderAllMessages === 'function') renderAllMessages(true);
+    
+    setTimeout(() => { triggerListenTogetherAI(friend, title, artist); }, 1000);
+}
+
+async function triggerListenTogetherAI(friend, title, artist) {
+    if (!config.apiKey) return alert("请先配置 API Key！");
+    
+    const loadingId = 'loading_' + Date.now();
+    friend.chatHistory.push({ role: 'assistant', content: '...', id: loadingId });
+    if (typeof renderAllMessages === 'function') renderAllMessages(true);
+
+    let prompt = `你扮演 ${friend.realName}。你的设定是：${friend.persona}。\n`;
+    if (friend.userPersona) prompt += `用户的人设是：${friend.userPersona}。\n`;
+    prompt += `\n【场景】：用户刚才在微信里给你发送了一张音乐卡片，邀请你“一起听歌”。当前播放的歌曲是《${title}》- ${artist}。
+请你根据你的人设，给出一句简短的回复（务必控制在50字以内），表示你接受了邀请，并且很高兴能和TA一起听这首歌。像活人一样自然，不用加动作描写或括号。`;
+
+    try {
+        const response = await fetch(config.baseUrl + '/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.apiKey },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'system', content: prompt }],
+                temperature: parseFloat(config.temperature) || 1.0,
+                max_tokens: 150
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        friend.chatHistory = friend.chatHistory.filter(m => m.id !== loadingId);
+        friend.chatHistory.push({ role: 'assistant', content: reply });
+        if (typeof renderAllMessages === 'function') renderAllMessages(true);
+        
+        startListenTogetherMode(friend.id);
+    } catch (e) {
+        friend.chatHistory = friend.chatHistory.filter(m => m.id !== loadingId);
+        friend.chatHistory.push({ role: 'assistant', content: "好呀，正想听歌呢！" });
+        if (typeof renderAllMessages === 'function') renderAllMessages(true);
+        startListenTogetherMode(friend.id);
+    }
+}
+
+function startListenTogetherMode(friendId) {
+    isListenTogetherMode = true;
+    listenTogetherCharId = friendId;
+    
+    clearInterval(listenTogetherSyncTimer);
+    listenTogetherSyncTimer = setInterval(syncLyricsToAI, 25000); 
+    alert("🎵 一起听模式已开启！\\nTA现在可以同步看到你的音乐和歌词啦！\\n(你可以正常退出播放界面，右上角靠下会出现圆形悬浮窗)");
+}
+
+async function syncLyricsToAI() {
+    if (!isListenTogetherMode || !listenTogetherCharId) return;
+    
+    let currentLine = '';
+    const lyricsContent = document.getElementById('lyrics-content');
+    if (lyricsContent) {
+        const divs = lyricsContent.querySelectorAll('div');
+        for (let i=0; i<divs.length; i++) {
+            if (window.getComputedStyle(divs[i]).opacity == '1' || divs[i].style.color === 'white' || divs[i].style.color === 'black') {
+                currentLine = divs[i].innerText;
+                break;
+            }
+        }
+        if(!currentLine && divs.length > 0) currentLine = divs[Math.floor(divs.length/2)].innerText;
+    }
+    
+    if (!currentLine || currentLine.includes('暂无歌词')) return;
+
+    const friend = friendList.find(f => f.id === listenTogetherCharId);
+    if (!friend) return;
+    
+    // 如果正好在跟TA聊天界面，TA有一定概率会对刚听到的歌词产生感慨并主动发微信
+    if (currentFriendId === listenTogetherCharId && Math.random() < 0.25) { 
+        let prompt = `你扮演 ${friend.realName}。你的设定是：${friend.persona}。\n`;
+        prompt += `你们正在一起听歌。刚才耳机里唱到这句歌词：“${currentLine}”。\n`;
+        prompt += `请结合这首歌的这句词，像真实的微信聊天一样，对用户随口发一句感慨（10到20字以内）。`;
+        
+        try {
+            const response = await fetch(config.baseUrl + '/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.apiKey },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{ role: 'system', content: prompt }],
+                    temperature: parseFloat(config.temperature) || 1.0,
+                    max_tokens: 150
+                })
+            });
+            const data = await response.json();
+            const reply = data.choices[0].message.content.trim();
+            
+            friend.chatHistory.push({ role: 'assistant', content: reply });
+            if (typeof renderAllMessages === 'function') renderAllMessages(true);
+        } catch (e) {}
+    }
+}
+
+// 拦截原有的音乐播放器开关事件，加上悬浮窗的显示隐藏功能
+const origCloseMusicPlayer = window.closeMusicPlayer || function(){};
+window.closeMusicPlayer = function() {
+    const screen = document.getElementById('music-player-screen');
+    if(screen) {
+        screen.classList.add('translate-y-full');
+        setTimeout(() => { screen.classList.add('hidden'); }, 300);
+    }
+    try { origCloseMusicPlayer(); } catch(e){}
+    
+    if (isListenTogetherMode) {
+        const widget = document.getElementById('listen-together-widget');
+        const coverEl = document.getElementById('player-cover-img');
+        if(widget && coverEl) {
+            document.getElementById('listen-together-cover').src = coverEl.src;
+            widget.classList.remove('hidden');
+        }
+    }
+};
+
+const origOpenMusicPlayer = window.openMusicPlayer || function(){};
+window.openMusicPlayer = function() {
+    const screen = document.getElementById('music-player-screen');
+    if(screen) {
+        screen.classList.remove('hidden');
+        setTimeout(() => { screen.classList.remove('translate-y-full'); }, 10);
+    }
+    try { origOpenMusicPlayer(); } catch(e){}
+    
+    const widget = document.getElementById('listen-together-widget');
+    if (widget) widget.classList.add('hidden');
+};
+// =========================================================
+
 function switchWaimaiTab(tab) {
     if(tab === 'home') {
         document.getElementById('waimai-home-tab').classList.remove('hidden');
@@ -4812,19 +4862,11 @@ if (friend && friend.isTranslationEnabled) {
             injectedLore.push(`[设定《${entry.title || '未命名'}》: ${entry.content}]`);
         }
     });
-                if(injectedLore.length > 0) {
+        if(injectedLore.length > 0) {
             finalSystemMessage += "\n\n背景补充：\n" + injectedLore.join("；");
             console.log("注入了世界书数据:", injectedLore);
         }
-
-        // === 新增：一起听状态注入，让AI实时知道你在听什么，唱到了哪里 ===
-        if (window.isListeningTogether && window.listenTogetherCharId === currentFriendId) {
-            const songTitle = document.getElementById('player-title') ? document.getElementById('player-title').innerText : '未知歌曲';
-            const activeLyricEl = document.querySelector('.active-lyric');
-            const currentLyric = activeLyricEl ? activeLyricEl.innerText : '暂无歌词/前奏中';
-            finalSystemMessage += `\n\n【特殊场景提示】：你正在和用户“一起听歌”。目前正在播放的歌曲是《${songTitle}》，现在刚好唱到这句歌词：“${currentLyric}”。请你在回复时，偶尔自然地提到这首歌或者这句歌词的感受，就像两人正戴着同一副耳机一样。`;
-        }
-
+        
         // --- ★ 新增：让AI一次性生成所有对话并整体总结心声 ---
         finalSystemMessage += `\n\n【核心心声要求】：在你的全部回复内容最末尾，你必须对这整次回复进行一个整体的内心想法总结。格式必须严格为：<心声>这里写你总体的内心真实想法</心声>。注意：心声是对本次你所有说的话的“整体总结”，只允许在末尾输出一次，绝对不要每说一句话就加一个心声！而且你的正文千万不要出现这个标签。`;
 
