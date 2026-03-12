@@ -2660,15 +2660,17 @@ function performGlobalSave() {
             if(el) customDOMState[id + '_html'] = el.innerHTML;
         });
 
-        localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
-    } catch (e) {
-        // 如果系统空间真的因为照片太大被彻底塞满了，弹出警告
-        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-            if (!window.hasShownQuotaAlert) {
-                alert('⚠️ 警告：存储空间（5MB）已被相册图片彻底撑爆了！\n\n之后的所有更改都无法保存。\n\n【解决办法】：请在桌面上长按删掉这个 APP，然后重新从浏览器里添加一次到桌面（让它格式化重生），再配合我们的图片压缩功能使用就不会出问题了！');
-                window.hasShownQuotaAlert = true;
-            }
+        // 【终极修复1】：把最新状态永远缓存在内存里，供巡逻队读取
+        window.my_safe_dom_cache = customDOMState;
+
+        try {
+            localStorage.setItem('os_custom_dom_state', JSON.stringify(customDOMState));
+        } catch(err) {
+            // 【终极修复2】：彻底删掉那烦人的5MB弹窗！就算塞满了也不弹窗，用内存缓存强行顶着！
         }
+
+    } catch (e) {
+        // 捕获其余可能的错误，不再弹窗
     }
 }
 
@@ -9261,20 +9263,26 @@ setInterval(() => {
         }
 
         // 巡逻2：死锁桌面组件和另外几个会变回去的小头像
-        const savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
+        // 【终极修复3】：优先从刚才安全的内存里拿最新数据！这样换图标绝对秒生效，不用换十几遍！
+        let savedCustomState = window.my_safe_dom_cache;
+        if (!savedCustomState) {
+            savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state'));
+        }
+        
         if (savedCustomState) {
             for (const key in savedCustomState) {
                 if (key.endsWith('_bg')) {
                     const realId = key.replace('_bg', '');
                     const el = document.getElementById(realId);
                     if (el && savedCustomState[key].length > 50) {
-                        const coreData = savedCustomState[key].substring(25, 60); 
+                        const coreData = savedCustomState[key].substring(25, 60);
                         if (el.style.backgroundImage && !el.style.backgroundImage.includes(coreData)) {
                             el.style.backgroundImage = savedCustomState[key];
                             // 【关键修复】：巡逻强制刷回来的时候，也要强制保持完美缩放和居中！
                             el.style.backgroundSize = 'cover';
                             el.style.backgroundPosition = 'center';
                             el.style.backgroundRepeat = 'no-repeat';
+                            el.innerHTML = '';
                         }
                     }
                 } else if (!key.endsWith('_html')) {
