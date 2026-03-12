@@ -4975,52 +4975,52 @@ function clearPostImage(){
     document.getElementById('post-image-add-btn').classList.remove('hidden');
     validatePostContent();
 }
-function submitPost(){
-    const text = document.getElementById('post-text').value.trim();
-    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden');
-    const imgSrc = hasImg ? document.getElementById('preview-img').src : null;
-    const now = new Date();
+function submitPost(){ 
+    const text = document.getElementById('post-text').value.trim(); 
+    const hasImg = !document.getElementById('post-image-preview').classList.contains('hidden'); 
+    const imgSrc = hasImg ? document.getElementById('preview-img').src : null; 
+    const now = new Date(); 
     const timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
 
-    // 1. 创建你的新帖子数据
-    const newPost = {
-        isChar: true,
-        charId: 'user',
-        name: userProfile.name,
-        handle: userProfile.handle,
-        text: text,
-        img: imgSrc,
-        time: timeStr,
-        comments: [],
-        listIndex: 0,
-        finalAvatar: document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg"
-    };
+    // 1. 创建新帖子数据
+    const newPost = { 
+        isChar: true, 
+        charId: 'user', 
+        name: userProfile.name, 
+        handle: userProfile.handle, 
+        text: text, 
+        img: imgSrc, 
+        time: timeStr, 
+        comments: [], 
+        listIndex: 0, 
+        finalAvatar: document.getElementById('profile-avatar') ? document.getElementById('profile-avatar').src : "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg" 
+    }; 
 
-    // 2. 【关键修正】：把新帖子塞进系统的大名单最前面
-    if (typeof currentForumPostsData === 'undefined') window.currentForumPostsData = [];
+    // 2. 更新全局数据
+    if (typeof currentForumPostsData === 'undefined') window.currentForumPostsData = []; 
     currentForumPostsData.unshift(newPost);
-    
-    // 3. 重新整理名单顺序（身份证号）
-    currentForumPostsData.forEach((p, idx) => p.listIndex = idx);
+    currentForumPostsData.forEach((p, idx) => p.listIndex = idx); 
 
-    // 4. 刷新广场界面，把新帖子显示出来
-    const feed = document.getElementById('forum-feed');
-    const hint = document.getElementById('empty-hint');
-    if(hint) hint.remove();
-    
-    feed.innerHTML = "";
-    currentForumPostsData.forEach(p => {
-        feed.appendChild(createForumPostNode(p));
-    });
-
-    // 5. 如果有个人主页，也顺便把新帖子放进去
-    const profileFeed = document.getElementById('profile-posts-feed');
-    if (profileFeed) {
-        profileFeed.prepend(createForumPostNode(newPost));
+    // 3. 刷新“广场首页”显示
+    const feed = document.getElementById('forum-feed'); 
+    if(feed) {
+        const hint = document.getElementById('empty-hint');
+        if(hint) hint.remove(); 
+        feed.innerHTML = ""; 
+        currentForumPostsData.forEach(p => { feed.appendChild(createForumPostNode(p)); });
     }
 
-    // 6. 发布成功，关掉写帖子的窗口
-    closeCompose();
+    // 4. 【核心修复】：同步刷新“个人主页”显示
+    const profileFeed = document.getElementById('profile-posts-feed');
+    if (profileFeed) {
+        profileFeed.innerHTML = ""; // 先清空主页旧列表
+        // 过滤出所有属于“我”的帖子并显示在主页
+        currentForumPostsData.filter(p => p.charId === 'user').forEach(p => {
+            profileFeed.appendChild(createForumPostNode(p));
+        });
+    }
+
+    closeCompose(); 
 }
 
 // 新增：专门用来修改论坛头像的函数，不波及微信
@@ -5243,30 +5243,33 @@ ${charDetails}
         currentForumPostsData.sort(() => Math.random() - 0.5);
         
         feed.innerHTML = "";
-        currentForumPostsData.forEach((p, index) => {
-            p.listIndex = index;
-            // 处理头像逻辑
-            let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG-2980.jpg";
-            if (p.isChar && p.charId) {
-                const f = friendList.find(x => x.id === p.charId);
-                if (f && f.avatar) avatar = f.avatar;
-                
-                // 【强制替换账号】：就算 AI 生成错了，在这里也会被强行换成你填写的账号
-                const charData = selectedFriendsData.find(x => x.id === p.charId);
-                if (charData && charData.handle) {
-                    p.handle = charData.handle;
-                    // 如果你填写账号的时候忘了打 @，这里会自动给你补上一个 @
-                    if (!p.handle.startsWith('@')) {
-                        p.handle = '@' + p.handle;
-                    }
-                }
-            } else {
-                avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random";
-            }
-            p.finalAvatar = avatar;
-            
-            feed.appendChild(createForumPostNode(p));
-        });
+            // 渲染并分发帖子到各个页面
+    const profileFeed = document.getElementById('profile-posts-feed');
+    if(profileFeed) profileFeed.innerHTML = ""; // 清空个人主页
+
+    currentForumPostsData.forEach((p, index) => { 
+        p.listIndex = index; 
+        let avatar = "https://i.postimg.cc/Qx8Y1m3R/IMG_2980.jpg"; 
+        if (p.isChar && p.charId) { 
+            const f = friendList.find(x => x.id === p.charId); 
+            if (f && f.avatar) avatar = f.avatar; 
+            const charData = selectedFriendsData.find(x => x.id === p.charId); 
+            if (charData && charData.handle) { 
+                p.handle = charData.handle.startsWith('@') ? charData.handle : '@' + charData.handle; 
+            } 
+        } else { 
+            avatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=random"; 
+        } 
+        p.finalAvatar = avatar; 
+
+        // 首页显示所有帖子
+        feed.appendChild(createForumPostNode(p)); 
+
+        // 如果该帖子是用户发的，或者是你当前查看的那个人的，就显示到“我”的主页标签里
+        if (profileFeed && (p.charId === 'user')) {
+            profileFeed.appendChild(createForumPostNode(p));
+        }
+    });
     } catch(e) {
         feed.innerHTML = '<div class="p-10 text-center text-red-500">生成失败，请检查网络或API Key，并稍后再试。</div>';
         console.error(e);
