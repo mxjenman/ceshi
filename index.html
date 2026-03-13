@@ -359,11 +359,19 @@ openPlaylist();">
                     </div>
                     <span class="text-xs text-gray-600 font-bold drop-shadow-md">默契比心</span>
                 </div>
+
                 <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openWaimaiApp()">
                     <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
                         <img id="icon-waimai" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
                     </div>
                     <span class="text-xs text-gray-600 font-bold drop-shadow-md">外卖</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openXixiNotice()">
+                    <div class="app-icon bg-[#5c5c5c] w-[60px] h-[60px] rounded-[15px] shadow-sm overflow-hidden p-0">
+                        <div class="w-full h-full flex items-center justify-center text-[22px] font-bold text-white rounded-[15px]" style="background: linear-gradient(135deg, #ff8fb1, #ffb6c1);">嘻</div>
+                    </div>
+                    <span class="text-xs text-gray-600 font-bold drop-shadow-md">嘻嘻</span>
                 </div>
             </div>
     
@@ -1587,28 +1595,30 @@ openPlaylist();">
             <button onclick="closeModal()" class="mt-6 w-full py-3 bg-gray-100 rounded-xl font-bold">确定并保存</button>
         </div>
     </div>
+    <div id="xixi-notice-modal" class="fixed inset-0 bg-black/50 hidden z-[120] flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div class="text-[20px] font-bold text-center mb-4">嘻嘻公告</div>
 
-    <!-- 初次进入公告弹窗 -->
-    <div id="announcement-modal" class="fixed inset-0 hidden z-[300] items-center justify-center p-6" style="background: rgba(0,0,0,0.45);">
-        <div class="w-full max-w-md bg-white rounded-[24px] shadow-2xl overflow-hidden animate-in">
-            <div class="px-5 pt-5 pb-3 border-b border-gray-100">
-                <div class="text-[18px] font-bold text-black text-center">公告</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+                <div class="text-[13px] text-gray-400 mb-2">当前公告显示内容</div>
+                <div id="xixi-notice-view" class="text-[14px] text-gray-700 leading-6 whitespace-pre-wrap break-words">这里是公告占位文本，你可以点击下方“保存公告内容”后，自定义这里显示的公告。</div>
             </div>
 
-            <div class="px-5 py-4">
-                <div id="announcement-text" class="text-[14px] leading-7 text-gray-700 whitespace-pre-wrap">
-咪打算跑路了嘻嘻 一直在贴钱而且没啥情绪价值还焦虑大家会不会私下决定我做的不好 bug也多多的修的我脑瓜疼 账号会注销掉 链接不会关 源代码会随缘开红薯小号发出来 不用担心咪秽土重生 咪打算逍遥去了没那闲工夫 早知道就做的精致点收费了 全是蹲蹲有情绪价值的就那么一两条 给我内耗死了咋办 总而言之咪不干了 真的没人懂在好多蹲蹲里发现一个长句以为是夸夸之类的结果是小白问问题的绝望嘛 而且我的iPad还因为哈吉米发烫掉了七个电池健康
-                </div>
+            <div class="mb-4">
+                <div class="text-[13px] text-gray-400 mb-2">编辑公告内容</div>
+                <textarea
+                    id="xixi-notice-input"
+                    class="w-full border border-gray-300 rounded-xl p-3 text-[14px] outline-none resize-none h-32 text-gray-700"
+                    placeholder="请在这里输入你的公告内容，比如：欢迎来到我的网页，最近新增了什么内容，或者想提醒用户的话。"
+                ></textarea>
             </div>
 
-            <div class="px-5 pb-5">
-                <button onclick="closeAnnouncementModal()" class="w-full py-3 rounded-[16px] bg-black text-white font-bold text-[15px] active:scale-95 transition-transform">
-                    我知道啦
-                </button>
+            <div class="flex gap-3">
+                <button onclick="closeXixiNotice()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-black">关闭</button>
+                <button onclick="saveXixiNotice()" class="flex-1 py-3 bg-black text-white rounded-xl font-bold">保存公告内容</button>
             </div>
         </div>
     </div>
-
     <div id="global-context-menu" class="context-menu">
         <div id="cm-items-container" class="flex items-center"></div>
         <div class="context-arrow"></div>
@@ -5524,9 +5534,36 @@ function closeModal(){
     document.getElementById('modal-overlay').classList.add('hidden');
 }
 
-function openPlaceholder(id) {
-    document.getElementById('placeholder-title').innerText = '占位APP ' + id;
-    document.getElementById('placeholder-screen').classList.remove('hidden');
+function openXixiNotice() {
+    const savedNotice = localStorage.getItem('xixi_notice_text') || '';
+    const inputEl = document.getElementById('xixi-notice-input');
+    const viewEl = document.getElementById('xixi-notice-view');
+
+    if (inputEl) {
+        inputEl.value = savedNotice;
+    }
+
+    if (viewEl) {
+        viewEl.innerText = savedNotice || '这里是公告占位文本，你可以点击下方“保存公告内容”后，自定义这里显示的公告。';
+    }
+
+    document.getElementById('xixi-notice-modal').classList.remove('hidden');
+}
+
+function closeXixiNotice() {
+    document.getElementById('xixi-notice-modal').classList.add('hidden');
+}
+
+function saveXixiNotice() {
+    const inputEl = document.getElementById('xixi-notice-input');
+    const text = inputEl.value.trim();
+
+    localStorage.setItem('xixi_notice_text', text);
+
+    document.getElementById('xixi-notice-view').innerText =
+        text || '咪打算跑路了嘻嘻 一直在贴钱而且没啥情绪价值还焦虑大家会不会私下决定我做的不好 bug也多多的修的我脑瓜疼 账号会注销掉 链接不会关 源代码会随缘开红薯小号发出来 不用担心咪秽土重生 咪打算逍遥去了没那闲工夫 早知道就做的精致点收费了 全是蹲蹲有情绪价值的就那么一两条 给我内耗死了咋办 总而言之咪不干了 真的没人懂在好多蹲蹲里发现一个长句以为是夸夸之类的结果是小白问问题的绝望嘛 而且我的iPad还因为哈吉米发烫掉了七个电池健康 链接后面可能会随缘修bug 看心情';
+
+    alert('公告内容已保存');
 }
 function closePlaceholder() {
     document.getElementById('placeholder-screen').classList.add('hidden');
@@ -6814,48 +6851,6 @@ function saveAppearanceApp() {
 
 updateWidgetTime();
 setInterval(updateWidgetTime, 1000);
-
-// ===== 初次进入公告弹窗功能 =====
-const ANNOUNCEMENT_STORAGE_KEY = 'os_announcement_seen_v1';
-
-// 你以后想改公告内容，就直接改这里的字
-const ANNOUNCEMENT_TEXT = `这里是公告占位文本
-你可以直接改这段字
-比如写：
-1. 欢迎进入我的小手机
-2. 更新了什么内容
-3. 使用前提醒
-4. 想对用户说的话`;
-
-function openAnnouncementModal() {
-    const modal = document.getElementById('announcement-modal');
-    const textBox = document.getElementById('announcement-text');
-    if (textBox) textBox.innerText = ANNOUNCEMENT_TEXT;
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-}
-
-function closeAnnouncementModal() {
-    const modal = document.getElementById('announcement-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-    localStorage.setItem(ANNOUNCEMENT_STORAGE_KEY, '1');
-}
-
-function showAnnouncementOnce() {
-    const hasSeen = localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY);
-    if (!hasSeen) {
-        setTimeout(() => {
-            openAnnouncementModal();
-        }, 300);
-    }
-}
-// ===== 初次进入公告弹窗功能结束 =====
-
 window.onload = () => {
     // 【设置读取魔法】在页面刚加载时，自动加载保存的数据
     const savedConfig = JSON.parse(localStorage.getItem('os_config'));
@@ -6965,12 +6960,6 @@ window.onload = () => {
             }
         }
     }
-
-    // 初次进入时显示一次公告
-    showAnnouncementOnce();
-
-    // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
-};
 
     // 【重点修复】：删除了原本的 requestNotificationPermission()，完美解决卡死！
 };
