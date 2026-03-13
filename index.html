@@ -1,26 +1,84 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
-    <link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="echo">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#f0f0f0">
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZWNobyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGYwZjAifQ==">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    
-    <title>echo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style id="custom-style">
-        /* 终极安卓适配补丁：锁定屏幕的真实可见高度 */
-        html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; }
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+<link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="pluie">
+
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f0f0f0">
+<meta name="application-name" content="pluie">
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<title>pluie</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+(function () {
+    try {
+        const manifestData = {
+            name: "pluie",
+            short_name: "pluie",
+            start_url: ".",
+            scope: ".",
+            display: "standalone",
+            orientation: "portrait",
+            background_color: "#f0f0f0",
+            theme_color: "#f0f0f0",
+            icons: [
+                {
+                    src: "https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg",
+                    sizes: "192x192",
+                    type: "image/png"
+                },
+                {
+                    src: "https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg",
+                    sizes: "512x512",
+                    type: "image/png"
+                }
+            ]
+        };
+        const manifestBlob = new Blob(
+            [JSON.stringify(manifestData)],
+            { type: "application/manifest+json" }
+        );
+        const manifestURL = URL.createObjectURL(manifestBlob);
+
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = manifestURL;
+        document.head.appendChild(link);
+    } catch (e) {
+        console.log("manifest 注入失败", e);
+    }
+})();
+</script>
+<style id="custom-style">
+        /* 苹果刘海屏 / 状态栏安全区修复 */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            padding-top: env(safe-area-inset-top);
+            box-sizing: border-box;
+        }
+
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
@@ -170,13 +228,13 @@
         .system-msg { text-align: center; font-size: 12px; color: #999; margin: 10px 0; }
     </style>
 </head>
-<body id="desktop-body" class="h-full overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
+<body id="desktop-body" class="h-full overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;" data-standalone="false">
 
     <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
-        <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
-            <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-            <div class="widget-card mb-12 mt-4">
+<div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
+    <div class="w-full flex flex-col" style="padding-top: max(8px, env(safe-area-inset-top));">
+    <div class="widget-card mb-12 mt-4">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
@@ -319,30 +377,30 @@ openPlaylist();">
                 </div>
             </div>
     
-        </div> </div>         <div class="px-6 pb-[30px] w-full z-20">
-        <div class="glass-card w-full p-4 flex justify-between items-center relative">
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
-                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
-                </div>
+        </div> </div>         <div class="fixed left-0 right-0 bottom-[20px] px-6 w-full z-20">
+    <div class="glass-card w-full p-4 flex justify-between items-center relative">
+        <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
+            <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                <img id="icon-sms" src="https://i.postimg.cc/28YxK7yk/IMG_3166.png" class="w-full h-full object-cover rounded-[15px]">
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSettingsApp()">
-                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img id="icon-settings" src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-full h-full object-cover rounded-[15px]">
-                </div>
+        </div>
+        <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSettingsApp()">
+            <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                <img id="icon-settings" src="https://i.postimg.cc/4NG1SQyx/IMG_3167.png" class="w-full h-full object-cover rounded-[15px]">
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openAppearanceApp()">
-                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img id="icon-appearance" src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
-                </div>
+        </div>
+        <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openAppearanceApp()">
+            <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                <img id="icon-appearance" src="https://i.postimg.cc/NftxzkF0/IMG_3165.png" class="w-full h-full object-cover rounded-[15px]">
             </div>
-            <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openCheckPhoneApp()">
-                <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
-                    <img id="icon-placeholder4" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
-                </div>
+        </div>
+        <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openCheckPhoneApp()">
+            <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
+                <img id="icon-placeholder4" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="w-full h-full object-cover rounded-[15px]" style="background-color: #5c5c5c;">
             </div>
         </div>
     </div>
+</div>
 
 
     <div id="chat-screen" class="fixed inset-0 bg-[#ededed] hidden flex flex-col z-50">
@@ -6518,17 +6576,22 @@ function applySystemFontAndSize() {
 // ===== 新增：全屏外观设置功能 =====
 function openAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.remove('slide-hidden');
-    
+
+    // 每次打开外观页，都重新建立暂存，避免旧数据干扰新预览
+    tempAppearance.icons = {};
+    tempAppearance.names = {};
+
     // 获取当前桌面壁纸用于预览
     const bodyBg = document.getElementById('desktop-body').style.backgroundImage;
     if (bodyBg && bodyBg !== 'none') {
-        // 提取 url("...") 里的内容
         const cleanUrl = bodyBg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
         document.getElementById('preview-wallpaper').src = cleanUrl;
+        document.getElementById('preview-wallpaper').style.backgroundColor = 'transparent';
         tempAppearance.wallpaper = cleanUrl;
     } else {
         document.getElementById('preview-wallpaper').src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
         document.getElementById('preview-wallpaper').style.backgroundColor = '#d1d5db';
+        tempAppearance.wallpaper = '';
     }
 
     // 回显全局聊天背景
@@ -6541,11 +6604,19 @@ function openAppearanceApp() {
         document.getElementById('preview-global-chat-bg').src = '';
         document.getElementById('preview-global-chat-bg').classList.add('hidden');
         document.getElementById('global-chat-bg-hint').classList.remove('hidden');
+        tempAppearance.chatBg = '';
+    }
+
+    // 工具：判断是不是那张透明占位图
+    function isTransparentPlaceholder(src) {
+        if (!src) return true;
+        return src.indexOf('data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==') === 0;
     }
 
     // 获取并显示所有桌面图标当前的状态
     const iconGrid = document.getElementById('icon-edit-grid');
     iconGrid.innerHTML = '';
+
     const iconsList = [
         { id: 'icon-wechat', name: '微信' },
         { id: 'icon-lorebook', name: '世界书' },
@@ -6555,27 +6626,40 @@ function openAppearanceApp() {
         { id: 'icon-settings', name: '设置' },
         { id: 'icon-appearance', name: '外观' },
         { id: 'icon-placeholder4', name: '查手机' },
-        // === 这里把外卖和默契比心加进去了 ===
         { id: 'icon-mqbx', name: '默契比心' },
         { id: 'icon-waimai', name: '外卖' }
     ];
 
-    // 获取已经保存过的自定义名称
+    const savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
     const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
 
     iconsList.forEach(icon => {
         const desktopImg = document.getElementById(icon.id);
-        const currentSrc = tempAppearance.icons[icon.id] || (desktopImg ? desktopImg.src : '');
-        
-        // 决定显示的名字：优先用刚刚暂存的，其次用以前保存过的，最后用默认的
-        const displayName = tempAppearance.names[icon.id] || savedAppNames[icon.id] || icon.name;
+
+        let realSrc = '';
+
+        // 优先级1：已经保存过的自定义图标
+        if (savedDesktopIcons[icon.id]) {
+            realSrc = savedDesktopIcons[icon.id];
+        }
+        // 优先级2：当前桌面上真实已有的图标
+        else if (desktopImg && desktopImg.src && !isTransparentPlaceholder(desktopImg.src)) {
+            realSrc = desktopImg.src;
+        }
+        // 优先级3：空白图标就不给透明图，直接留空
+        else {
+            realSrc = '';
+        }
+
+        const displayName = savedAppNames[icon.id] || icon.name;
 
         iconGrid.innerHTML += `
             <div class="flex flex-col items-center gap-1">
-                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200 cursor-pointer active:scale-95 transition-transform" onclick="triggerIconEdit('${icon.id}')">
-                    <img id="preview-${icon.id}" src="${currentSrc}" class="w-full h-full object-cover">
+                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200 cursor-pointer active:scale-95 transition-transform flex items-center justify-center relative" onclick="triggerIconEdit('${icon.id}')">
+                    <img id="preview-${icon.id}" src="${realSrc}" class="w-full h-full object-cover ${realSrc ? '' : 'hidden'}">
+                    <span id="preview-empty-${icon.id}" class="text-[10px] text-gray-400 ${realSrc ? 'hidden' : ''}">空白</span>
                 </div>
-                <span id="preview-name-${icon.id}" class="text-[10px] text-gray-500 cursor-pointer hover:text-black underline decoration-gray-300 underline-offset-2 px-1" onclick="editAppearanceAppName('${icon.id}', '${displayName}')">${displayName}</span>
+                <span id="preview-name-${icon.id}" class="text-[10px] text-gray-500 cursor-pointer hover:text-black underline decoration-gray-300 underline-offset-2 px-1 text-center" onclick="editAppearanceAppName('${icon.id}', '${displayName.replace(/'/g, "\\'")}')">${displayName}</span>
             </div>
         `;
     });
@@ -6583,8 +6667,8 @@ function openAppearanceApp() {
 
 function closeAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.add('slide-hidden');
-    tempAppearance.icons = {}; // 清除未保存的暂存状态
-    tempAppearance.names = {}; // 新增：清除未保存的文字状态
+    tempAppearance.icons = {};
+    tempAppearance.names = {};
 }
 
 // 处理壁纸选择
@@ -6596,7 +6680,7 @@ function handleWallpaperSelect(input) {
             document.getElementById('preview-wallpaper').src = result;
             document.getElementById('preview-wallpaper').style.backgroundColor = 'transparent';
             tempAppearance.wallpaper = result;
-        }
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
@@ -6604,63 +6688,114 @@ function handleWallpaperSelect(input) {
 // 触发某个图标的选择
 function triggerIconEdit(iconId) {
     currentEditingIconId = iconId;
-    document.getElementById('icon-file-input').click();
+    const input = document.getElementById('icon-file-input');
+    input.value = '';
+    input.click();
 }
 
 // 处理图标选择
 function handleIconSelect(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const result = e.target.result;
-            // 更新预览界面的小图标
-            document.getElementById(`preview-${currentEditingIconId}`).src = result;
-            // 暂存更改，等点了保存再生效
-            tempAppearance.icons[currentEditingIconId] = result;
-            // 清空 input 允许重复选择同一张
-            input.value = '';
-        }
-        reader.readAsDataURL(input.files[0]);
+    if (!currentEditingIconId) return;
+    if (!(input.files && input.files[0])) return;
+
+    const file = input.files[0];
+
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+        alert('请选图片文件');
+        input.value = '';
+        return;
     }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const result = e.target.result;
+
+        const previewImg = document.getElementById(`preview-${currentEditingIconId}`);
+        const previewEmpty = document.getElementById(`preview-empty-${currentEditingIconId}`);
+
+        if (previewImg) {
+            previewImg.src = result;
+            previewImg.classList.remove('hidden');
+        }
+
+        if (previewEmpty) {
+            previewEmpty.classList.add('hidden');
+        }
+
+        // 暂存更改，等点保存再真正应用
+        tempAppearance.icons[currentEditingIconId] = result;
+
+        input.value = '';
+    };
+    reader.readAsDataURL(file);
 }
 
 // 点击保存外观设置
 function saveAppearanceApp() {
     // 1. 应用壁纸
-    if (tempAppearance.wallpaper) {
-        document.getElementById('desktop-body').style.backgroundImage = `url(${tempAppearance.wallpaper})`;
-    }
-    // 2. 应用所有更改过的图标到真实桌面
-    for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
-        const desktopImg = document.getElementById(iconId);
-        if (desktopImg) {
-            desktopImg.src = imgSrc;
-            // 如果原本是纯色占位的背景，现在去除了
-            if(desktopImg.style.backgroundColor) desktopImg.style.backgroundColor = 'transparent';
+    if (tempAppearance.wallpaper !== undefined) {
+        if (tempAppearance.wallpaper) {
+            const bgValue = `url(${tempAppearance.wallpaper})`;
+            document.getElementById('desktop-body').style.backgroundImage = bgValue;
+            localStorage.setItem('os_desktop_bg', bgValue);
+        } else {
+            document.getElementById('desktop-body').style.backgroundImage = 'none';
+            localStorage.removeItem('os_desktop_bg');
         }
     }
-    
-    // 3. 新增：应用所有更改过的名称到真实桌面
+
+    // 2. 读取已保存图标
+    let savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
+
+    // 3. 应用这次新换的图标到真实桌面，并保存
+    for (const [iconId, newSrc] of Object.entries(tempAppearance.icons)) {
+        savedDesktopIcons[iconId] = newSrc;
+
+        const desktopImg = document.getElementById(iconId);
+        if (desktopImg) {
+            desktopImg.src = newSrc;
+            desktopImg.style.backgroundColor = 'transparent';
+            desktopImg.classList.remove('hidden');
+        }
+    }
+
+    localStorage.setItem('os_desktop_icons', JSON.stringify(savedDesktopIcons));
+
+    // 4. 应用所有更改过的名称到真实桌面，并保存
     let savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
     for (const [iconId, newName] of Object.entries(tempAppearance.names)) {
         savedAppNames[iconId] = newName;
         const desktopImg = document.getElementById(iconId);
         if (desktopImg) {
-            // 通过图片往上找父元素，再找旁边的文字元素
             const iconContainer = desktopImg.closest('.app-icon');
-            if (iconContainer && iconContainer.nextElementSibling) {
-                iconContainer.nextElementSibling.innerText = newName;
+            if (iconContainer && iconContainer.parentElement) {
+                const textEl = iconContainer.parentElement.querySelector('span');
+                if (textEl) textEl.innerText = newName;
             }
         }
     }
     localStorage.setItem('os_app_names', JSON.stringify(savedAppNames));
-    
-    // 保存全局聊天背景到缓存
+
+    // 5. 保存全局聊天背景
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
-        localStorage.setItem('globalChatBg', tempAppearance.chatBg);
+        localStorage.setItem('globalChatBg', tempAppearance.chatBg || '');
     }
-    
+
+    // 6. 同步进总缓存，防止旧缓存把新图顶回去
+    try {
+        let savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state')) || {};
+        for (const [iconId, imgSrc] of Object.entries(savedDesktopIcons)) {
+            savedCustomState[iconId] = imgSrc;
+        }
+        localStorage.setItem('os_custom_dom_state', JSON.stringify(savedCustomState));
+    } catch (e) {}
+
+    // 7. 立刻全局保存
+    if (typeof performGlobalSave === 'function') {
+        performGlobalSave();
+    }
+
     alert("✅ 外观设置已应用到桌面！");
     closeAppearanceApp();
 }
@@ -6712,6 +6847,18 @@ window.onload = () => {
     if (savedBg) {
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody) desktopBody.style.backgroundImage = savedBg;
+    }
+
+    // 4.5 恢复桌面图标（这是这次修复闪烁和变回默认图标的关键）
+    const savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
+    for (const [iconId, imgSrc] of Object.entries(savedDesktopIcons)) {
+        const desktopImg = document.getElementById(iconId);
+        if (desktopImg && imgSrc) {
+            desktopImg.src = imgSrc;
+            if (desktopImg.style.backgroundColor) {
+                desktopImg.style.backgroundColor = 'transparent';
+            }
+        }
     }
 
     // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
@@ -9737,128 +9884,27 @@ setInterval(() => {
 }, 500);
 // =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
 </script>
-<!-- 激活码系统开始 -->
-<div id="activation-screen" style="
-position:fixed;
-inset:0;
-background:#f0f0f0;
-z-index:999999;
-display:none;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-font-family:sans-serif;
-padding:20px;
-text-align:center;
-">
-
-<h2 style="font-size:22px;margin-bottom:20px;">请输入激活码</h2>
-
-<div style="margin-bottom:15px;font-size:14px;color:#666;">
-本机识别码：<br>
-<span id="device-code" style="font-weight:bold;font-size:16px;color:#000;"></span>
-</div>
-
-<input id="activation-input" placeholder="输入激活码"
-style="
-padding:12px;
-font-size:16px;
-border-radius:12px;
-border:1px solid #ccc;
-width:220px;
-text-align:center;
-margin-bottom:15px;
-">
-
-<button onclick="checkActivation()" style="
-padding:12px 24px;
-font-size:16px;
-border:none;
-background:#000;
-color:#fff;
-border-radius:12px;
-cursor:pointer;
-">
-确认激活
-</button>
-
-<div id="activation-error" style="
-color:red;
-margin-top:12px;
-display:none;
-">
-激活码错误
-</div>
-
-</div>
-
 <script>
-// ===== 本机识别码：只是记录，不再绑定激活码 =====
-function getDeviceCode() {
-    let code = localStorage.getItem("device_code");
+(function () {
+    function checkStandalone() {
+        const isIosStandalone = window.navigator.standalone === true;
+        const isAndroidStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isStandalone = isIosStandalone || isAndroidStandalone;
 
-    if (!code) {
-        code = "DEV-" + Math.random().toString(36).substr(2, 10).toUpperCase();
-        localStorage.setItem("device_code", code);
+        document.body.setAttribute('data-standalone', isStandalone ? 'true' : 'false');
+
+        if (isStandalone) {
+            document.documentElement.style.height = '100vh';
+            document.body.style.height = '100vh';
+            document.body.style.overflow = 'hidden';
+        }
     }
 
-    return code;
-}
-
-// ===== 检查激活码 =====
-function checkActivation() {
-    let input = document.getElementById("activation-input").value.trim().toUpperCase();
-    let device = getDeviceCode();
-
-    document.getElementById("activation-error").style.display = "none";
-
-    if (!input) {
-        alert("请先输入激活码");
-        document.getElementById("activation-error").innerText = "请先输入激活码";
-        document.getElementById("activation-error").style.display = "block";
-        return;
-    }
-
-    let data = localStorage.getItem("codes");
-    let db = JSON.parse(data || "{}");
-
-    if (!db || !db[input]) {
-        alert("激活码不存在，请检查输入");
-        document.getElementById("activation-error").innerText = "激活码不存在";
-        document.getElementById("activation-error").style.display = "block";
-        return;
-    }
-
-    if (db[input].used === true) {
-        alert("这个激活码已经被使用过了");
-        document.getElementById("activation-error").innerText = "这个激活码已经被使用过了";
-        document.getElementById("activation-error").style.display = "block";
-        return;
-    }
-
-    db[input].used = true;
-    db[input].usedAt = new Date().toLocaleString();
-    db[input].usedDevice = device;
-    db[input].useCount = 1;
-
-    localStorage.setItem("codes", JSON.stringify(db));
-
-    localStorage.setItem("activated", "yes");
-    localStorage.setItem("activated_code", input);
-
-    document.getElementById("activation-screen").style.display = "none";
-    alert("激活成功！欢迎使用");
-}
-
-// ===== 页面启动时检测 =====
-window.addEventListener("load", function () {
-    if (localStorage.getItem("activated") !== "yes") {
-        let screen = document.getElementById("activation-screen");
-        screen.style.display = "flex";
-        document.getElementById("device-code").innerText = getDeviceCode();
-    }
-});
+    window.addEventListener('load', checkStandalone);
+    window.addEventListener('resize', checkStandalone);
+    window.addEventListener('orientationchange', checkStandalone);
+    document.addEventListener('visibilitychange', checkStandalone);
+})();
 </script>
-<!-- 激活码系统结束 -->
 </body>
 </html>
