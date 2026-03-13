@@ -9737,5 +9737,123 @@ setInterval(() => {
 }, 500);
 // =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
 </script>
+<!-- 激活码系统开始 -->
+<div id="activation-screen" style="
+position:fixed;
+inset:0;
+background:#f0f0f0;
+z-index:999999;
+display:none;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-family:sans-serif;
+padding:20px;
+text-align:center;
+">
+
+<h2 style="font-size:22px;margin-bottom:20px;">请输入激活码</h2>
+
+<div style="margin-bottom:15px;font-size:14px;color:#666;">
+设备码：<br>
+<span id="device-code" style="font-weight:bold;font-size:16px;color:#000;"></span>
+</div>
+
+<input id="activation-input" placeholder="输入激活码"
+style="
+padding:12px;
+font-size:16px;
+border-radius:12px;
+border:1px solid #ccc;
+width:220px;
+text-align:center;
+margin-bottom:15px;
+">
+
+<button onclick="checkActivation()" style="
+padding:12px 24px;
+font-size:16px;
+border:none;
+background:#000;
+color:#fff;
+border-radius:12px;
+cursor:pointer;
+">
+确认激活
+</button>
+
+<div id="activation-error" style="
+color:red;
+margin-top:12px;
+display:none;
+">
+激活码错误
+</div>
+
+</div>
+
+
+<script>
+// ===== 生成设备码（一机一码）=====
+function getDeviceCode() {
+
+let code = localStorage.getItem("device_code");
+
+if (!code) {
+code = "DEV-" + Math.random().toString(36).substr(2, 10).toUpperCase();
+localStorage.setItem("device_code", code);
+}
+
+return code;
+}
+
+
+// ===== 生成对应激活码规则 =====
+// 你只需要根据设备码算出同样规则的码给用户
+
+function generateActivationCode(deviceCode) {
+
+let base = deviceCode.replace("DEV-", "");
+let reversed = base.split("").reverse().join("");
+return "ACT-" + reversed.substring(0,8).toUpperCase();
+
+}
+
+
+// ===== 检查激活 =====
+function checkActivation() {
+
+let input = document.getElementById("activation-input").value.trim();
+let device = getDeviceCode();
+let correct = generateActivationCode(device);
+
+if (input === correct) {
+
+localStorage.setItem("activated", "yes");
+document.getElementById("activation-screen").style.display = "none";
+
+} else {
+
+document.getElementById("activation-error").style.display = "block";
+
+}
+}
+
+
+// ===== 页面启动时检测 =====
+window.addEventListener("load", function () {
+
+if (localStorage.getItem("activated") !== "yes") {
+
+let screen = document.getElementById("activation-screen");
+screen.style.display = "flex";
+
+document.getElementById("device-code").innerText = getDeviceCode();
+
+}
+
+});
+</script>
+<!-- 激活码系统结束 -->
 </body>
 </html>
