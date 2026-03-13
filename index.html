@@ -9522,7 +9522,7 @@ async function executeAutoMomentPost(friend) {
         feed.prepend(div);
     } catch(e) { console.error("AI自动发朋友圈失败:", e); }
 }
-// =============== 新增：一起听 & 浮窗功能引擎 3.0究极版 =================
+// =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 =================
 let listeningTogetherCharId = null;
 
 // 强化：打开音乐播放器时隐藏浮窗
@@ -9537,6 +9537,7 @@ const originalCloseMusicPlayer = window.closeMusicPlayer;
 window.closeMusicPlayer = function() {
     if (originalCloseMusicPlayer) originalCloseMusicPlayer();
     const title = document.getElementById('player-title').innerText;
+    // 只有在真的有歌曲时才显示浮窗
     if (title && title !== '暂无歌曲') {
         const coverSrc = document.getElementById('player-cover-img').src;
         document.getElementById('music-floating-cover').src = coverSrc;
@@ -9580,22 +9581,20 @@ async function sendListenInvite(charId) {
     const songArtist = document.getElementById('player-artist').innerText;
     const songCover = document.getElementById('player-cover-img').src;
     
-    // 制作防弹级精美音乐卡片（自带隐身机制）
+    // 制作精美音乐卡片（为了让部分代码不包气泡，在最前面放了一个隐藏的占位img标签）
     const cardHtml = `
-        <span class="music-card-preview-text" style="display:none;">[一起听歌邀请]</span>
-        <div class="music-card-wrapper" style="display:inline-block; width:100%; text-align:left;">
-            <div class="music-card-core bg-white rounded-[16px] w-[230px] shadow-md border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform" onclick="openMusicPlayer()" style="margin:0;">
-                <div class="flex items-center gap-3 p-3 bg-gray-50 border-b border-gray-100">
-                    <img src="${songCover}" class="w-11 h-11 rounded-full object-cover" style="animation: spin 5s linear infinite;">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-[14px] font-bold text-[#333] truncate">${songTitle}</div>
-                        <div class="text-[11px] text-gray-500 truncate">${songArtist}</div>
-                    </div>
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;">
+        <div class="bg-white rounded-[16px] w-[230px] shadow-md border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform" onclick="openMusicPlayer()">
+            <div class="flex items-center gap-3 p-3 bg-gray-50 border-b border-gray-100">
+                <img src="${songCover}" class="w-11 h-11 rounded-full object-cover" style="animation: spin 5s linear infinite;">
+                <div class="flex-1 min-w-0">
+                    <div class="text-[14px] font-bold text-[#333] truncate">${songTitle}</div>
+                    <div class="text-[11px] text-gray-500 truncate">${songArtist}</div>
                 </div>
-                <div class="p-2.5 text-[11px] text-gray-500 flex justify-between items-center bg-white">
-                    <span class="font-bold text-black">🎵 邀请你一起听歌</span>
-                    <span class="text-[#07c160] font-bold">▶ 点击进入</span>
-                </div>
+            </div>
+            <div class="p-2.5 text-[11px] text-gray-500 flex justify-between items-center bg-white">
+                <span class="font-bold text-black">🎵 邀请你一起听歌</span>
+                <span class="text-[#07c160] font-bold">▶ 点击进入</span>
             </div>
         </div>
     `;
@@ -9606,6 +9605,7 @@ async function sendListenInvite(charId) {
     if (currentFriendId === charId) {
         renderAllMessages(true);
     }
+    // 强制刷新左侧好友列表让它生成最新消息
     if(typeof renderFriendList === 'function') renderFriendList(); 
     
     alert(`已向 ${friend.remark} 发送了卡片邀请，快去微信看看TA同不同意吧！`);
@@ -9690,65 +9690,52 @@ setInterval(async () => {
     }
 }, 15000);
 
-// 核心：全自动界面修复引擎 3.0究极防弹版
+// 核心：全自动界面修复引擎（解决卡片气泡、引文、预览问题、自动切封面）
 setInterval(() => {
-    // 1. 去掉聊天主界面卡片外面的绿色/白色气泡，让它无缝显示
-    document.querySelectorAll('.music-card-core').forEach(card => {
-        let bubble = card.parentElement;
-        for (let i = 0; i < 4; i++) {
-            if (!bubble) break;
-            if ((bubble.classList.contains('p-2') || bubble.classList.contains('p-3') || bubble.className.includes('bg-[#') || bubble.className.includes('bg-white')) && !bubble.classList.contains('music-card-core')) {
+    // 1. 彻底清除聊天记录里邀请卡片外面的绿色/白色气泡，让它无缝显示
+    document.querySelectorAll('#chat-messages > div').forEach(msgWrapper => {
+        if (msgWrapper.innerHTML.includes('🎵 邀请你一起听歌')) {
+            // 找到所有可能是气泡的层，把背景和内边距掏空
+            const bubbles = msgWrapper.querySelectorAll('.bg-\\[\\#95ec69\\], .bg-white, .p-2, .p-3');
+            bubbles.forEach(bubble => {
+                bubble.classList.remove('bg-[#95ec69]', 'bg-white', 'p-2', 'p-3', 'shadow-sm', 'border', 'rounded-lg');
                 bubble.style.background = 'transparent';
                 bubble.style.padding = '0';
-                bubble.style.boxShadow = 'none';
-                bubble.style.border = 'none';
-                bubble.classList.remove('bg-[#95ec69]', 'bg-white', 'shadow-sm', 'border', 'rounded-lg');
-            }
-            bubble = bubble.parentElement;
+            });
+        }
+        
+        // 2. 修复消息列表里引用回复时显示一长串代码的问题，改成简化的"一起听歌吧"
+        const quoteDiv = msgWrapper.querySelector('.quote-block') || msgWrapper.querySelector('.bg-black\\/5');
+        if (quoteDiv && quoteDiv.innerHTML.includes('🎵 邀请你一起听歌')) {
+            quoteDiv.innerHTML = '一起听歌吧';
         }
     });
 
-    // 2. 隐藏列表和引用区里渲染出的卡片，强制换成纯文字
-    document.querySelectorAll('.music-card-wrapper').forEach(wrapper => {
-        const isInChat = wrapper.closest('#chat-messages');
-        // 如果是这两种情况：引用区、或者是左侧的好友列表
-        const isQuote = wrapper.closest('.bg-black\\/5') || wrapper.closest('.reply-preview');
-        const isFriendList = wrapper.closest('#friend-list');
-
-        const coreCard = wrapper.querySelector('.music-card-core');
-        const previewText = wrapper.previousElementSibling; 
-
-        if (isFriendList || isQuote || !isInChat) {
-            // 不在聊天主界面里，强行把卡片藏起来，变文字
-            if (coreCard) coreCard.style.display = 'none';
-            if (previewText) {
-                previewText.style.display = 'inline';
-                previewText.style.color = 'inherit';
+    // 3. 修复左侧好友列表最后一条消息预览，不要显示一整个卡片，改成显示"一起听歌吧"
+    const listContainer = document.getElementById('friend-list-container');
+    if (listContainer) {
+        // 精准寻找到显示预览小字的那个位置，直接替换，保证不破坏头像和名字
+        listContainer.querySelectorAll('.text-gray-400.truncate').forEach(el => {
+            if (el.innerHTML.includes('🎵 邀请你一起听歌')) {
+                el.innerHTML = '一起听歌吧';
             }
-        } else {
-            // 在聊天主界面里，正常显示完整卡片
-            if (coreCard) coreCard.style.display = 'block';
-            if (previewText) previewText.style.display = 'none';
-        }
-    });
-
-    // 3. 终极防御：如果系统把卡片代码直接当成了"纯文字"显示，强行拦截并盖掉！
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    let textNode;
-    while(textNode = walker.nextNode()) {
-        if (textNode.nodeValue.includes('music-card-core')) {
-            textNode.nodeValue = '[一起听歌邀请]';
-        }
+        });
     }
 
-    // 4. 浮窗封面自动跟随换歌切换！
+    // 4. 修复点击长按回复时，输入框上面的那一行预览文字
+    const replyPreview = document.getElementById('reply-preview-text');
+    if (replyPreview && replyPreview.innerHTML.includes('🎵 邀请你一起听歌')) {
+        replyPreview.innerHTML = '一起听歌吧';
+    }
+    
+    // 5. 浮窗封面自动跟随换歌切换！每隔0.5秒钟检查一次播放器封面并同步给浮窗
     const coverImg = document.getElementById('player-cover-img');
     const floatingCover = document.getElementById('music-floating-cover');
     if (coverImg && floatingCover && coverImg.src && coverImg.src !== floatingCover.src) {
         floatingCover.src = coverImg.src;
     }
-}, 200);
-// =============== 新增：一起听 & 浮窗功能引擎 3.0究极版 结束 =================
+}, 500);
+// =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
 </script>
 </body>
 </html>
