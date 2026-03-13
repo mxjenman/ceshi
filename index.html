@@ -1,67 +1,117 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
-<link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+    <link rel="icon" href="https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="echo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f0f0f0">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZWNobyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGYwZjAifQ==">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>echo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+            /* ================= 公告弹窗样式 ================= */
+        .notice-modal-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="echo">
+        .notice-modal-mask.show {
+            display: flex;
+        }
 
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f0f0f0">
-<meta name="application-name" content="echo">
+        .notice-modal-card {
+            width: 100%;
+            max-width: 360px;
+            background: rgba(255,255,255,0.96);
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            overflow: hidden;
+            animation: noticePopIn 0.25s ease-out;
+        }
 
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+        @keyframes noticePopIn {
+            from {
+                opacity: 0;
+                transform: scale(0.94) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
 
-<title>echo</title>
-<script src="https://cdn.tailwindcss.com"></script>
+        .notice-modal-header {
+            padding: 18px 20px 10px 20px;
+            text-align: center;
+        }
 
-<script>
-(function () {
-    try {
-        const manifestData = {
-            name: "echo",
-            short_name: "echo",
-            start_url: ".",
-            scope: ".",
-            display: "standalone",
-            orientation: "portrait",
-            background_color: "#f0f0f0",
-            theme_color: "#f0f0f0",
-            icons: [
-                {
-                    src: "https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg",
-                    sizes: "192x192",
-                    type: "image/png"
-                },
-                {
-                    src: "https://i.postimg.cc/cJ7TGpSf/IMG-3096.jpg",
-                    sizes: "512x512",
-                    type: "image/png"
-                }
-            ]
-        };
+        .notice-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111;
+            letter-spacing: 1px;
+        }
 
-        const manifestBlob = new Blob(
-            [JSON.stringify(manifestData)],
-            { type: "application/manifest+json" }
-        );
-        const manifestURL = URL.createObjectURL(manifestBlob);
+        .notice-modal-body {
+            padding: 4px 20px 20px 20px;
+        }
 
-        const link = document.createElement("link");
-        link.rel = "manifest";
-        link.href = manifestURL;
-        document.head.appendChild(link);
-    } catch (e) {
-        console.log("manifest 注入失败", e);
-    }
-})();
-</script>
+        .notice-modal-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #444;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 45vh;
+            overflow-y: auto;
+        }
+
+        .notice-modal-footer {
+            display: flex;
+            border-top: 1px solid #efefef;
+        }
+
+        .notice-modal-btn {
+            flex: 1;
+            border: none;
+            background: white;
+            padding: 15px 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notice-modal-btn:active {
+            background: #f5f5f5;
+        }
+
+        .notice-modal-btn + .notice-modal-btn {
+            border-left: 1px solid #efefef;
+        }
+
+        .notice-edit-btn {
+            color: #666;
+        }
+
+        .notice-ok-btn {
+            color: #000;
+        }
+        /* ================= 公告弹窗样式结束 ================= */
     <style id="custom-style">
         /* 终极安卓适配补丁：锁定屏幕的真实可见高度 */
         html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; }
@@ -215,8 +265,23 @@
         .system-msg { text-align: center; font-size: 12px; color: #999; margin: 10px 0; }
     </style>
 </head>
-<body id="desktop-body" class="h-full overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;" data-standalone="false">
-
+<body id="desktop-body" class="h-full overflow-hidden flex flex-col bg-cover bg-center transition-all duration-300" style="background-image: none;">
+    <!-- ================= 初次进入公告弹窗 ================= -->
+    <div id="notice-modal" class="notice-modal-mask">
+        <div class="notice-modal-card">
+            <div class="notice-modal-header">
+                <div class="notice-modal-title">公告</div>
+            </div>
+            <div class="notice-modal-body">
+                <div id="notice-modal-text" class="notice-modal-text">咪打算跑路了嘻嘻 一直在贴钱而且没啥情绪价值还焦虑大家会不会私下决定我做的不好 bug也多多的修的我脑瓜疼 账号会注销掉 链接不会关 源代码会随缘开红薯小号发出来 不用担心咪秽土重生 咪打算逍遥去了没那闲工夫 早知道就做的精致点收费了 全是蹲蹲有情绪价值的就那么一两条 给我内耗死了咋办 总而言之咪不干了 真的没人懂在好多蹲蹲里发现一个长句以为是夸夸之类的结果是小白问问题的绝望嘛</div>
+            </div>
+            <div class="notice-modal-footer">
+                <button class="notice-modal-btn notice-edit-btn" onclick="editNoticeText()">编辑公告</button>
+                <button class="notice-modal-btn notice-ok-btn" onclick="closeNoticeModal()">我知道了</button>
+            </div>
+        </div>
+    </div>
+    <!-- ================= 初次进入公告弹窗结束 ================= -->
     <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
         <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
@@ -6673,25 +6738,34 @@ function handleIconSelect(input) {
 function saveAppearanceApp() {
     // 1. 应用壁纸
     if (tempAppearance.wallpaper) {
-        document.getElementById('desktop-body').style.backgroundImage = `url(${tempAppearance.wallpaper})`;
+        const bgValue = `url(${tempAppearance.wallpaper})`;
+        document.getElementById('desktop-body').style.backgroundImage = bgValue;
+        localStorage.setItem('os_desktop_bg', bgValue);
     }
-    // 2. 应用所有更改过的图标到真实桌面
+
+    // 2. 先读取已经保存过的桌面图标
+    let savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
+
+    // 3. 应用所有更改过的图标到真实桌面，并且立刻单独保存
     for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
         const desktopImg = document.getElementById(iconId);
         if (desktopImg) {
             desktopImg.src = imgSrc;
-            // 如果原本是纯色占位的背景，现在去除了
-            if(desktopImg.style.backgroundColor) desktopImg.style.backgroundColor = 'transparent';
+            if (desktopImg.style.backgroundColor) {
+                desktopImg.style.backgroundColor = 'transparent';
+            }
         }
+        savedDesktopIcons[iconId] = imgSrc;
     }
-    
-    // 3. 新增：应用所有更改过的名称到真实桌面
+
+    localStorage.setItem('os_desktop_icons', JSON.stringify(savedDesktopIcons));
+
+    // 4. 应用所有更改过的名称到真实桌面，并且保存
     let savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
     for (const [iconId, newName] of Object.entries(tempAppearance.names)) {
         savedAppNames[iconId] = newName;
         const desktopImg = document.getElementById(iconId);
         if (desktopImg) {
-            // 通过图片往上找父元素，再找旁边的文字元素
             const iconContainer = desktopImg.closest('.app-icon');
             if (iconContainer && iconContainer.nextElementSibling) {
                 iconContainer.nextElementSibling.innerText = newName;
@@ -6699,13 +6773,27 @@ function saveAppearanceApp() {
         }
     }
     localStorage.setItem('os_app_names', JSON.stringify(savedAppNames));
-    
-    // 保存全局聊天背景到缓存
+
+    // 5. 保存全局聊天背景
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
         localStorage.setItem('globalChatBg', tempAppearance.chatBg);
     }
-    
+
+    // 6. 额外把这次最新画面立刻写进总缓存，防止旧缓存把新图标顶回去
+    try {
+        let savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state')) || {};
+        for (const [iconId, imgSrc] of Object.entries(savedDesktopIcons)) {
+            savedCustomState[iconId] = imgSrc;
+        }
+        localStorage.setItem('os_custom_dom_state', JSON.stringify(savedCustomState));
+    } catch (e) {}
+
+    // 7. 立刻执行一次全局保存，别再等每秒自动保存
+    if (typeof performGlobalSave === 'function') {
+        performGlobalSave();
+    }
+
     alert("✅ 外观设置已应用到桌面！");
     closeAppearanceApp();
 }
@@ -6757,6 +6845,18 @@ window.onload = () => {
     if (savedBg) {
         const desktopBody = document.getElementById('desktop-body');
         if (desktopBody) desktopBody.style.backgroundImage = savedBg;
+    }
+
+    // 4.5 恢复桌面图标（这是这次修复闪烁和变回默认图标的关键）
+    const savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
+    for (const [iconId, imgSrc] of Object.entries(savedDesktopIcons)) {
+        const desktopImg = document.getElementById(iconId);
+        if (desktopImg && imgSrc) {
+            desktopImg.src = imgSrc;
+            if (desktopImg.style.backgroundColor) {
+                desktopImg.style.backgroundColor = 'transparent';
+            }
+        }
     }
 
     // 5. 还原前，先按同样的顺序给没有名字的元素打上对应编号
@@ -9781,28 +9881,6 @@ setInterval(() => {
     }
 }, 500);
 // =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
-</script>
-<script>
-(function () {
-    function checkStandalone() {
-        const isIosStandalone = window.navigator.standalone === true;
-        const isAndroidStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        const isStandalone = isIosStandalone || isAndroidStandalone;
-
-        document.body.setAttribute('data-standalone', isStandalone ? 'true' : 'false');
-
-        if (isStandalone) {
-            document.documentElement.style.height = '100vh';
-            document.body.style.height = '100vh';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    window.addEventListener('load', checkStandalone);
-    window.addEventListener('resize', checkStandalone);
-    window.addEventListener('orientationchange', checkStandalone);
-    document.addEventListener('visibilitychange', checkStandalone);
-})();
 </script>
 </body>
 </html>
