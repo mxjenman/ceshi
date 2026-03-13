@@ -9808,35 +9808,39 @@ return code;
 }
 
 
-// ===== 生成对应激活码规则 =====
-// 你只需要根据设备码算出同样规则的码给用户
-
-function generateActivationCode(deviceCode) {
-
-let base = deviceCode.replace("DEV-", "");
-let reversed = base.split("").reverse().join("");
-return "ACT-" + reversed.substring(0,8).toUpperCase();
-
-}
-
-
-// ===== 检查激活 =====
+// ===== 关联后台：检查激活码合法性 =====
 function checkActivation() {
-
-let input = document.getElementById("activation-input").value.trim();
-let device = getDeviceCode();
-let correct = generateActivationCode(device);
-
-if (input === correct) {
-
-localStorage.setItem("activated", "yes");
-document.getElementById("activation-screen").style.display = "none";
-
-} else {
-
-document.getElementById("activation-error").style.display = "block";
-
-}
+    let input = document.getElementById("activation-input").value.trim();
+    let device = getDeviceCode();
+    
+    // 从后台存储的数据里拿激活码列表
+    let db = JSON.parse(localStorage.getItem("codes") || "{}");
+    
+    if (db[input]) {
+        // 如果激活码存在，检查它是否没被用过，或者就是当前这个设备在用
+        if (db[input].used === "no" || db[input].deviceId === device) {
+            
+            // 标记为已激活
+            db[input].used = "yes";
+            db[input].deviceId = device;
+            
+            // 把更新后的数据存回后台
+            localStorage.setItem("codes", JSON.stringify(db));
+            
+            // 开启软件
+            localStorage.setItem("activated", "yes");
+            document.getElementById("activation-screen").style.display = "none";
+            alert("激活成功！");
+            
+        } else {
+            // 激活码被别人用了
+            alert("该激活码已被其他设备使用");
+            document.getElementById("activation-error").style.display = "block";
+        }
+    } else {
+        // 根本没有这个激活码
+        document.getElementById("activation-error").style.display = "block";
+    }
 }
 
 
