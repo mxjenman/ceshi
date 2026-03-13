@@ -9755,7 +9755,7 @@ text-align:center;
 <h2 style="font-size:22px;margin-bottom:20px;">请输入激活码</h2>
 
 <div style="margin-bottom:15px;font-size:14px;color:#666;">
-设备码：<br>
+本机识别码：<br>
 <span id="device-code" style="font-weight:bold;font-size:16px;color:#000;"></span>
 </div>
 
@@ -9792,75 +9792,71 @@ display:none;
 
 </div>
 
-
 <script>
-// ===== 生成设备码（一机一码）=====
+// ===== 本机识别码：只是记录，不再绑定激活码 =====
 function getDeviceCode() {
+    let code = localStorage.getItem("device_code");
 
-let code = localStorage.getItem("device_code");
+    if (!code) {
+        code = "DEV-" + Math.random().toString(36).substr(2, 10).toUpperCase();
+        localStorage.setItem("device_code", code);
+    }
 
-if (!code) {
-code = "DEV-" + Math.random().toString(36).substr(2, 10).toUpperCase();
-localStorage.setItem("device_code", code);
+    return code;
 }
 
-return code;
-}
-
-
-// ===== 关联后台：检查激活码合法性 =====
+// ===== 检查激活码 =====
 function checkActivation() {
-    // 1. 获取用户输入的激活码
-    let input = document.getElementById("activation-input").value.trim();
-    // 2. 获取当前机器的设备ID
+    let input = document.getElementById("activation-input").value.trim().toUpperCase();
     let device = getDeviceCode();
-    
-    // 3. 这里的 "codes" 必须和后台文件里的名字一模一样
+
+    document.getElementById("activation-error").style.display = "none";
+
+    if (!input) {
+        alert("请先输入激活码");
+        document.getElementById("activation-error").innerText = "请先输入激活码";
+        document.getElementById("activation-error").style.display = "block";
+        return;
+    }
+
     let data = localStorage.getItem("codes");
     let db = JSON.parse(data || "{}");
-    
-    // 4. 检查输入的码在不在后台列表里
-    if (db && db[input]) {
-        
-        // 5. 检查这个码是不是还没人用过 (false)，或者就是这张票对应的就是我这台机器
-        if (db[input].used === false || db[input].device === device) {
-            
-            // 6. 验证通过，把这个码标记为“已使用”并绑定我的设备ID
-            db[input].used = true;
-            db[input].device = device;
-            
-            // 7. 把更新后的名单存回去，后台刷新就能看到了
-            localStorage.setItem("codes", JSON.stringify(db));
-            
-            // 8. 成功进入软件
-            localStorage.setItem("activated", "yes");
-            document.getElementById("activation-screen").style.display = "none";
-            alert("激活成功！欢迎使用");
-            
-        } else {
-            // 这个码的 used 已经是 true 了，且 device 也不是我
-            alert("该激活码已被其他设备占用");
-        }
-    } else {
-        // 列表里根本没这个码，或者后台还没生成过码
-        alert("激活码不存在，请检查输入或先在后台生成");
-        document.getElementById("activation-error").style.display = "block";
-    }
-}
 
+    if (!db || !db[input]) {
+        alert("激活码不存在，请检查输入");
+        document.getElementById("activation-error").innerText = "激活码不存在";
+        document.getElementById("activation-error").style.display = "block";
+        return;
+    }
+
+    if (db[input].used === true) {
+        alert("这个激活码已经被使用过了");
+        document.getElementById("activation-error").innerText = "这个激活码已经被使用过了";
+        document.getElementById("activation-error").style.display = "block";
+        return;
+    }
+
+    db[input].used = true;
+    db[input].usedAt = new Date().toLocaleString();
+    db[input].usedDevice = device;
+    db[input].useCount = 1;
+
+    localStorage.setItem("codes", JSON.stringify(db));
+
+    localStorage.setItem("activated", "yes");
+    localStorage.setItem("activated_code", input);
+
+    document.getElementById("activation-screen").style.display = "none";
+    alert("激活成功！欢迎使用");
+}
 
 // ===== 页面启动时检测 =====
 window.addEventListener("load", function () {
-
-if (localStorage.getItem("activated") !== "yes") {
-
-let screen = document.getElementById("activation-screen");
-screen.style.display = "flex";
-
-document.getElementById("device-code").innerText = getDeviceCode();
-
-}
-
+    if (localStorage.getItem("activated") !== "yes") {
+        let screen = document.getElementById("activation-screen");
+        screen.style.display = "flex";
+        document.getElementById("device-code").innerText = getDeviceCode();
+    }
 });
 </script>
 <!-- 激活码系统结束 -->
