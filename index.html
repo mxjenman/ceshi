@@ -10,23 +10,27 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="echo">
 
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="pluie">
+
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f0f0f0">
-<meta name="application-name" content="echo">
+<meta name="application-name" content="pluie">
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<title>echo</title>
+<title>pluie</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script>
 (function () {
     try {
         const manifestData = {
-            name: "echo",
-            short_name: "echo",
+            name: "pluie",
+            short_name: "pluie",
             start_url: ".",
             scope: ".",
             display: "standalone",
@@ -46,7 +50,6 @@
                 }
             ]
         };
-
         const manifestBlob = new Blob(
             [JSON.stringify(manifestData)],
             { type: "application/manifest+json" }
@@ -62,14 +65,52 @@
     }
 })();
 </script>
-    <style id="custom-style">
-        /* 终极安卓适配补丁：锁定屏幕的真实可见高度 */
-        html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; }
-        body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+<style id="custom-style">
+        /* 苹果+安卓统一适配：保留顶部和底部安全距离，避免苹果添加到桌面后整体上移 */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: border-box;
+        }
+
         .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; }
         .app-icon { width: 60px; height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .app-icon:active { transform: scale(0.85); }
-                /* 气泡样式保留名字，颜色和外观用后面的新代码控制 */
+
+        /* 首页第一屏专用：不要再手动往上顶，改成正常顶部留白 */
+        .home-top-wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            padding-top: 8px;
+            box-sizing: border-box;
+        }
+
+        /* 底部 Dock 专用：所有手机都离底部 20px，同时兼容苹果底部安全区 */
+        .home-dock-wrap {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            padding-left: 24px;
+            padding-right: 24px;
+            width: 100%;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+
+        /* 气泡样式保留名字，颜色和外观用后面的新代码控制 */
         .chat-msg-user { }
         .chat-msg-ai { }
 
@@ -78,17 +119,17 @@
             width:100%;
             border-radius:28px;
             padding:20px;
-            background: rgba(255, 255, 255, 0.6); /* 带一点白的透明底色 */
-            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
-            -webkit-backdrop-filter: blur(12px); /* 兼容苹果手机 */
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             box-shadow:0 8px 20px rgba(0,0,0,0.08);
             position:relative;
             transition: all 0.3s ease;
         }
         .left-widget {
-            background: rgba(255, 255, 255, 0.6); /* 带一点白的透明底色 */
-            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
-            -webkit-backdrop-filter: blur(12px); /* 兼容苹果手机 */
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
         .widget-avatar{
             width:60px;
@@ -124,8 +165,7 @@
         /* 论坛主页样式扩展 */
         .profile-banner { width: 100%; height: 120px; background: #cfd9de; cursor: pointer; object-fit: cover; }
         .profile-avatar-main { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; margin-top: -40px; margin-left: 15px; position: relative; cursor: pointer; object-fit: cover; background: white; }
-        .tab-active { border-bottom: 4px solid #000000; color: #000; font-weight: bold;
-        }
+        .tab-active { border-bottom: 4px solid #000000; color: #000; font-weight: bold; }
         
         /* 进场动画 */
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
@@ -133,7 +173,6 @@
 
         /* 微信专有样式 */
         .wechat-nav-active { color: #000000 !important; }
-        /* 修改1：将原本的 200px 高度调整为 290px，让背景图更大 */
         .moments-header { height: 290px; background: #333; position: relative; width: 100%; }
         .moments-avatar { width: 70px; height: 70px; border-radius: 8px; border: 2px solid white; position: absolute; right: 15px; bottom: -15px; }
         .moments-name { color: white; font-weight: bold; position: absolute; right: 100px; bottom: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
@@ -153,8 +192,7 @@
         .wx-chevron { color: #d1d1d1; font-size: 14px; font-family: serif; display: none; } 
         .page-layer { position: fixed; inset: 0; background: #f0f0f0; z-index: 100; transition: transform 0.3s ease; }
         .slide-hidden { transform: translateX(100%); }
-                .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%;
-        }
+        .wx-divider-thin { height: 0.5px; background-color: #f2f2f2; width: 100%; }
         
         /* 新增：酷炫黑色长按气泡弹窗 */
         .context-menu {
@@ -163,23 +201,22 @@
             z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
         .context-menu.show { opacity: 1; pointer-events: auto; }
-               .context-menu-item {
-            padding: 8px 14px; /* 缩小了内边距 */
-            font-size: 13px; white-space: nowrap; cursor: pointer; /* 缩小了字体 */
+        .context-menu-item {
+            padding: 8px 14px;
+            font-size: 13px; white-space: nowrap; cursor: pointer;
             position: relative;
         }
         .context-menu-item:not(:last-child)::after {
             content: '';
-            position: absolute; right: 0; top: 10px; bottom: 10px; /* 缩小了分隔线 */
+            position: absolute; right: 0; top: 10px; bottom: 10px;
             width: 1px; background: rgba(255,255,255,0.2);
         }
-        .context-menu-item:active { background: rgba(0,0,0,0.2); border-radius: 12px;
-        }
+        .context-menu-item:active { background: rgba(0,0,0,0.2); border-radius: 12px; }
         .context-arrow {
             position: absolute;
             bottom: -5px; left: 50%; transform: translateX(-50%);
             width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
-            border-top: 5px solid #4c4c4c; /* 缩小了尖尖 */
+            border-top: 5px solid #4c4c4c;
         }
 
         /* 新增：多选勾选框和引用样式 */
@@ -195,8 +232,7 @@
             background: rgba(0,0,0,0.05); border-left: 3px solid #ccc; padding: 4px 8px;
             font-size: 12px; color: #666; margin-bottom: 6px; border-radius: 4px;
         }
-        .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd;
-        }
+        .chat-msg-user .quote-block { background: rgba(255,255,255,0.2); color: #eee; border-left-color: #ddd; }
         
         /* 隐藏左右滑动的自带滚动条 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -219,8 +255,8 @@
 
     <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
-        <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
-            <div class="w-full flex flex-col" style="transform: translateY(-35px);">
+<div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
+            <div class="home-top-wrap">
             <div class="widget-card mb-12 mt-4">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
@@ -364,7 +400,7 @@ openPlaylist();">
                 </div>
             </div>
     
-        </div> </div>         <div class="fixed left-0 right-0 bottom-[20px] px-6 w-full z-20">
+        </div> </div>         <div class="home-dock-wrap">
     <div class="glass-card w-full p-4 flex justify-between items-center relative">
         <div class="flex flex-col items-center gap-1 w-[60px]" onclick="openSmsApp()">
             <div class="app-icon overflow-hidden p-0 w-[60px] h-[60px] rounded-[15px] shadow-sm">
@@ -6563,17 +6599,22 @@ function applySystemFontAndSize() {
 // ===== 新增：全屏外观设置功能 =====
 function openAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.remove('slide-hidden');
-    
+
+    // 每次打开外观页，都重新建立暂存，避免旧数据干扰新预览
+    tempAppearance.icons = {};
+    tempAppearance.names = {};
+
     // 获取当前桌面壁纸用于预览
     const bodyBg = document.getElementById('desktop-body').style.backgroundImage;
     if (bodyBg && bodyBg !== 'none') {
-        // 提取 url("...") 里的内容
         const cleanUrl = bodyBg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
         document.getElementById('preview-wallpaper').src = cleanUrl;
+        document.getElementById('preview-wallpaper').style.backgroundColor = 'transparent';
         tempAppearance.wallpaper = cleanUrl;
     } else {
         document.getElementById('preview-wallpaper').src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
         document.getElementById('preview-wallpaper').style.backgroundColor = '#d1d5db';
+        tempAppearance.wallpaper = '';
     }
 
     // 回显全局聊天背景
@@ -6586,11 +6627,19 @@ function openAppearanceApp() {
         document.getElementById('preview-global-chat-bg').src = '';
         document.getElementById('preview-global-chat-bg').classList.add('hidden');
         document.getElementById('global-chat-bg-hint').classList.remove('hidden');
+        tempAppearance.chatBg = '';
+    }
+
+    // 工具：判断是不是那张透明占位图
+    function isTransparentPlaceholder(src) {
+        if (!src) return true;
+        return src.indexOf('data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==') === 0;
     }
 
     // 获取并显示所有桌面图标当前的状态
     const iconGrid = document.getElementById('icon-edit-grid');
     iconGrid.innerHTML = '';
+
     const iconsList = [
         { id: 'icon-wechat', name: '微信' },
         { id: 'icon-lorebook', name: '世界书' },
@@ -6600,27 +6649,40 @@ function openAppearanceApp() {
         { id: 'icon-settings', name: '设置' },
         { id: 'icon-appearance', name: '外观' },
         { id: 'icon-placeholder4', name: '查手机' },
-        // === 这里把外卖和默契比心加进去了 ===
         { id: 'icon-mqbx', name: '默契比心' },
         { id: 'icon-waimai', name: '外卖' }
     ];
 
-    // 获取已经保存过的自定义名称
+    const savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
     const savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
 
     iconsList.forEach(icon => {
         const desktopImg = document.getElementById(icon.id);
-        const currentSrc = tempAppearance.icons[icon.id] || (desktopImg ? desktopImg.src : '');
-        
-        // 决定显示的名字：优先用刚刚暂存的，其次用以前保存过的，最后用默认的
-        const displayName = tempAppearance.names[icon.id] || savedAppNames[icon.id] || icon.name;
+
+        let realSrc = '';
+
+        // 优先级1：已经保存过的自定义图标
+        if (savedDesktopIcons[icon.id]) {
+            realSrc = savedDesktopIcons[icon.id];
+        }
+        // 优先级2：当前桌面上真实已有的图标
+        else if (desktopImg && desktopImg.src && !isTransparentPlaceholder(desktopImg.src)) {
+            realSrc = desktopImg.src;
+        }
+        // 优先级3：空白图标就不给透明图，直接留空
+        else {
+            realSrc = '';
+        }
+
+        const displayName = savedAppNames[icon.id] || icon.name;
 
         iconGrid.innerHTML += `
             <div class="flex flex-col items-center gap-1">
-                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200 cursor-pointer active:scale-95 transition-transform" onclick="triggerIconEdit('${icon.id}')">
-                    <img id="preview-${icon.id}" src="${currentSrc}" class="w-full h-full object-cover">
+                <div class="w-12 h-12 rounded-[10px] overflow-hidden shadow-sm border border-gray-100 bg-gray-200 cursor-pointer active:scale-95 transition-transform flex items-center justify-center relative" onclick="triggerIconEdit('${icon.id}')">
+                    <img id="preview-${icon.id}" src="${realSrc}" class="w-full h-full object-cover ${realSrc ? '' : 'hidden'}">
+                    <span id="preview-empty-${icon.id}" class="text-[10px] text-gray-400 ${realSrc ? 'hidden' : ''}">空白</span>
                 </div>
-                <span id="preview-name-${icon.id}" class="text-[10px] text-gray-500 cursor-pointer hover:text-black underline decoration-gray-300 underline-offset-2 px-1" onclick="editAppearanceAppName('${icon.id}', '${displayName}')">${displayName}</span>
+                <span id="preview-name-${icon.id}" class="text-[10px] text-gray-500 cursor-pointer hover:text-black underline decoration-gray-300 underline-offset-2 px-1 text-center" onclick="editAppearanceAppName('${icon.id}', '${displayName.replace(/'/g, "\\'")}')">${displayName}</span>
             </div>
         `;
     });
@@ -6628,8 +6690,8 @@ function openAppearanceApp() {
 
 function closeAppearanceApp() {
     document.getElementById('appearance-app-screen').classList.add('slide-hidden');
-    tempAppearance.icons = {}; // 清除未保存的暂存状态
-    tempAppearance.names = {}; // 新增：清除未保存的文字状态
+    tempAppearance.icons = {};
+    tempAppearance.names = {};
 }
 
 // 处理壁纸选择
@@ -6641,7 +6703,7 @@ function handleWallpaperSelect(input) {
             document.getElementById('preview-wallpaper').src = result;
             document.getElementById('preview-wallpaper').style.backgroundColor = 'transparent';
             tempAppearance.wallpaper = result;
-        }
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
@@ -6649,61 +6711,89 @@ function handleWallpaperSelect(input) {
 // 触发某个图标的选择
 function triggerIconEdit(iconId) {
     currentEditingIconId = iconId;
-    document.getElementById('icon-file-input').click();
+    const input = document.getElementById('icon-file-input');
+    input.value = '';
+    input.click();
 }
 
 // 处理图标选择
 function handleIconSelect(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const result = e.target.result;
-            // 更新预览界面的小图标
-            document.getElementById(`preview-${currentEditingIconId}`).src = result;
-            // 暂存更改，等点了保存再生效
-            tempAppearance.icons[currentEditingIconId] = result;
-            // 清空 input 允许重复选择同一张
-            input.value = '';
-        }
-        reader.readAsDataURL(input.files[0]);
+    if (!currentEditingIconId) return;
+    if (!(input.files && input.files[0])) return;
+
+    const file = input.files[0];
+
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+        alert('请选图片文件');
+        input.value = '';
+        return;
     }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const result = e.target.result;
+
+        const previewImg = document.getElementById(`preview-${currentEditingIconId}`);
+        const previewEmpty = document.getElementById(`preview-empty-${currentEditingIconId}`);
+
+        if (previewImg) {
+            previewImg.src = result;
+            previewImg.classList.remove('hidden');
+        }
+
+        if (previewEmpty) {
+            previewEmpty.classList.add('hidden');
+        }
+
+        // 暂存更改，等点保存再真正应用
+        tempAppearance.icons[currentEditingIconId] = result;
+
+        input.value = '';
+    };
+    reader.readAsDataURL(file);
 }
 
 // 点击保存外观设置
 function saveAppearanceApp() {
     // 1. 应用壁纸
-    if (tempAppearance.wallpaper) {
-        const bgValue = `url(${tempAppearance.wallpaper})`;
-        document.getElementById('desktop-body').style.backgroundImage = bgValue;
-        localStorage.setItem('os_desktop_bg', bgValue);
+    if (tempAppearance.wallpaper !== undefined) {
+        if (tempAppearance.wallpaper) {
+            const bgValue = `url(${tempAppearance.wallpaper})`;
+            document.getElementById('desktop-body').style.backgroundImage = bgValue;
+            localStorage.setItem('os_desktop_bg', bgValue);
+        } else {
+            document.getElementById('desktop-body').style.backgroundImage = 'none';
+            localStorage.removeItem('os_desktop_bg');
+        }
     }
 
-    // 2. 先读取已经保存过的桌面图标
+    // 2. 读取已保存图标
     let savedDesktopIcons = JSON.parse(localStorage.getItem('os_desktop_icons')) || {};
 
-    // 3. 应用所有更改过的图标到真实桌面，并且立刻单独保存
-    for (const [iconId, imgSrc] of Object.entries(tempAppearance.icons)) {
+    // 3. 应用这次新换的图标到真实桌面，并保存
+    for (const [iconId, newSrc] of Object.entries(tempAppearance.icons)) {
+        savedDesktopIcons[iconId] = newSrc;
+
         const desktopImg = document.getElementById(iconId);
         if (desktopImg) {
-            desktopImg.src = imgSrc;
-            if (desktopImg.style.backgroundColor) {
-                desktopImg.style.backgroundColor = 'transparent';
-            }
+            desktopImg.src = newSrc;
+            desktopImg.style.backgroundColor = 'transparent';
+            desktopImg.classList.remove('hidden');
         }
-        savedDesktopIcons[iconId] = imgSrc;
     }
 
     localStorage.setItem('os_desktop_icons', JSON.stringify(savedDesktopIcons));
 
-    // 4. 应用所有更改过的名称到真实桌面，并且保存
+    // 4. 应用所有更改过的名称到真实桌面，并保存
     let savedAppNames = JSON.parse(localStorage.getItem('os_app_names')) || {};
     for (const [iconId, newName] of Object.entries(tempAppearance.names)) {
         savedAppNames[iconId] = newName;
         const desktopImg = document.getElementById(iconId);
         if (desktopImg) {
             const iconContainer = desktopImg.closest('.app-icon');
-            if (iconContainer && iconContainer.nextElementSibling) {
-                iconContainer.nextElementSibling.innerText = newName;
+            if (iconContainer && iconContainer.parentElement) {
+                const textEl = iconContainer.parentElement.querySelector('span');
+                if (textEl) textEl.innerText = newName;
             }
         }
     }
@@ -6712,10 +6802,10 @@ function saveAppearanceApp() {
     // 5. 保存全局聊天背景
     if (tempAppearance.chatBg !== undefined) {
         config.globalChatBg = tempAppearance.chatBg;
-        localStorage.setItem('globalChatBg', tempAppearance.chatBg);
+        localStorage.setItem('globalChatBg', tempAppearance.chatBg || '');
     }
 
-    // 6. 额外把这次最新画面立刻写进总缓存，防止旧缓存把新图标顶回去
+    // 6. 同步进总缓存，防止旧缓存把新图顶回去
     try {
         let savedCustomState = JSON.parse(localStorage.getItem('os_custom_dom_state')) || {};
         for (const [iconId, imgSrc] of Object.entries(savedDesktopIcons)) {
@@ -6724,7 +6814,7 @@ function saveAppearanceApp() {
         localStorage.setItem('os_custom_dom_state', JSON.stringify(savedCustomState));
     } catch (e) {}
 
-    // 7. 立刻执行一次全局保存，别再等每秒自动保存
+    // 7. 立刻全局保存
     if (typeof performGlobalSave === 'function') {
         performGlobalSave();
     }
