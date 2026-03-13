@@ -9817,12 +9817,12 @@ function checkActivation() {
     let db = JSON.parse(localStorage.getItem("codes") || "{}");
     
     if (db[input]) {
-        // 如果激活码存在，检查它是否没被用过，或者就是当前这个设备在用
-        if (db[input].used === "no" || db[input].deviceId === device) {
+        // 修复：后台生成的未使用暗号是 false，设备名叫 device
+        if (db[input].used === false || db[input].device === device) {
             
-            // 标记为已激活
-            db[input].used = "yes";
-            db[input].deviceId = device;
+            // 标记为已激活（把暗号改成 true）
+            db[input].used = true;
+            db[input].device = device;
             
             // 把更新后的数据存回后台
             localStorage.setItem("codes", JSON.stringify(db));
