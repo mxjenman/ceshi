@@ -222,9 +222,9 @@
 
     <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
-        <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
-            <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-            <div class="widget-card mb-12 mt-4">
+        <div class="min-w-full flex-shrink-0 snap-center px-6 pt-[15px] pb-6 flex flex-col items-center">
+            <div class="w-full flex flex-col">
+            <div class="widget-card mb-12" style="margin-top: 0;">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
@@ -9874,54 +9874,26 @@ setInterval(() => {
 }, 500);
 // =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
 </script>
-<style>
-    /* 核心修正：强制让网页内容避开苹果底部的黑条和顶部的刘海 */
-    :root {
-        --safe-top: env(safe-area-inset-top);
-        --safe-bottom: env(safe-area-inset-bottom);
-    }
-
-    html, body {
-        /* 确保高度填满屏幕，但不超出 */
-        height: 100% !important;
-        height: -webkit-fill-available !important; 
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        /* 关键：给底部留出苹果横条的距离 */
-        padding-bottom: var(--safe-bottom) !important;
-        box-sizing: border-box !important;
-    }
-
-    /* 如果你的底部对话框还是被挡住，强制给它一个向上的偏移 */
-    #footer, .input-container, .bottom-bar {
-        padding-bottom: var(--safe-bottom) !important;
-    }
-</style>
-
 <script>
 (function () {
-    function fixAppleDisplay() {
-        // 检测是否是苹果全屏模式
-        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    function checkStandalone() {
+        const isIosStandalone = window.navigator.standalone === true;
+        const isAndroidStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isStandalone = isIosStandalone || isAndroidStandalone;
 
-        if (isIos) {
-            // 修正视口高度，防止内容掉到屏幕外面去
-            document.documentElement.style.height = window.innerHeight + 'px';
-            document.body.style.height = window.innerHeight + 'px';
-            
-            // 强制刷新一次布局
-            window.scrollTo(0, 0);
+        document.body.setAttribute('data-standalone', isStandalone ? 'true' : 'false');
+
+        if (isStandalone) {
+            document.documentElement.style.height = '100vh';
+            document.body.style.height = '100vh';
+            document.body.style.overflow = 'hidden';
         }
     }
 
-    window.addEventListener('load', fixAppleDisplay);
-    window.addEventListener('resize', fixAppleDisplay);
-    // 针对输入法弹起后的回弹修正
-    window.addEventListener('focusout', () => {
-        window.scrollTo(0, 0);
-    });
+    window.addEventListener('load', checkStandalone);
+    window.addEventListener('resize', checkStandalone);
+    window.addEventListener('orientationchange', checkStandalone);
+    document.addEventListener('visibilitychange', checkStandalone);
 })();
 </script>
 </body>
