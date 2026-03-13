@@ -9522,7 +9522,7 @@ async function executeAutoMomentPost(friend) {
         feed.prepend(div);
     } catch(e) { console.error("AI自动发朋友圈失败:", e); }
 }
-// =============== 新增：一起听 & 浮窗功能引擎 =================
+// =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 =================
 let listeningTogetherCharId = null;
 
 // 强化：打开音乐播放器时隐藏浮窗
@@ -9571,7 +9571,7 @@ function closeListenModal() {
     document.getElementById('listen-together-modal').classList.add('hidden');
 }
 
-// 在微信发送音乐卡片邀请（利用包含img标签自动去除气泡包裹）
+// 在微信发送音乐卡片邀请
 async function sendListenInvite(charId) {
     closeListenModal();
     const friend = friendList.find(f => f.id === charId);
@@ -9581,8 +9581,9 @@ async function sendListenInvite(charId) {
     const songArtist = document.getElementById('player-artist').innerText;
     const songCover = document.getElementById('player-cover-img').src;
     
-    // 制作精美音乐卡片（因为带有 img 标签，系统会自动判定为多媒体卡片，去掉了灰色气泡）
+    // 制作精美音乐卡片（为了让部分代码不包气泡，在最前面放了一个隐藏的占位img标签）
     const cardHtml = `
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;">
         <div class="bg-white rounded-[16px] w-[230px] shadow-md border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform" onclick="openMusicPlayer()">
             <div class="flex items-center gap-3 p-3 bg-gray-50 border-b border-gray-100">
                 <img src="${songCover}" class="w-11 h-11 rounded-full object-cover" style="animation: spin 5s linear infinite;">
@@ -9598,18 +9599,17 @@ async function sendListenInvite(charId) {
         </div>
     `;
     
-    // 把卡片扔进微信聊天
     if (!friend.chatHistory) friend.chatHistory = [];
     friend.chatHistory.push({ role: 'user', content: cardHtml });
     
-    // 刷新微信界面显示出来
     if (currentFriendId === charId) {
         renderAllMessages(true);
     }
+    // 强制刷新左侧好友列表让它生成最新消息
+    if(typeof renderFriendList === 'function') renderFriendList(); 
     
     alert(`已向 ${friend.remark} 发送了卡片邀请，快去微信看看TA同不同意吧！`);
     
-    // 背后呼唤AI进行回复
     if (!config.apiKey) return;
     let prompt = `你扮演 ${friend.realName}。设定：${friend.persona}。\n【场景】：用户刚才发了一张音乐卡片，邀请你一起听歌。歌曲是《${songTitle}》（歌手：${songArtist}）。\n【任务】：根据你的人设立刻发微信回复用户，表达你是否愿意一起听（傲娇、开心、高冷都可以，符合人设就行）。回复口语化、简短自然。`;
     
@@ -9628,18 +9628,16 @@ async function sendListenInvite(charId) {
         
         friend.chatHistory.push({ role: 'assistant', content: reply });
         if (currentFriendId === charId) renderAllMessages(true);
+        if(typeof renderFriendList === 'function') renderFriendList(); 
         localStorage.setItem('friend_list', JSON.stringify(friendList));
         
-        // 绑定状态：TA已经同意了，接下来开始同步听歌
         listeningTogetherCharId = charId;
-        
     } catch(e) {}
 }
 
-// 核心：每隔15秒偷偷检查播放器唱到了哪句歌词，并同步给AI
+// 核心：每隔15秒检查歌词并同步给AI
 let lastReportedLyrics = "";
 setInterval(async () => {
-    // 没人一起听，或者没填API就不管
     if (!listeningTogetherCharId || !config.apiKey) return;
     
     const playerTitle = document.getElementById('player-title');
@@ -9649,25 +9647,21 @@ setInterval(async () => {
     const currentSong = playerTitle.innerText;
     if (currentSong === '暂无歌曲') return;
 
-    // 抓取当前亮起的歌词
     let currentLyrics = "";
     const activeLine = lyricsContainer.querySelector('.text-black, .text-white, .font-bold, .opacity-100'); 
     if (activeLine) {
         currentLyrics = activeLine.innerText.trim();
     } else {
-        // 如果找不到高亮的，就抓第一句
         const lines = lyricsContainer.innerText.split('\n').filter(l => l.trim().length > 0 && !l.includes('暂无歌词'));
         if (lines.length > 0) currentLyrics = lines[0].trim();
     }
 
-    // 没抓到或者和上次汇报的歌词一样，就不打扰AI
     if (!currentLyrics || currentLyrics === lastReportedLyrics) return;
     lastReportedLyrics = currentLyrics;
 
     const friend = friendList.find(f => f.id === listeningTogetherCharId);
     if (!friend) return;
 
-    // 只有小概率（百分之十）AI会忍不住针对这句歌词发微信给你，避免频繁刷屏！
     if (Math.random() < 0.1) { 
         let prompt = `你扮演 ${friend.realName}。设定：${friend.persona}。\n【场景】：你们正在连线“一起听歌”。现在手机里放着《${currentSong}》，刚好唱到了这句歌词：“${currentLyrics}”。\n【任务】：请针对这句歌词、或者当前的听歌氛围，主动给用户发一句简短的微信（字数15字内，像活人一样自然，绝不能像机器人复读歌词）。`;
         try {
@@ -9687,15 +9681,61 @@ setInterval(async () => {
             if (currentFriendId === listeningTogetherCharId) {
                 renderAllMessages(true);
             }
-            // 触发顶部的系统通知横幅提醒你TA来消息了
             if(typeof sendSystemNotification === 'function') {
                 sendSystemNotification(friend.remark, reply);
             }
+            if(typeof renderFriendList === 'function') renderFriendList(); 
             localStorage.setItem('friend_list', JSON.stringify(friendList));
         } catch(e) {}
     }
-}, 15000); 
-// =============== 一起听 & 浮窗功能引擎 结束 =================
+}, 15000);
+
+// 核心：全自动界面修复引擎（解决卡片气泡、引文、预览问题、自动切封面）
+setInterval(() => {
+    // 1. 彻底清除聊天记录里邀请卡片外面的绿色/白色气泡，让它无缝显示
+    document.querySelectorAll('#chat-messages > div').forEach(msgWrapper => {
+        if (msgWrapper.innerHTML.includes('🎵 邀请你一起听歌')) {
+            // 找到所有可能是气泡的层，把背景和内边距掏空
+            const bubbles = msgWrapper.querySelectorAll('.bg-\\[\\#95ec69\\], .bg-white, .p-2, .p-3');
+            bubbles.forEach(bubble => {
+                bubble.classList.remove('bg-[#95ec69]', 'bg-white', 'p-2', 'p-3', 'shadow-sm', 'border', 'rounded-lg');
+                bubble.style.background = 'transparent';
+                bubble.style.padding = '0';
+            });
+        }
+        
+        // 2. 修复消息列表里引用回复时显示一长串代码的问题，改成简化的"[一起听歌邀请]"
+        const quoteDiv = msgWrapper.querySelector('.bg-black\\/5');
+        if (quoteDiv && quoteDiv.innerHTML.includes('🎵 邀请你一起听歌')) {
+            quoteDiv.innerHTML = '[一起听歌邀请]';
+        }
+    });
+
+    // 3. 修复左侧好友列表最后一条消息预览，不要显示代码，显示"[一起听歌邀请]"
+    const listContainer = document.getElementById('friend-list');
+    if (listContainer) {
+        listContainer.querySelectorAll('div').forEach(el => {
+            // 只要文本里混进了邀请卡片的代码特征，直接盖掉
+            if (el.innerHTML.includes('🎵 邀请你一起听歌') && el.innerHTML.includes('bg-white')) {
+                el.innerHTML = '[一起听歌邀请]';
+            }
+        });
+    }
+
+    // 4. 修复点击长按回复时，输入框上面的那一行预览文字
+    const replyPreview = document.getElementById('reply-preview-text');
+    if (replyPreview && replyPreview.innerHTML.includes('🎵 邀请你一起听歌')) {
+        replyPreview.innerHTML = '[一起听歌邀请]';
+    }
+    
+    // 5. 浮窗封面自动跟随换歌切换！每隔0.5秒钟检查一次播放器封面并同步给浮窗
+    const coverImg = document.getElementById('player-cover-img');
+    const floatingCover = document.getElementById('music-floating-cover');
+    if (coverImg && floatingCover && coverImg.src && coverImg.src !== floatingCover.src) {
+        floatingCover.src = coverImg.src;
+    }
+}, 500);
+// =============== 新增：一起听 & 浮窗功能引擎 2.0升级版 结束 =================
 </script>
 </body>
 </html>
