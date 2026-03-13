@@ -9810,35 +9810,40 @@ return code;
 
 // ===== 关联后台：检查激活码合法性 =====
 function checkActivation() {
+    // 1. 获取用户输入的激活码
     let input = document.getElementById("activation-input").value.trim();
+    // 2. 获取当前机器的设备ID
     let device = getDeviceCode();
     
-    // 从后台存储的数据里拿激活码列表
-    let db = JSON.parse(localStorage.getItem("codes") || "{}");
+    // 3. 这里的 "codes" 必须和后台文件里的名字一模一样
+    let data = localStorage.getItem("codes");
+    let db = JSON.parse(data || "{}");
     
-    if (db[input]) {
-        // 修复：后台生成的未使用暗号是 false，设备名叫 device
+    // 4. 检查输入的码在不在后台列表里
+    if (db && db[input]) {
+        
+        // 5. 检查这个码是不是还没人用过 (false)，或者就是这张票对应的就是我这台机器
         if (db[input].used === false || db[input].device === device) {
             
-            // 标记为已激活（把暗号改成 true）
+            // 6. 验证通过，把这个码标记为“已使用”并绑定我的设备ID
             db[input].used = true;
             db[input].device = device;
             
-            // 把更新后的数据存回后台
+            // 7. 把更新后的名单存回去，后台刷新就能看到了
             localStorage.setItem("codes", JSON.stringify(db));
             
-            // 开启软件
+            // 8. 成功进入软件
             localStorage.setItem("activated", "yes");
             document.getElementById("activation-screen").style.display = "none";
-            alert("激活成功！");
+            alert("激活成功！欢迎使用");
             
         } else {
-            // 激活码被别人用了
-            alert("该激活码已被其他设备使用");
-            document.getElementById("activation-error").style.display = "block";
+            // 这个码的 used 已经是 true 了，且 device 也不是我
+            alert("该激活码已被其他设备占用");
         }
     } else {
-        // 根本没有这个激活码
+        // 列表里根本没这个码，或者后台还没生成过码
+        alert("激活码不存在，请检查输入或先在后台生成");
         document.getElementById("activation-error").style.display = "block";
     }
 }
