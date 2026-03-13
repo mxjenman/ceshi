@@ -23,37 +23,6 @@
 <meta http-equiv="Expires" content="0">
 
 <title>pluie</title>
-
-<script>
-  window.addEventListener('load', function() {
-    // 检查是不是苹果手机添加到桌面的情况
-    var isIosStandalone = window.navigator.standalone === true;
-    if (isIosStandalone) {
-      setTimeout(function() {
-        // 扫描页面里所有的组件
-        var allElements = document.querySelectorAll('*');
-        for (var i = 0; i < allElements.length; i++) {
-          var el = allElements[i];
-          var style = window.getComputedStyle(el);
-          // 如果找到悬浮贴在屏幕顶部的组件（不管你给它起了什么名字）
-          if ((style.position === 'fixed' || style.position === 'absolute') && parseInt(style.top) <= 20) {
-            // 强制下达命令：躲开苹果黑边(safe-area-inset-top)，再往下让出 15px！
-            el.style.top = 'calc(env(safe-area-inset-top) + 15px)';
-          }
-        }
-      }, 300); // 稍微等0.3秒确保你的组件已经加载出来
-    }
-  });
-</script>
-<style>
-  /* 这一步是双保险：如果你的组件不是悬浮的，给整个网页加一个安全内边距 */
-  @supports (padding-top: env(safe-area-inset-top)) {
-    body[data-standalone="true"] {
-      padding-top: calc(env(safe-area-inset-top) + 15px) !important;
-      box-sizing: border-box;
-    }
-  }
-</style>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script>
@@ -254,8 +223,8 @@
     <div id="home-screen" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full">
 
         <div class="min-w-full flex-shrink-0 snap-center p-6 flex flex-col items-center">
-            <div class="w-full flex flex-col" style="transform: translateY(-35px);">
-            <div class="widget-card mb-12 mt-4">
+            <div class="w-full flex flex-col" style="padding-top: 15px;">
+            <div class="widget-card mb-12">
                 <div class="flex items-start gap-10">
                     <div class="flex flex-col items-center gap-1">
                         <span class="widget-emoji" onclick="editEmoji('left')">(⸝⸝๑  ̫ ๑⸝⸝)</span>
